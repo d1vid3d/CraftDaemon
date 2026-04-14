@@ -105,7 +105,7 @@ This isn't meant to gatekeep — the documentation tries to be as clear as possi
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/CraftDaemon.git
+git https://github.com/d1vid3d/CraftDaemon/releases/tag/v1.0.0
 cd CraftDaemon
 ```
 
