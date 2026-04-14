@@ -7,6 +7,7 @@
 ![Linux](https://img.shields.io/badge/Linux-systemd-FCC624?style=flat-square&logo=linux&logoColor=black)
 ![Paper](https://img.shields.io/badge/Paper-Recommended-F96854?style=flat-square)
 ![Self-Hosted](https://img.shields.io/badge/Self--Hosted-required-red?style=flat-square)
+![Release](https://img.shields.io/github/v/release/d1vid3d/CraftDaemon)
 
 ---
 
