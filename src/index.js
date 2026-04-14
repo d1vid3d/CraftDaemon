@@ -29,7 +29,7 @@ const execAsync = promisify(exec);
 //  RCON_PORT=25575
 //  RCON_PASSWORD=
 //
-//  PLAYIT_ADDRESS=xx.ip.gl.ply.gg:12345  ← your playit.gg tunnel address
+//  TUNNEL_ADDRESS=xx.ip.gl.ply.gg:12345  ← your optional tunnel address (e.g. Playit.gg) to display in the /address command
 //
 // ----------------------------------------------------------------
 
@@ -40,7 +40,7 @@ const RCON_PORT        = parseInt(process.env.RCON_PORT || "25575", 10);
 const RCON_PASSWORD    = process.env.RCON_PASSWORD || "";
 const MC_SERVICE        = process.env.MC_SERVICE       || "minecraft";
 const STATUS_CHANNEL_ID = process.env.STATUS_CHANNEL_ID;
-const PLAYIT_ADDRESS    = process.env.PLAYIT_ADDRESS   || null;
+const TUNNEL_ADDRESS    = process.env.TUNNEL_ADDRESS   || null;
 
 // Auto-shutdown configuration (Not on .env since these are more like constants that you probably won't change per-deployment)
 
@@ -403,8 +403,8 @@ client.on("interactionCreate", async (interaction) => {
 
     // ── ADDRESS ────────────────────────────────────────────────
     if (interaction.commandName === "address") {
-        if (!PLAYIT_ADDRESS) {
-            return interaction.reply("⚠️ No server address has been configured. Set `PLAYIT_ADDRESS` in the bot's `.env` file.");
+        if (!TUNNEL_ADDRESS) {
+            return interaction.reply("⚠️ No server address has been configured. Set `TUNNEL_ADDRESS` in the bot's `.env` file.");
         }
         return interaction.reply({
             embeds: [{
@@ -413,7 +413,7 @@ client.on("interactionCreate", async (interaction) => {
                 color: 0x5865f2,
                 fields: [
                     { name: "Java Edition Version", value: `\`${process.env.JAVA_EDITION_VERSION || "Not configured"}\``, inline: false },
-                    { name: "Tunnel Address", value: `\`${PLAYIT_ADDRESS}\``, inline: false },
+                    { name: "Tunnel Address", value: `\`${TUNNEL_ADDRESS}\``, inline: false },
                     { name: "Local (LAN) Address", value: `\`${process.env.LOCAL_ADDRESS || "Not configured"}\``, inline: false },
                 ],
                 footer: { text: "Share this with your friends to let them join!" },
@@ -494,8 +494,8 @@ client.on("interactionCreate", async (interaction) => {
             embed.fields.push({ name: "TPS",             value: `📉 ${tps}`,                                    inline: false });
             embed.fields.push({ name: "Players",         value: `👥 ${playersLine}`,                            inline: false });
             embed.fields.push({ name: "Ping (RCON RTT)", value: ping !== null ? `📡 ${ping} ms` : "N/A",        inline: false });
-            if (PLAYIT_ADDRESS) {
-                embed.fields.push({ name: "Address", value: `🌐 \`${PLAYIT_ADDRESS}\``, inline: false });
+            if (TUNNEL_ADDRESS) {
+                embed.fields.push({ name: "Address", value: `🌐 \`${TUNNEL_ADDRESS}\``, inline: false });
             }
         } else {
             embed.fields.push({
