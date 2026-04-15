@@ -1,15 +1,26 @@
-# CraftDaemon
-> A self-hosted Discord bot for controlling a Minecraft server through **systemd** and **RCON** — built for people who run their own Linux server and want Discord as the control panel.
+<p align="center">
+  <picture>
+    <source srcset="assets/logo-dark.svg" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/logo-light.svg" media="(prefers-color-scheme: light)">
+    <img src="assets/logo-dark.svg" width="70%">
+  </picture>
+</p>
 
-![Node.js](https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white)
-![Discord.js](https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-systemd-FCC624?style=flat-square&logo=linux&logoColor=black)
-![Paper](https://img.shields.io/badge/Paper-Recommended-F96854?style=flat-square)
-![Self-Hosted](https://img.shields.io/badge/Self--Hosted-Required-red?style=flat-square)
-![Release](https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=flat-square)
+<div align="center" style="max-width: 45%; margin: -1em auto 2em auto;">
+  A self-hosted Discord bot for controlling a Minecraft server through <b>systemd</b> and <b>RCON</b> — built for people who run their own Linux server and want Discord as the control panel.
+</div>
 
+<div align="center">
 
----
+  <img src="https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white" />
+  <img src="https://img.shields.io/badge/Linux-systemd-FCC624?style=flat-square&logo=linux&logoColor=black" />
+  <img src="https://img.shields.io/badge/Paper-Recommended-F96854?style=flat-square" />
+  <img src="https://img.shields.io/badge/Self--Hosted-Required-red?style=flat-square" />
+  <img src="https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=flat-square" />
+
+</div>
+
 
 ## Overview
 
@@ -58,12 +69,28 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 | `/address` | Shows the server's connection addresses (main address, LAN, Java version) |
 | `/ping` | Checks the bot's Discord API latency |
 
-### Bot Responses
+### Bot Responses (Brief showcase)
 
 📸 **Screenshot:** `/status` embed — online state with RCON stats
 <p align="left">
-  <img src="assets/ExampleScreenshot-Dark.png" width="50%"/>
+  <img src="assets/status-example-dark.png" width="60%"/>
 </p>
+
+📸 **Screenshot:** `/address` embed — assigned address informations
+<p align="left">
+  <img src="assets/address-example-dark.png" width="60%"/>
+</p>
+
+📸 **Screenshot:** `Auto-Shutdown Warning` embed — notification posted after the set amount of time
+<p align="left">
+  <img src="assets/warning-example-dark.png" width="60%"/>
+</p>
+
+📸 **Screenshot:** `Bot Presence Status` you can see the current server status from the server member list or the bot profile's
+<p align="left">
+  <img src="assets/bot-presence-example-dark.png" width="30%"/>
+</p>
+
 
 The `/status` command is the most information-dense response in the bot. When the server is fully online and RCON is responding, it shows systemd uptime, live TPS, current player count and names, and RCON round-trip latency — all in a single Discord embed. When the server is offline or still starting up, it reflects that state instead.
 
