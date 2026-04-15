@@ -6,16 +6,11 @@
     <img src="assets/logo-dark.svg" width="70%">
   </picture>
 
-  <br>
-
-  <sub>
+  <h4>
     A self-hosted Discord bot for controlling a Minecraft server<br>
     through <b>systemd</b> and <b>RCON</b> — built for people who run<br>
     their own Linux server and want Discord as the control panel.
-  </sub>
-
-  <br>
-  <sub>&nbsp;</sub>
+  </h4>
 
   <img src="https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white" />&nbsp;
   <img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white" />&nbsp;
@@ -25,7 +20,6 @@
   <img src="https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=flat-square" />
 
 </div>
-
 
 ## Overview
 

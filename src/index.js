@@ -102,7 +102,7 @@ async function getServiceUptime() {
         const { stdout } = await execAsync(
             `sudo systemctl show ${MC_SERVICE} --property=ActiveEnterTimestamp`
         );
-        // stdout: "ActiveEnterTimestamp=Wed 2025-01-01 12:00:00 WIB"
+        // stdout: "ActiveEnterTimestamp=Wed 2025-01-01 12:00:00 UTC"
         const value = stdout.replace("ActiveEnterTimestamp=", "").trim();
         if (!value) return "N/A";
 
