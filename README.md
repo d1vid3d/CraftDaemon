@@ -6,7 +6,7 @@
   </picture>
 </p>
 
-<div align="center" style="max-width: 45%; margin: auto auto auto auto;">
+<div align="center" style="max-width: 45%; margin: auto auto 20px auto;">
   A self-hosted Discord bot for controlling a Minecraft server through <b>systemd</b> and <b>RCON</b> — built for people who run their own Linux server and want Discord as the control panel.
 </div>
 
