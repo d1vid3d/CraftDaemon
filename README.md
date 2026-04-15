@@ -1,26 +1,25 @@
-<p align="center">
+<div align="center">
+
   <picture>
     <source srcset="assets/logo-dark.svg" media="(prefers-color-scheme: dark)">
     <source srcset="assets/logo-light.svg" media="(prefers-color-scheme: light)">
     <img src="assets/logo-dark.svg" width="70%">
   </picture>
-</p>
 
-<div align="center">
-  A self-hosted Discord bot for controlling a Minecraft server<br>
-  through <b>systemd</b> and <b>RCON</b> — built for people who run<br>
-  their own Linux server and want Discord as the control panel.
-</div>
+  <sub>
+    A self-hosted Discord bot for controlling a Minecraft server through<br>
+    <b>systemd</b> and <b>RCON</b> — built for people who run<br>
+    their own Linux server and want Discord as the control panel.
+  </sub>
 
-<br></br>
+  <br>
+  <sub>&nbsp;</sub>
 
-<div align="center">
-
-  <img src="https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white" />
-  <img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white" />
-  <img src="https://img.shields.io/badge/Linux-systemd-FCC624?style=flat-square&logo=linux&logoColor=black" />
-  <img src="https://img.shields.io/badge/Paper-Recommended-F96854?style=flat-square" />
-  <img src="https://img.shields.io/badge/Self--Hosted-Required-red?style=flat-square" />
+  <img src="https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white" />&nbsp;
+  <img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white" />&nbsp;
+  <img src="https://img.shields.io/badge/Linux-systemd-FCC624?style=flat-square&logo=linux&logoColor=black" />&nbsp;
+  <img src="https://img.shields.io/badge/Paper-Recommended-F96854?style=flat-square" />&nbsp;
+  <img src="https://img.shields.io/badge/Self--Hosted-Required-red?style=flat-square" />&nbsp;
   <img src="https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=flat-square" />
 
 </div>
