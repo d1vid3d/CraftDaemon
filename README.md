@@ -6,11 +6,11 @@
   </picture>
 </p>
 
-<div align="center" style="max-width: 45%; margin: -1em auto 2em auto;">
+<div align="center" style="max-width: 45%; margin: auto auto auto auto;">
   A self-hosted Discord bot for controlling a Minecraft server through <b>systemd</b> and <b>RCON</b> — built for people who run their own Linux server and want Discord as the control panel.
 </div>
 
-<div align="center" style="margin: 1em auto auto auto">
+<div align="center" style="margin: 20px auto auto auto;" >
 
   <img src="https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white" />
   <img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white" />
