@@ -31,6 +31,10 @@ const execAsync = promisify(exec);
 //
 //  MAIN_ADDRESS=xx.ip.gl.ply.gg:12345  ← your main server address (e.g. Playit.gg) to display in the /address command
 //
+//  AUTO_STOP_MINUTES=10          [how long server waits before auto-stopping due to inactivity]
+//  WARNING_MINUTES=8             [when to send the inactivity warning]
+//  CHECK_INTERVAL=30000          [milliseconds between inactivity checks]
+//
 // ----------------------------------------------------------------
 
 // Hardcoding is not reccomended for these values since they may differ between environments, but you can change the defaults here if you want:
@@ -42,11 +46,11 @@ const MC_SERVICE        = process.env.MC_SERVICE       || "minecraft";
 const STATUS_CHANNEL_ID = process.env.STATUS_CHANNEL_ID;
 const MAIN_ADDRESS      = process.env.MAIN_ADDRESS     || null;
 
-// Auto-shutdown configuration (Not on .env since these are more like constants that you probably won't change per-deployment)
+// Auto-shutdown configuration (from .env with defaults)
 
-const AUTO_STOP_MINUTES = 10;
-const WARNING_MINUTES   = 8;
-const CHECK_INTERVAL    = 30_000; // ms
+const AUTO_STOP_MINUTES = parseInt(process.env.AUTO_STOP_MINUTES || "10", 10);
+const WARNING_MINUTES   = parseInt(process.env.WARNING_MINUTES || "8", 10);
+const CHECK_INTERVAL    = parseInt(process.env.CHECK_INTERVAL || "30000", 10); //ms
 
 // ---- Runtime state ---------------------------------------------
 let emptySince   = null;
@@ -257,7 +261,20 @@ async function updateBotPresence() {
 async function sendAutoStopWarning(minutesLeft) {
     try {
         const channel = await client.channels.fetch(STATUS_CHANNEL_ID);
-        if (!channel) return;
+        if (!channel) {
+            console.error("[AutoStop] Channel not found. Check STATUS_CHANNEL_ID in .env");
+            return;
+        }
+        
+        // Check bot permissions
+        if (channel.permissionsFor(client.user).has("SEND_MESSAGES")) {
+            console.log("[AutoStop] Bot missing SEND_MESSAGES permission");
+        }
+        if (!channel.permissionsFor(client.user).has("EMBED_LINKS")) {
+            console.error("[AutoStop] Bot missing EMBED_LINKS permission - cannot send embeds");
+            return;
+        }
+        
         await channel.send({
             embeds: [{
                 title: "⚠️ Server Inactivity Warning",
@@ -266,7 +283,7 @@ async function sendAutoStopWarning(minutesLeft) {
             }],
         });
     } catch (err) {
-        console.error("Failed to send auto-stop warning:", err);
+        console.error("[AutoStop] Failed to send warning:", err.message);
     }
 }
 
