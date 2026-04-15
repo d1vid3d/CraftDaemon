@@ -6,8 +6,8 @@
 ![Discord.js](https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-systemd-FCC624?style=flat-square&logo=linux&logoColor=black)
 ![Paper](https://img.shields.io/badge/Paper-Recommended-F96854?style=flat-square)
-![Self-Hosted](https://img.shields.io/badge/Self--Hosted-required-red?style=flat-square)
-![Release](https://img.shields.io/github/v/release/d1vid3d/CraftDaemon)
+![Self-Hosted](https://img.shields.io/badge/Self--Hosted-Required-red?style=flat-square)
+![Release](https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=flat-square)
 
 ---
 
@@ -105,7 +105,7 @@ This isn't meant to gatekeep — the documentation tries to be as clear as possi
 ### 1. Clone the repository
 
 ```bash
-git clone --branch v1.0.0 https://github.com/d1vid3d/CraftDaemon
+git clone --branch v1.0.1 https://github.com/d1vid3d/CraftDaemon
 cd CraftDaemon
 ```
 
