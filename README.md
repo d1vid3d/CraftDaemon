@@ -1,5 +1,4 @@
 # CraftDaemon
-
 > A self-hosted Discord bot for controlling a Minecraft server through **systemd** and **RCON** — built for people who run their own Linux server and want Discord as the control panel.
 
 ![Node.js](https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white)
@@ -8,6 +7,7 @@
 ![Paper](https://img.shields.io/badge/Paper-Recommended-F96854?style=flat-square)
 ![Self-Hosted](https://img.shields.io/badge/Self--Hosted-Required-red?style=flat-square)
 ![Release](https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=flat-square)
+
 
 ---
 
@@ -55,8 +55,17 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 | `/stop` | Stops the server via `systemctl stop` |
 | `/restart` | Restarts the server via `systemctl restart` |
 | `/status` | Shows a full status embed: systemd state, uptime, TPS, player list, and RCON ping |
-| `/address` | Shows the server's connection addresses (tunnel, LAN, Java version) |
+| `/address` | Shows the server's connection addresses (main address, LAN, Java version) |
 | `/ping` | Checks the bot's Discord API latency |
+
+### Bot Responses
+
+📸 **Screenshot:** `/status` embed — online state with RCON stats
+<p align="left">
+  <img src="assets/ExampleScreenshot-Dark.png" width="30%"/>
+</p>
+
+The `/status` command is the most information-dense response in the bot. When the server is fully online and RCON is responding, it shows systemd uptime, live TPS, current player count and names, and RCON round-trip latency — all in a single Discord embed. When the server is offline or still starting up, it reflects that state instead.
 
 ### Smart Bot Presence
 
@@ -70,7 +79,7 @@ The bot's Discord status updates automatically every 60 seconds to reflect the s
 
 ### Auto-Shutdown
 
-When the server has been empty for **10 minutes**, CraftDaemon automatically stops it to save resources. At the **8-minute** mark, it posts a warning to your configured status channel first.
+When the server has been empty for a configurable amount of time (default: **10 minutes**), CraftDaemon automatically stops it to save resources. Before that, at the **8-minute** mark, it posts a warning to your configured status channel. Both thresholds and the check interval are fully configurable in your `.env`.
 
 This is entirely handled through RCON player count polling — no modifications to the server needed.
 
@@ -96,7 +105,7 @@ This isn't meant to gatekeep — the documentation tries to be as clear as possi
 - A **Minecraft server** (Paper recommended) configured as a **systemd service**, with RCON enabled
 - A **Discord bot token** from the [Discord Developer Portal](https://discord.com/developers/applications)
 - `sudo` access for the bot's user to run specific `systemctl` commands (see setup)
-- A **public tunnel address** (e.g. playit.gg) if you want `/address` to show a tunnel address (optional)
+- A **public tunnel or forwarded address** (e.g. playit.gg) if you want `/address` to show a main address (optional)
 
 ---
 
@@ -121,7 +130,57 @@ This will install all required packages, including:
 - [`rcon`](https://www.npmjs.com/package/rcon) — RCON client for communicating with the Minecraft server
 - [`dotenv`](https://www.npmjs.com/package/dotenv) — environment variable loading
 
-### 3. Configure your environment
+### 3. Create your Discord bot application
+
+<details>
+<summary><b>Click to expand — Discord Developer Portal walkthrough</b></summary>
+
+#### 3a. Create the application
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) and log in
+2. Click **New Application** in the top right
+3. Give it a name (e.g. `CraftDaemon`) and click **Create**
+
+#### 3b. Create the bot and get your token
+
+1. In the left sidebar, click **Bot**
+2. Click **Add Bot** → **Yes, do it!**
+3. Under the bot's username, click **Reset Token** and copy it — this is your `TOKEN` value
+   > ⚠️ Treat this token like a password. Never share it or commit it to version control. If it leaks, reset it immediately from this page.
+4. Scroll down to **Privileged Gateway Intents** and enable:
+   - **Server Members Intent**
+   - **Message Content Intent**
+
+#### 3c. Get your Client ID
+
+1. In the left sidebar, click **OAuth2 → General**
+2. Copy the **Client ID** — this is your `CLIENT_ID` value
+
+#### 3d. Invite the bot to your server
+
+1. In the left sidebar, click **OAuth2 → URL Generator**
+2. Under **Scopes**, check: `bot` and `applications.commands`
+3. Under **Bot Permissions**, check: `Send Messages`, `Embed Links`, `Read Message History`
+4. Copy the generated URL at the bottom and open it in your browser
+5. Select your server from the dropdown and click **Authorize**
+
+#### 3e. Get your Guild ID (Server ID)
+
+1. Open Discord and go to **Settings → Advanced**
+2. Enable **Developer Mode**
+3. Close settings, then right-click your server icon in the left sidebar
+4. Click **Copy Server ID** — this is your `GUILD_ID` value
+
+#### 3f. Get your Status Channel ID
+
+1. Right-click the channel you want the bot to post auto-shutdown warnings in
+2. Click **Copy Channel ID** — this is your `STATUS_CHANNEL_ID` value
+
+</details>
+
+### 4. Configure your environment
+
+Your `.env` file is how you configure CraftDaemon. It's a plain text file that lives in the project root and is loaded automatically by the bot on startup via `dotenv`. It's never committed to version control — it stays on your machine only.
 
 Copy the example file and fill it in:
 
@@ -130,23 +189,33 @@ cp .env.example .env
 nano .env
 ```
 
+<details>
+<summary><b>Click to expand — full .env variable reference</b></summary>
+
 | Variable | Required | Description |
 |---|---|---|
-| `TOKEN` | ✅ | Your Discord bot token |
-| `CLIENT_ID` | ✅ | Your bot's application/client ID |
-| `GUILD_ID` | ✅ | Your Discord server (guild) ID |
-| `STATUS_CHANNEL_ID` | ✅ | Channel ID where auto-shutdown warnings are posted |
+| `TOKEN` | ✅ | Your Discord bot token (from step 3b) |
+| `CLIENT_ID` | ✅ | Your bot's application/client ID (from step 3c) |
+| `GUILD_ID` | ✅ | Your Discord server ID (from step 3e) |
+| `STATUS_CHANNEL_ID` | ✅ | Channel ID where auto-shutdown warnings are posted (from step 3f) |
 | `RCON_HOST` | ✅ | RCON host — `127.0.0.1` if bot and server are on the same machine |
 | `RCON_PORT` | ✅ | RCON port (default: `25575`) |
 | `RCON_PASSWORD` | ✅ | RCON password from your `server.properties` |
 | `MC_SERVICE` | ✅ | Your Minecraft server's systemd service name (e.g. `minecraft`) |
-| `JAVA_EDITION_VERSION` | ☑️ | Java edition version string shown in `/address` |
-| `TUNNEL_ADDRESS` | ☑️ | Your public tunnel address shown in `/address` and `/status` (e.g. a playit.gg address) |
-| `LOCAL_ADDRESS` | ☑️ | Your LAN address shown in `/address` |
+| `AUTO_STOP_MINUTES` | ✅ | Minutes of inactivity before the server auto-stops (set to `0` to disable) |
+| `WARNING_MINUTES` | ✅ | Minutes of inactivity before the warning message is posted |
+| `CHECK_INTERVAL` | ✅ | How often in milliseconds the bot polls for player activity (e.g. `30000` = 30s) |
+| `JAVA_EDITION_VERSION` | ☑️ | Java edition version string shown in `/address` (e.g. `1.21.4`) |
+| `MAIN_ADDRESS` | ☑️ | Your public server address shown in `/address` and `/status` (e.g. a playit.gg tunnel or port-forwarded address) |
+| `LOCAL_ADDRESS` | ☑️ | Your LAN address shown in `/address` (e.g. `192.168.1.100:25565`) |
 
-> ☑️ = Optional, but `/address` will show "Not configured" for anything left blank.
+> ✅ = Required for the bot to function. ☑️ = Optional, but `/address` will show "Not configured" for anything left blank.
 
-### 4. Set up the Minecraft server as a systemd service
+**A note on auto-shutdown variables:** `WARNING_MINUTES` should always be set lower than `AUTO_STOP_MINUTES` — if it's equal or higher, no warning will be sent before the server stops. Setting `AUTO_STOP_MINUTES=0` disables auto-shutdown entirely.
+
+</details>
+
+### 5. Set up the Minecraft server as a systemd service
 
 If you haven't already, create a systemd unit for your Minecraft server. Here's a minimal example using Paper:
 
@@ -178,7 +247,7 @@ The service name you use here (e.g. `minecraft`) must match `MC_SERVICE` in your
 
 > **⚠️ Heads up — console access:** Running the server as a systemd service means you lose direct console input from your terminal. You can still read logs with `journalctl -u minecraft -f`, but you won't be able to type commands directly into the server console over SSH. The practical workaround is to use an RCON terminal client like [mcrcon](https://github.com/Tiiffi/mcrcon) — it opens an interactive RCON session from your shell where you can run any server command without a leading `/`. CraftDaemon does not currently have a send-console-command feature, so mcrcon (or equivalent) is the recommended solution for direct server administration.
 
-### 5. Enable RCON on your Minecraft server
+### 6. Enable RCON on your Minecraft server
 
 In your `server.properties`:
 
@@ -190,7 +259,7 @@ rcon.password=your_rcon_password_here
 
 This password must match `RCON_PASSWORD` in your `.env`. Keep both files out of version control.
 
-### 6. Grant the bot sudoers permissions
+### 7. Grant the bot sudoers permissions
 
 The bot runs `systemctl` commands with `sudo`. You need to allow this without a password prompt for the specific commands only.
 
@@ -206,7 +275,7 @@ botuser ALL=(ALL) NOPASSWD: /bin/systemctl start minecraft, /bin/systemctl stop 
 
 > Keep this as narrow as possible — only grant the exact commands the bot needs.
 
-### 7. Register slash commands
+### 8. Register slash commands
 
 Run this **once** to register the slash commands to your Discord guild:
 
@@ -216,7 +285,7 @@ node src/register-commands.js
 
 You'll need to re-run this if you add or change any commands.
 
-### 8. Run the bot
+### 9. Run the bot
 
 For a quick test:
 
@@ -270,26 +339,104 @@ CraftDaemon/
 
 ---
 
+## Managing Your Services
+
+<details>
+<summary><b>Click to expand — useful systemd & journalctl commands</b></summary>
+
+Once both services are running, you'll mostly interact with them through Discord. But here are the essential commands to know for when you need to manage things directly from your server.
+
+### systemctl — controlling services
+
+```bash
+# Check the current status of a service (active state, recent logs, PID)
+sudo systemctl status craftdaemon
+sudo systemctl status minecraft
+
+# Start a service
+sudo systemctl start craftdaemon
+
+# Stop a service
+sudo systemctl stop craftdaemon
+
+# Restart a service (stop then start)
+sudo systemctl restart craftdaemon
+
+# Enable a service to start automatically on boot
+sudo systemctl enable craftdaemon
+
+# Disable autostart on boot
+sudo systemctl disable craftdaemon
+
+# Reload systemd after creating or editing a .service file
+sudo systemctl daemon-reload
+```
+
+### journalctl — reading logs
+
+```bash
+# View the last 50 lines of logs for the bot
+journalctl -u craftdaemon -n 50 --no-pager
+
+# Follow live logs in real time (like tail -f)
+journalctl -u craftdaemon -f
+
+# Follow live logs for the Minecraft server
+journalctl -u minecraft -f
+
+# View logs since the last boot only
+journalctl -u craftdaemon -b
+
+# View logs from a specific time window
+journalctl -u craftdaemon --since "1 hour ago"
+```
+
+`journalctl -f` is your best friend when debugging — run it in a separate terminal while reproducing an issue to see exactly what the bot or server is doing in real time.
+
+</details>
+
+---
+
 ## Auto-Shutdown Details
 
-The bot checks player count via RCON every **30 seconds**. The shutdown sequence works like this:
+<details>
+<summary><b>Click to expand</b></summary>
 
-1. Server is running, 0 players online → timer starts
-2. After **8 minutes** of being empty → warning posted to `STATUS_CHANNEL_ID`
-3. After **10 minutes** of being empty → `systemctl stop` is called automatically
-4. If a player joins at any point → timer and warning are reset
+The bot polls player count via RCON on the interval defined by `CHECK_INTERVAL` in your `.env`. The shutdown sequence works like this:
 
-The auto-shutdown thresholds (`AUTO_STOP_MINUTES`, `WARNING_MINUTES`) are constants at the top of `index.js` and can be adjusted there.
+1. Server is running, 0 players online → inactivity timer starts
+2. After `WARNING_MINUTES` of being empty → warning message posted to `STATUS_CHANNEL_ID`
+3. After `AUTO_STOP_MINUTES` of being empty → `systemctl stop` is called automatically
+4. If a player joins at any point → timer and warning state are fully reset
+
+Setting `AUTO_STOP_MINUTES=0` in your `.env` disables auto-shutdown entirely. `WARNING_MINUTES` must be lower than `AUTO_STOP_MINUTES`, otherwise the warning will never fire before the shutdown.
+
+</details>
+
+---
+
+## Customization
+
+CraftDaemon's codebase is intentionally small and readable. If the default behavior doesn't quite fit your setup, you're encouraged to open `src/index.js` and adjust things directly — you don't need to be an expert, just comfortable reading through code and making small targeted changes.
+
+Some things that are straightforward to modify:
+
+- **Bot presence update frequency** — the `setInterval(updateBotPresence, 60_000)` call controls how often the bot's Discord status refreshes. Change `60_000` to any value in milliseconds.
+- **RCON command timeout** — the `rconCommand` function has a default timeout of `2500ms`. If your server is slow to respond, bump this up.
+- **Embed styling** — all Discord embeds are plain objects inside the slash command handlers. Colors, field labels, and copy are easy to change without touching any bot logic.
+- **Auto-shutdown behavior** — configurable via `.env`, but the underlying logic lives in the `setInterval` block near the bottom of `index.js` if you want to change how it actually works.
+
+If something's broken and you suspect it might be a simple fix, take a look at the code before opening an issue — it's probably shorter than you expect.
 
 ---
 
 ## Troubleshooting
 
 **Slash commands don't appear in Discord**
-Run `node src/register-commands.js` and wait a few minutes. Also make sure your bot invite URL includes the `applications.commands` scope.
+Run `node src/register-commands.js` and wait a few minutes. Make sure your bot invite URL includes the `applications.commands` scope, and that `CLIENT_ID` and `GUILD_ID` in your `.env` are correct.
 
 **`sudo: a terminal is required` or permission denied on systemctl**
-The sudoers rule isn't set up, is set up for the wrong user, or the service names don't match. Re-check step 6.
+The sudoers rule isn't set up correctly, is configured for the wrong user, or the service name in the sudoers file doesn't match `MC_SERVICE`. Re-check step 7.
 
 **`/status` shows RCON not responding right after `/start`**
 This is expected — Paper takes 20–30 seconds to fully boot and open the RCON port. Run `/status` again after a moment.
@@ -298,16 +445,19 @@ This is expected — Paper takes 20–30 seconds to fully boot and open the RCON
 TPS is read via the `tps` command which only exists on Paper. Vanilla servers will show N/A here.
 
 **`RCON_PASSWORD is not set` error**
-Your `.env` file is missing or not being loaded. Make sure it exists in the project root and `dotenv` is installed.
+Your `.env` file is missing or not being loaded. Make sure it exists in the project root and that `dotenv` is installed (`npm install`).
 
-**Bot goes offline / crashes**
-Check logs with `journalctl -u craftdaemon -n 50 --no-pager` if running as a systemd service.
+**Auto-shutdown isn't triggering**
+Check that `AUTO_STOP_MINUTES` is not set to `0` in your `.env`, and that `WARNING_MINUTES` is set lower than `AUTO_STOP_MINUTES`.
+
+**Bot goes offline or crashes unexpectedly**
+Check logs with `journalctl -u craftdaemon -n 50 --no-pager`. The most common causes are an invalid or expired token, a missing `.env` value, or a Node.js version mismatch.
 
 ---
 
 ## Contributing
 
-This is a personal-use project. PRs and issues are welcome — open an issue first for larger changes.
+This is a personal-use project. PRs and issues are welcome — open an issue first for larger changes so we can align before you put work in.
 
 ---
 
