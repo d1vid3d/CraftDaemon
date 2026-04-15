@@ -2,7 +2,7 @@
 // Make sure to configure your sudoers file accordingly and understand the security implications.
 
 // ============================================================
-//  Minecraft Server Discord Bot
+//  CraftDaemon  |  A Discord bot for managing your Minecraft server on Linux
 //  Server management via systemd  |  Stats via RCON
 // ============================================================
 
@@ -17,19 +17,19 @@ const Rcon = require("rcon");
 
 const execAsync = promisify(exec);
 
-// ---- Example Config (from .env) ----------------------------------------
+// ---- Example Config (check .env.example for details) ----------------------------------------
 //
 //  TOKEN=
 //  GUILD_ID=
 //  STATUS_CHANNEL_ID=
 //
-//  MC_SERVICE=minecraft          ← your systemd service name
+//  MC_SERVICE=minecraft          [your systemd service name]
 //
 //  RCON_HOST=127.0.0.1
 //  RCON_PORT=25575
 //  RCON_PASSWORD=
 //
-//  TUNNEL_ADDRESS=xx.ip.gl.ply.gg:12345  ← your optional tunnel address (e.g. Playit.gg) to display in the /address command
+//  MAIN_ADDRESS=xx.ip.gl.ply.gg:12345  ← your main server address (e.g. Playit.gg) to display in the /address command
 //
 // ----------------------------------------------------------------
 
@@ -40,7 +40,7 @@ const RCON_PORT        = parseInt(process.env.RCON_PORT || "25575", 10);
 const RCON_PASSWORD    = process.env.RCON_PASSWORD || "";
 const MC_SERVICE        = process.env.MC_SERVICE       || "minecraft";
 const STATUS_CHANNEL_ID = process.env.STATUS_CHANNEL_ID;
-const TUNNEL_ADDRESS    = process.env.TUNNEL_ADDRESS   || null;
+const MAIN_ADDRESS      = process.env.MAIN_ADDRESS     || null;
 
 // Auto-shutdown configuration (Not on .env since these are more like constants that you probably won't change per-deployment)
 
@@ -218,7 +218,7 @@ async function updateBotPresence() {
     try {
         const running = await isServerRunning();
 
-        if (!running) {
+            if (!running) {
             client.user.setPresence({
                 status: "dnd",
                 activities: [{ name: "🟥 Server Offline", type: ActivityType.Watching }],
@@ -258,11 +258,13 @@ async function sendAutoStopWarning(minutesLeft) {
     try {
         const channel = await client.channels.fetch(STATUS_CHANNEL_ID);
         if (!channel) return;
-        await channel.send(
-            `⚠️ **Server inactivity warning**\n` +
-            `No players online for ${AUTO_STOP_MINUTES - minutesLeft} minute(s).\n` +
-            `🕒 Server will automatically stop in **${minutesLeft} minute(s)** if no one joins.`
-        );
+        await channel.send({
+            embeds: [{
+                title: "⚠️ Server Inactivity Warning",
+                description: `No players online for **${AUTO_STOP_MINUTES - minutesLeft}** minute(s).\n\nServer will automatically stop in **${minutesLeft}** minute(s) if no one joins.`,
+                color: 0xffcc00,
+            }],
+        });
     } catch (err) {
         console.error("Failed to send auto-stop warning:", err);
     }
@@ -341,7 +343,13 @@ client.on("interactionCreate", async (interaction) => {
     if (interaction.commandName === "ping") {
         const sent = await interaction.reply({ content: "🏓 Pinging...", fetchReply: true });
         const latency = sent.createdTimestamp - interaction.createdTimestamp;
-        return interaction.editReply(`🏓 Pong! (${latency}ms)`);
+        return interaction.editReply({
+            embeds: [{
+                title: "🏓 Pong!",
+                description: `Bot latency: **${latency}ms**`,
+                color: 0x5865f2,
+            }],
+        });
     }
 
     // ── START ──────────────────────────────────────────────────
@@ -349,19 +357,49 @@ client.on("interactionCreate", async (interaction) => {
         const state = await getServiceState();
 
         if (state === "active") {
-            return interaction.reply("🟢 Server is already running.");
+            return interaction.reply({
+                embeds: [{
+                    title: "🖥️ Server Status",
+                    description: "🟢 Server is already running.",
+                    color: 0x00ff66,
+                }],
+            });
         }
         if (state === "activating") {
-            return interaction.reply("🟡 Server is already starting up, give it a moment.");
+            return interaction.reply({
+                embeds: [{
+                    title: "🖥️ Server Status",
+                    description: "🟡 Server is already starting up, give it a moment.",
+                    color: 0xffcc00,
+                }],
+            });
         }
 
-        await interaction.reply("▶️ Starting server… (ETA ~30 seconds)");
+        await interaction.reply({
+            embeds: [{
+                title: "▶️ Starting Server",
+                description: "Starting server… (ETA ~30 seconds)",
+                color: 0x5865f2,
+            }],
+        });
         try {
             await startServer();
-            return interaction.followUp("✅ Start command sent. Use `/status` to monitor startup.");
+            return interaction.followUp({
+                embeds: [{
+                    title: "✅ Start Command Sent",
+                    description: "Use `/status` to monitor startup.",
+                    color: 0x00ff66,
+                }],
+            });
         } catch (err) {
             console.error("[/start]", err);
-            return interaction.followUp("❌ Failed to start the server. Check bot sudo permissions.");
+            return interaction.followUp({
+                embeds: [{
+                    title: "❌ Start Failed",
+                    description: "Failed to start the server. Check bot sudo permissions.",
+                    color: 0xff0000,
+                }],
+            });
         }
     }
 
@@ -370,16 +408,40 @@ client.on("interactionCreate", async (interaction) => {
         const running = await isServerRunning();
 
         if (!running) {
-            return interaction.reply("🔴 Server is not running.");
+            return interaction.reply({
+                embeds: [{
+                    title: "🖥️ Server Status",
+                    description: "🔴 Server is not running.",
+                    color: 0xff0000,
+                }],
+            });
         }
 
-        await interaction.reply("🛑 Stopping server…");
+        await interaction.reply({
+            embeds: [{
+                title: "🛑 Stopping Server",
+                description: "Stopping server…",
+                color: 0xff4d00,
+            }],
+        });
         try {
             await stopServer();
-            return interaction.followUp("✅ Server stopped.");
+            return interaction.followUp({
+                embeds: [{
+                    title: "✅ Server Stopped",
+                    description: "Server has been stopped successfully.",
+                    color: 0xff0000,
+                }],
+            });
         } catch (err) {
             console.error("[/stop]", err);
-            return interaction.followUp("❌ Failed to stop the server. Check bot sudo permissions.");
+            return interaction.followUp({
+                embeds: [{
+                    title: "❌ Stop Failed",
+                    description: "Failed to stop the server. Check bot sudo permissions.",
+                    color: 0xff0000,
+                }],
+            });
         }
     }
 
@@ -388,35 +450,64 @@ client.on("interactionCreate", async (interaction) => {
         const running = await isServerRunning();
 
         if (!running) {
-            return interaction.reply("🔴 Server is not running, use `/start` instead.");
+            return interaction.reply({
+                embeds: [{
+                    title: "🖥️ Server Status",
+                    description: "🔴 Server is not running, use `/start` instead.",
+                    color: 0xff0000,
+                }],
+            });
         }
 
-        await interaction.reply("🔄 Restarting server… (this takes ~30 seconds)");
+        await interaction.reply({
+            embeds: [{
+                title: "🔄 Restarting Server",
+                description: "Restarting server… (this takes ~30 seconds)",
+                color: 0x5865f2,
+            }],
+        });
         try {
             await restartServer();
-            return interaction.followUp("✅ Restart command sent. Use `/status` to monitor.");
+            return interaction.followUp({
+                embeds: [{
+                    title: "✅ Restart Command Sent",
+                    description: "Use `/status` to monitor the restart.",
+                    color: 0x00ff66,
+                }],
+            });
         } catch (err) {
             console.error("[/restart]", err);
-            return interaction.followUp("❌ Failed to restart the server. Check bot sudo permissions.");
+            return interaction.followUp({
+                embeds: [{
+                    title: "❌ Restart Failed",
+                    description: "Failed to restart the server. Check bot sudo permissions.",
+                    color: 0xff0000,
+                }],
+            });
         }
     }
 
     // ── ADDRESS ────────────────────────────────────────────────
     if (interaction.commandName === "address") {
-        if (!TUNNEL_ADDRESS) {
-            return interaction.reply("⚠️ No server address has been configured. Set `TUNNEL_ADDRESS` in the bot's `.env` file.");
+        if (!MAIN_ADDRESS) {
+            return interaction.reply({
+                embeds: [{
+                    title: "⚠️ Server Address Not Configured",
+                    description: "Set `MAIN_ADDRESS` in the bot's `.env` file.",
+                    color: 0xffcc00,
+                }],
+            });
         }
         return interaction.reply({
             embeds: [{
                 title: "🌐 Server Address",
-                description: `Connect using the address below:`,
+                description: "Share these addresses with your friends to let them join!",
                 color: 0x5865f2,
                 fields: [
-                    { name: "Java Edition Version", value: `\`${process.env.JAVA_EDITION_VERSION || "Not configured"}\``, inline: false },
-                    { name: "Tunnel Address", value: `\`${TUNNEL_ADDRESS}\``, inline: false },
-                    { name: "Local (LAN) Address", value: `\`${process.env.LOCAL_ADDRESS || "Not configured"}\``, inline: false },
+                    { name: "Main Address", value: `\`${MAIN_ADDRESS}\``, inline: false },
+                    { name: "Java Edition", value: `\`${process.env.JAVA_EDITION_VERSION || "Not configured"}\``, inline: true },
+                    { name: "LAN Address", value: `\`${process.env.LOCAL_ADDRESS || "Not configured"}\``, inline: true },
                 ],
-                footer: { text: "Share this with your friends to let them join!" },
             }],
         });
     }
@@ -494,8 +585,8 @@ client.on("interactionCreate", async (interaction) => {
             embed.fields.push({ name: "TPS",             value: `📉 ${tps}`,                                    inline: false });
             embed.fields.push({ name: "Players",         value: `👥 ${playersLine}`,                            inline: false });
             embed.fields.push({ name: "Ping (RCON RTT)", value: ping !== null ? `📡 ${ping} ms` : "N/A",        inline: false });
-            if (TUNNEL_ADDRESS) {
-                embed.fields.push({ name: "Address", value: `🌐 \`${TUNNEL_ADDRESS}\``, inline: false });
+            if (MAIN_ADDRESS) {
+                embed.fields.push({ name: "Address", value: `🌐 \`${MAIN_ADDRESS}\``, inline: false });
             }
         } else {
             embed.fields.push({

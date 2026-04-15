@@ -2,14 +2,16 @@
 // It uses the same token and channel ID as the main bot, so you can keep it in sync with your .env configuration. You can customize the embed content to fit your announcement style.
 
 // Do a node command on this file to post the patch notes to your channel. Make sure to update the TOKEN and CHANNEL_ID variables before running.
-// Example usage: `node src/patchnotes-broadcast.js`
+// Example usage: `node misc_util/patchnotes-broadcast.js`
+
+// Usefull for: Posting something through the bot, announcements, update to your friends, trolling your players, etc.
 
 require('dotenv').config();
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 
-const TOKEN = process.env.TOKEN; // your bot token from the Discord Developer Portal
-const CHANNEL_ID = process.env.STATUS_CHANNEL_ID; // the channel to post in
+const TOKEN = process.env.TOKEN;
+const CHANNEL_ID = process.env.STATUS_CHANNEL_ID;
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -18,8 +20,10 @@ client.once('ready', async () => {
 
   const channel = await client.channels.fetch(CHANNEL_ID);
 
-  const embed = new EmbedBuilder() // Change content to the patch notes you want to post, this is just a template to get you started
-    .setTitle('📦 PATCH NOTES — ConsoleBot (FuhNawBot) v2.0.1a')
+  //  Build your embeds, content, messages, formatting, etc. here. This is just an example template to get you started.
+
+  const embed = new EmbedBuilder()
+    .setTitle('📦 PATCH NOTES — CraftDaemon v2.0.1a')
     .setDescription(
       '🗓️ 14-04-2026\n\n' +
       "This is a near-complete rewrite of the bot's server management internals.\n" +
@@ -94,8 +98,8 @@ client.once('ready', async () => {
       }
     )
     .setColor(0x5865F2) // Discord blurple, change if you want
-    .setFooter({ text: 'FuhNawBot • v2.0.1a • Server and Bot powered by Ubuntu Server 22.04' }) // Footer information, change as needed
-    .setTimestamp();
+    .setFooter({ text: 'Super Sigma Footer' }) // Footer information, change as needed
+    .setTimestamp(); // Adds a timestamp to the embed, you can customize or remove this if you want
 
   await channel.send({ embeds: [embed] });
   console.log('Patch notes posted!');
