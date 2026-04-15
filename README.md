@@ -72,22 +72,38 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 
 📸 **Screenshot:** `/status` embed — online state with RCON stats
 <p align="left">
-  <img src="assets/status-example-dark.png" width="60%"/>
+  <picture>
+    <source srcset="assets/status-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/status-example-light.png" media="(prefers-color-scheme: light)">
+    <img src="assets/status-example-dark.png" width="60%"/>
+  </picture>
 </p>
 
 📸 **Screenshot:** `/address` embed — assigned address informations
 <p align="left">
-  <img src="assets/address-example-dark.png" width="60%"/>
+  <picture>
+    <source srcset="assets/address-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/address-example-light.png" media="(prefers-color-scheme: light)">
+    <img src="assets/address-example-dark.png" width="60%"/>
+  </picture>
 </p>
 
 📸 **Screenshot:** `Auto-Shutdown Warning` embed — notification posted after the set amount of time
 <p align="left">
-  <img src="assets/warning-example-dark.png" width="60%"/>
+  <picture>
+    <source srcset="assets/warning-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/warning-example-light.png" media="(prefers-color-scheme: light)">
+    <img src="assets/warning-example-dark.png" width="60%"/>
+  </picture>
 </p>
 
 📸 **Screenshot:** `Bot Presence Status` you can see the current server status from the server member list or the bot profile's
 <p align="left">
-  <img src="assets/bot-presence-example-dark.png" width="30%"/>
+  <picture>
+    <source srcset="assets/bot-presence-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/bot-presence-example-light.png" media="(prefers-color-scheme: light)">
+    <img src="assets/bot-presence-example-dark.png" width="30%"/>
+  </picture>
 </p>
 
 
