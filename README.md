@@ -6,9 +6,11 @@
     <img src="assets/logo-dark.svg" width="70%">
   </picture>
 
+  <br>
+
   <sub>
-    A self-hosted Discord bot for controlling a Minecraft server through<br>
-    <b>systemd</b> and <b>RCON</b> — built for people who run<br>
+    A self-hosted Discord bot for controlling a Minecraft server<br>
+    through <b>systemd</b> and <b>RCON</b> — built for people who run<br>
     their own Linux server and want Discord as the control panel.
   </sub>
 
