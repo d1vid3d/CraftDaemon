@@ -62,7 +62,7 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 
 📸 **Screenshot:** `/status` embed — online state with RCON stats
 <p align="left">
-  <img src="assets/ExampleScreenshot-Dark.png" width="30%"/>
+  <img src="assets/ExampleScreenshot-Dark.png" width="50%"/>
 </p>
 
 The `/status` command is the most information-dense response in the bot. When the server is fully online and RCON is responding, it shows systemd uptime, live TPS, current player count and names, and RCON round-trip latency — all in a single Discord embed. When the server is offline or still starting up, it reflects that state instead.
