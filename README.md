@@ -156,7 +156,7 @@ This isn't meant to gatekeep — the documentation tries to be as clear as possi
 ### 1. Clone the repository
 
 ```bash
-git clone --branch v1.0.1 https://github.com/d1vid3d/CraftDaemon
+git clone --branch v1.1.0 https://github.com/d1vid3d/CraftDaemon
 cd CraftDaemon
 ```
 
