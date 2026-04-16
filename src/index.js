@@ -473,7 +473,14 @@ client.on("interactionCreate", async (interaction) => {
     // ── PING ───────────────────────────────────────────────────
     if (interaction.commandName === "ping") {
         discordLogger.info(`Ping command from ${interaction.user.tag}`);
-        const sent = await interaction.reply({ content: "🏓 Pinging...", fetchReply: true });
+        const sent = await interaction.reply({ 
+            embeds: [{
+                title: "🏓 Pinging...",
+                description: "Measuring latency...",
+                color: 0x5865f2,
+            }],
+            fetchReply: true 
+        });
         const latency = sent.createdTimestamp - interaction.createdTimestamp;
         return interaction.editReply({
             embeds: [{
@@ -550,7 +557,7 @@ client.on("interactionCreate", async (interaction) => {
                 }],
             });
         }
-
+        
         await interaction.reply({
             embeds: [{
                 title: "🛑 Stopping Server",
