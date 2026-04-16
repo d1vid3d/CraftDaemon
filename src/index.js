@@ -18,9 +18,10 @@ const Rcon = require("rcon");
 // Import custom logger
 const { createLogger, LogLevel } = require("./logger");
 
+// Promisified exec for easier async/await usage
 const execAsync = promisify(exec);
 
-// Create category-specific loggers
+// Create category-specific loggers (Create your own categories as needed by calling createLogger with a custom name in your modules)
 const botLogger = createLogger('Bot');
 const discordLogger = createLogger('Discord');
 const nodeLogger = createLogger('Node');
@@ -29,7 +30,7 @@ const rconLogger = createLogger('RCON');
 const autoStopLogger = createLogger('AutoStop');
 const systemdLogger = createLogger('SystemD');
 
-// ---- Example Config (check .env.example for details) ----------------------------------------
+// ---- Example Config [CHANGE IN .ENV] (check .env.example for details) ----------------------------------------
 //
 //  TOKEN=
 //  GUILD_ID=
@@ -101,13 +102,31 @@ async function startServer() {
     await execAsync(`sudo systemctl start ${MC_SERVICE}`);
 }
 
+// Send /save-all command via RCON to save world data (To prevent unexpected data loss on shutdown/restart). This is called before stopServer() and restartServer().
+async function saveAll() {
+    try {
+        minecraftLogger.info("Sending /save-all command via RCON...");
+        const res = await rconCommand("save-all");
+        minecraftLogger.info(`Save-all response: ${res}`);
+    } catch (err) {
+        minecraftLogger.error(`Failed to send save-all: ${err.message}`);
+        // Don't throw - continue with shutdown even if save fails
+    }
+}
+
 // Runs systemctl stop and resolves when the command returns
 async function stopServer() {
+    await saveAll();
+    // Give the server a moment to process the save command
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await execAsync(`sudo systemctl stop ${MC_SERVICE}`);
 }
 
 // Runs systemctl restart and resolves when the command returns
 async function restartServer() {
+    await saveAll();
+    // Give the server a moment to process the save command
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await execAsync(`sudo systemctl restart ${MC_SERVICE}`);
 }
 
@@ -396,11 +415,11 @@ setInterval(async () => {
 //  Ready
 // ================================================================
 
-client.on("ready", (c) => {
+client.on("clientReady", (c) => {
     discordLogger.info(`✅ ${c.user.username} is online.`);
 });
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
     discordLogger.info(`Logged in as ${client.user.tag}`);
     systemdLogger.info(`Managing systemd service: ${MC_SERVICE}`);
 
