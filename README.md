@@ -444,11 +444,11 @@ journalctl -u craftdaemon --since "1 hour ago"
 <details>
 <summary><b>Click to expand</b></summary>
 
-### The bot uses a structured logging system with category-based prefixes, timestamps, and color-coded log levels. This makes it easier to track what's happening across different components.
+### The bot uses a structured logging system with category-based prefixes, timestamps, and color-coded log levels. This makes it easier to track what's happening across different components. Almost all aspect of the logging system is customizable.
 
 ## Log Categories
 
-The logger supports the following categories:
+The logger supports the following categories (Customizable):
 
 - **[Bot]** - General bot operation and lifecycle events
 - **[Discord]** - Discord.js and API interactions
@@ -460,14 +460,14 @@ The logger supports the following categories:
 
 ## Log Levels
 
-Each log entry includes a level indicator:
+Each log entry includes a level indicator (Customizable):
 
 - **[DEBUG]** (gray) - Detailed debugging information, suppressed by default
 - **[INFO]** (green) - General informational messages about normal operations
 - **[WARN]** (yellow) - Warning conditions that might need attention
 - **[ERROR]** (red) - Error conditions that need investigation
 
-## Log Format
+## Log Format (Customizable)
 
 ```
 HH:MM:SS [Category] [Level] Message
@@ -556,7 +556,45 @@ myLogger.info("Something happened");
 myLogger.error("An error occurred: " + err.message);
 myLogger.debug("Detailed debug info");
 myLogger.warn("This might be a problem");
+``` 
+
+## Console/Log messages showcase
+
+Startup config messages:
+
+``` bash
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] ========== BOT STARTUP CONFIGURATION ==========
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] RCON Host: 127.0.0.1
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] RCON Port: 25575
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] Minecraft Service: minecraft-service.service
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] Auto-stop enabled: Yes (10 min idle, warning at 8 min)
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] Status channel ID: 1404683867265489235
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] Main address: my-minecraft-server.joinmc.link
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] =============================================
+Apr 16 03:15:31 node-0 node[3040518]: 03:15:31 [Discord] [INFO] ✅ CraftDaemon is online.
+Apr 16 03:15:31 node-0 node[3040518]: 03:15:31 [Discord] [INFO] Logged in as CraftDaemon#2232
+Apr 16 03:15:31 node-0 node[3040518]: 03:15:31 [SystemD] [INFO] Managing systemd service: minecraft-server.service
+Apr 16 03:16:29 node-0 node[3040518]: 03:16:29 [SystemD] [INFO] Start command from steve
 ```
+
+Command sent from Discord user:
+``` bash
+Apr 16 03:16:29 node-0 node[3040518]: 03:16:29 [SystemD] [INFO] Start command from steve
+```
+
+RCON Error log:
+``` bash
+Apr 16 03:16:30 node-0 node[3040518]: 03:16:30 [RCON] [ERROR] RCON error: connect ECONNREFUSED 127.0.0.1:25575
+Apr 16 03:16:31 node-0 node[3040518]: 03:16:31 [RCON] [ERROR] RCON error: connect ECONNREFUSED 127.0.0.1:25575
+```
+
+AutoStop engaging:
+``` bash
+Apr 16 03:17:00 node-0 node[3040518]: 03:17:00 [AutoStop] [INFO] Server is now empty. Auto-stop timer started (10 minutes until shutdown).
+Apr 16 03:25:00 node-0 node[3040518]: 03:25:00 [AutoStop] [WARN] Server empty for 8.0 minutes. Warning sent (2 min until shutdown).
+Apr 16 03:27:00 node-0 node[3040518]: 03:27:00 [AutoStop] [INFO] Server empty for 10.0 minutes (threshold: 10). Initiating shutdown.
+```
+
 
 ## Performance Notes
 

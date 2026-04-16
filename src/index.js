@@ -352,6 +352,35 @@ async function sendAutoStopWarning(minutesLeft) {
     }
 }
 
+async function sendAutoStopShutdown() {
+    try {
+        const channel = await client.channels.fetch(STATUS_CHANNEL_ID);
+        if (!channel) {
+            autoStopLogger.error("Channel not found. Check STATUS_CHANNEL_ID in .env");
+            return;
+        }
+
+        // Check bot permissions
+        if (!channel.permissionsFor(client.user).has("SEND_MESSAGES")) {
+            autoStopLogger.warn("Bot missing SEND_MESSAGES permission");
+        }
+        if (!channel.permissionsFor(client.user).has("EMBED_LINKS")) {
+            autoStopLogger.error("Bot missing EMBED_LINKS permission - cannot send embeds");
+            return;
+        }
+        
+        await channel.send({
+            embeds: [{
+                title: "🛑 Server Shut Down",
+                description: `Server has been automatically stopped due to inactivity (${AUTO_STOP_MINUTES} minutes with no players online).`,
+                color: 0xff0000,
+            }],
+        });
+    } catch (err) {
+        autoStopLogger.error(`Failed to send shutdown notification: ${err.message}`);
+    }
+}
+
 setInterval(async () => {
     const running = await isServerRunning();
 
@@ -402,6 +431,7 @@ setInterval(async () => {
         autoStopLogger.info(`Server empty for ${minutesEmpty.toFixed(1)} minutes (threshold: ${AUTO_STOP_MINUTES}). Initiating shutdown.`);
         try {
             await stopServer();
+            await sendAutoStopShutdown();
         } catch (err) {
             autoStopLogger.error(`Failed to stop server: ${err.message}`);
         }
