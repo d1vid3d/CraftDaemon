@@ -666,6 +666,12 @@ Check logs with `journalctl -u craftdaemon -n 50 --no-pager`. The most common ca
 
 ---
 
+## Like this project?
+
+If CraftDaemon has been useful to you, consider giving it a ⭐ on GitHub! It helps others discover the project and means a lot to the development. Thanks for using it.
+
+---
+
 ## Contributing
 
 This is a personal-use project. PRs and issues are welcome — open an issue first for larger changes so we can align before you put work in.
