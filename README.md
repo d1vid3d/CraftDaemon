@@ -312,7 +312,7 @@ sudo visudo -f /etc/sudoers.d/craftdaemon
 Add the following (replace `botuser` with the Linux user that will run the bot):
 
 ```
-botuser ALL=(ALL) NOPASSWD: /bin/systemctl start minecraft, /bin/systemctl stop minecraft, /bin/systemctl restart minecraft, /bin/systemctl is-active minecraft, /bin/systemctl show minecraft
+botuser ALL=(ALL) NOPASSWD: /bin/systemctl start minecraft, /bin/systemctl stop minecraft, /bin/systemctl restart minecraft, /bin/systemctl show minecraft
 ```
 
 > Keep this as narrow as possible — only grant the exact commands the bot needs.
@@ -434,6 +434,137 @@ journalctl -u craftdaemon --since "1 hour ago"
 ```
 
 `journalctl -f` is your best friend when debugging — run it in a separate terminal while reproducing an issue to see exactly what the bot or server is doing in real time.
+
+</details>
+
+---
+
+## Advanced Logging Capabilities and Customization
+
+<details>
+<summary><b>Click to expand</b></summary>
+
+### The bot uses a structured logging system with category-based prefixes, timestamps, and color-coded log levels. This makes it easier to track what's happening across different components.
+
+## Log Categories
+
+The logger supports the following categories:
+
+- **[Bot]** - General bot operation and lifecycle events
+- **[Discord]** - Discord.js and API interactions
+- **[Node]** - Node.js runtime errors and events
+- **[Minecraft]** - Minecraft server-specific events
+- **[RCON]** - RCON (Remote Console) communication with the Minecraft server
+- **[AutoStop]** - Auto-shutdown feature activities
+- **[SystemD]** - systemd service management (start, stop, restart, status)
+
+## Log Levels
+
+Each log entry includes a level indicator:
+
+- **[DEBUG]** (gray) - Detailed debugging information, suppressed by default
+- **[INFO]** (green) - General informational messages about normal operations
+- **[WARN]** (yellow) - Warning conditions that might need attention
+- **[ERROR]** (red) - Error conditions that need investigation
+
+## Log Format
+
+```
+HH:MM:SS [Category] [Level] Message
+```
+
+Example:
+```
+12:35:47 [RCON] [DEBUG] Sending command: list
+12:35:47 [RCON] [INFO] Response received for command: list
+12:36:02 [AutoStop] [WARN] Server has been empty for 8 minutes
+12:36:12 [SystemD] [ERROR] Failed to start server: Permission denied
+```
+
+## Enabling Debug Logging
+
+To enable debug-level logging, modify `src/index.js` and change the logger minimum level:
+
+```javascript
+const { createLogger, LogLevel } = require("./logger");
+
+// Change LogLevel.INFO to LogLevel.DEBUG
+const botLogger = createLogger('Bot', LogLevel.DEBUG);
+```
+
+Or import and set globally:
+
+```javascript
+const { mainLogger, LogLevel } = require("./logger");
+mainLogger.setMinLevel(LogLevel.DEBUG);
+```
+
+## Color Reference
+
+Terminal colors used in logs:
+
+- **Cyan** - Bot category
+- **Blue** - Discord category
+- **Green** - Node category & INFO level
+- **Red** - Minecraft category & ERROR level
+- **Magenta** - RCON category
+- **Yellow** - AutoStop category & WARN level
+- **White** - SystemD category
+- **Gray** - DEBUG level & timestamps
+
+## Common Log Scenarios
+
+### Server starts successfully
+```
+08:15:23 [SystemD] [INFO] Start command from user#1234
+08:15:24 [SystemD] [INFO] Managing systemd service: minecraft
+08:15:30 [Discord] [INFO] ✅ bot is online.
+```
+
+### RCON communication issue
+```
+10:22:45 [RCON] [DEBUG] Sending command: list
+10:22:47 [RCON] [WARN] RCON command timed out after 2500ms
+10:22:48 [Discord] [WARN] Server is running, but RCON is not responding yet.
+```
+
+### Auto-stop triggered
+```
+14:55:12 [AutoStop] [INFO] Stopping server due to inactivity.
+14:55:15 [SystemD] [INFO] Server stopped successfully.
+```
+
+## Troubleshooting
+
+If you're not seeing expected logs:
+
+1. Check the log level - DEBUG logs are hidden by default
+2. Verify the category name matches what's in the code
+3. Check that the logger is being called in the right place
+4. If using an IDE, ensure it's displaying colored output (check terminal settings)
+
+## Usage in Custom Code
+
+To add logging to your own functions:
+
+```javascript
+const { createLogger } = require("./logger");
+const myLogger = createLogger('MyComponent');
+
+// Use it:
+myLogger.info("Something happened");
+myLogger.error("An error occurred: " + err.message);
+myLogger.debug("Detailed debug info");
+myLogger.warn("This might be a problem");
+```
+
+## Performance Notes
+
+- Logging is lightweight and designed for production use
+- DEBUG logs are completely ignored if level is INFO or higher
+- Log calls have minimal performance impact
+
+
 
 </details>
 

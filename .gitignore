@@ -1,4 +1,6 @@
+test-logger.js
 .env
 node_modules/
 PatchNotes/
 logs/
+docs/

@@ -15,7 +15,19 @@ const { exec } = require("child_process");
 const { promisify } = require("util");
 const Rcon = require("rcon");
 
+// Import custom logger
+const { createLogger, LogLevel } = require("./logger");
+
 const execAsync = promisify(exec);
+
+// Create category-specific loggers
+const botLogger = createLogger('Bot');
+const discordLogger = createLogger('Discord');
+const nodeLogger = createLogger('Node');
+const minecraftLogger = createLogger('Minecraft');
+const rconLogger = createLogger('RCON');
+const autoStopLogger = createLogger('AutoStop');
+const systemdLogger = createLogger('SystemD');
 
 // ---- Example Config (check .env.example for details) ----------------------------------------
 //
@@ -23,17 +35,11 @@ const execAsync = promisify(exec);
 //  GUILD_ID=
 //  STATUS_CHANNEL_ID=
 //
-//  MC_SERVICE=minecraft          [your systemd service name]
+//  MC_SERVICE=minecraft        [your systemd service name]
 //
 //  RCON_HOST=127.0.0.1
 //  RCON_PORT=25575
 //  RCON_PASSWORD=
-//
-//  MAIN_ADDRESS=xx.ip.gl.ply.gg:12345  ← your main server address (e.g. Playit.gg) to display in the /address command
-//
-//  AUTO_STOP_MINUTES=10          [how long server waits before auto-stopping due to inactivity]
-//  WARNING_MINUTES=8             [when to send the inactivity warning]
-//  CHECK_INTERVAL=30000          [milliseconds between inactivity checks]
 //
 // ----------------------------------------------------------------
 
@@ -56,6 +62,16 @@ const CHECK_INTERVAL    = parseInt(process.env.CHECK_INTERVAL || "30000", 10); /
 let emptySince   = null;
 let warningSent  = false;
 
+// ========== STARTUP CONFIG LOGGING (Default Console Broadcast when bot starts) ==========
+botLogger.info("========== BOT STARTUP CONFIGURATION ==========");
+botLogger.info(`RCON Host: ${RCON_HOST}`);
+botLogger.info(`RCON Port: ${RCON_PORT}`);
+botLogger.info(`Minecraft Service: ${MC_SERVICE}`);
+botLogger.info(`Auto-stop enabled: Yes (${AUTO_STOP_MINUTES} min idle, warning at ${WARNING_MINUTES} min)`);
+botLogger.info(`Status channel ID: ${STATUS_CHANNEL_ID || "NOT SET"}`);
+botLogger.info(`Main address: ${MAIN_ADDRESS || "NOT SET"}`);
+botLogger.info("=============================================");
+
 // ================================================================
 //  systemd helpers
 // ================================================================
@@ -66,7 +82,7 @@ let warningSent  = false;
 async function getServiceState() {
     try {
         const { stdout } = await execAsync(
-            `sudo systemctl is-active ${MC_SERVICE}`
+            `systemctl is-active ${MC_SERVICE}`
         );
         return stdout.trim();
     } catch (err) {
@@ -148,26 +164,50 @@ function rconCommand(cmd, timeout = 2500) {
         };
 
         conn.on("auth", () => {
-            try { conn.send(cmd); } catch (e) { cleanup(); reject(e); }
+            try { 
+                rconLogger.debug(`Sending command: ${cmd}`);
+                conn.send(cmd); 
+            } catch (e) { 
+                rconLogger.error(`Failed to send command: ${e.message}`);
+                cleanup(); 
+                reject(e); 
+            }
         });
 
         conn.on("response", (str) => {
             responded = true;
+            rconLogger.debug(`Response received for command: ${cmd}`);
             cleanup();
             resolve(cleanMinecraftFormatting(String(str)));
         });
 
-        conn.on("error", (err) => { cleanup(); reject(err); });
+        conn.on("error", (err) => { 
+            rconLogger.error(`RCON error: ${err.message}`);
+            cleanup(); 
+            reject(err); 
+        });
 
         conn.on("end", () => {
-            if (!responded) { cleanup(); reject(new Error("RCON connection ended before response.")); }
+            if (!responded) { 
+                rconLogger.warn("RCON connection ended before response");
+                cleanup(); 
+                reject(new Error("RCON connection ended before response.")); 
+            }
         });
 
         timer = setTimeout(() => {
-            if (!responded) { cleanup(); reject(new Error("RCON timed out")); }
+            if (!responded) { 
+                rconLogger.warn(`RCON command timed out after ${timeout}ms`);
+                cleanup(); 
+                reject(new Error("RCON timed out")); 
+            }
         }, timeout);
 
-        try { conn.connect(); } catch (e) { cleanup(); reject(e); }
+        try { conn.connect(); } catch (e) { 
+            rconLogger.error(`Failed to connect to RCON: ${e.message}`);
+            cleanup(); 
+            reject(e); 
+        }
     });
 }
 
@@ -223,6 +263,8 @@ async function updateBotPresence() {
         const running = await isServerRunning();
 
             if (!running) {
+            // [PRESENCE UPDATE] Server is offline
+            discordLogger.debug("Updating presence: Server Offline (DND status)");
             client.user.setPresence({
                 status: "dnd",
                 activities: [{ name: "🟥 Server Offline", type: ActivityType.Watching }],
@@ -235,6 +277,8 @@ async function updateBotPresence() {
 
         if (players === null) {
             // Active but RCON not ready yet (still starting up)
+            // [PRESENCE UPDATE] Server is starting
+            discordLogger.debug("Updating presence: Server Starting (IDLE status)");
             client.user.setPresence({
                 status: "idle",
                 activities: [{ name: "🟡 Server Starting...", type: ActivityType.Watching }],
@@ -242,6 +286,8 @@ async function updateBotPresence() {
             return;
         }
 
+        // [PRESENCE UPDATE] Server is running with players
+        discordLogger.debug(`Updating presence: Server Online (${players} player${players !== 1 ? "s" : ""})`);
         client.user.setPresence({
             status: "online",
             activities: [{
@@ -250,28 +296,28 @@ async function updateBotPresence() {
             }],
         });
     } catch (err) {
-        console.error("Presence update failed:", err);
+        discordLogger.error(`Presence update failed: ${err.message}`);
     }
 }
 
 // ================================================================
-//  Auto-shutdown  (Uses stopServer() instead of stdin.write)
+//  Auto-shutdown  (Uses stopServer())
 // ================================================================
 
 async function sendAutoStopWarning(minutesLeft) {
     try {
         const channel = await client.channels.fetch(STATUS_CHANNEL_ID);
         if (!channel) {
-            console.error("[AutoStop] Channel not found. Check STATUS_CHANNEL_ID in .env");
+            autoStopLogger.error("Channel not found. Check STATUS_CHANNEL_ID in .env");
             return;
         }
-        
+
         // Check bot permissions
-        if (channel.permissionsFor(client.user).has("SEND_MESSAGES")) {
-            console.log("[AutoStop] Bot missing SEND_MESSAGES permission");
+        if (!channel.permissionsFor(client.user).has("SEND_MESSAGES")) {
+            autoStopLogger.warn("Bot missing SEND_MESSAGES permission");
         }
         if (!channel.permissionsFor(client.user).has("EMBED_LINKS")) {
-            console.error("[AutoStop] Bot missing EMBED_LINKS permission - cannot send embeds");
+            autoStopLogger.error("Bot missing EMBED_LINKS permission - cannot send embeds");
             return;
         }
         
@@ -283,7 +329,7 @@ async function sendAutoStopWarning(minutesLeft) {
             }],
         });
     } catch (err) {
-        console.error("[AutoStop] Failed to send warning:", err.message);
+        autoStopLogger.error(`Failed to send warning: ${err.message}`);
     }
 }
 
@@ -291,6 +337,10 @@ setInterval(async () => {
     const running = await isServerRunning();
 
     if (!running) {
+        if (emptySince !== null) {
+            // [AUTO-STOP TRACKING] Server offline - reset timer
+            autoStopLogger.info("Server went offline. Resetting auto-stop timer.");
+        }
         emptySince  = null;
         warningSent = false;
         return;
@@ -300,15 +350,21 @@ setInterval(async () => {
     if (players === null) return; // RCON not ready yet, skip this tick
 
     if (players > 0) {
+        if (emptySince !== null) {
+            // [AUTO-STOP TRACKING] Players joined - cancel shutdown
+            autoStopLogger.info(`Players detected (${players}). Cancelling auto-stop timer.`);
+        }
         emptySince  = null;
         warningSent = false;
         return;
     }
 
-    // No players
+    // No players online
     if (!emptySince) {
+        // [AUTO-STOP TRACKING] Server became empty - start timer
         emptySince  = Date.now();
         warningSent = false;
+        autoStopLogger.info(`Server is now empty. Auto-stop timer started (${AUTO_STOP_MINUTES} minutes until shutdown).`);
         return;
     }
 
@@ -316,16 +372,19 @@ setInterval(async () => {
 
     if (minutesEmpty >= WARNING_MINUTES && !warningSent) {
         const minutesLeft = Math.ceil(AUTO_STOP_MINUTES - minutesEmpty);
+        // [AUTO-STOP TRACKING] Sending warning
+        autoStopLogger.warn(`Server empty for ${minutesEmpty.toFixed(1)} minutes. Warning sent (${minutesLeft} min until shutdown).`);
         await sendAutoStopWarning(minutesLeft);
         warningSent = true;
     }
 
     if (minutesEmpty >= AUTO_STOP_MINUTES) {
-        console.log("[AutoStop] Stopping server due to inactivity.");
+        // [AUTO-STOP TRACKING] Threshold reached - shutting down
+        autoStopLogger.info(`Server empty for ${minutesEmpty.toFixed(1)} minutes (threshold: ${AUTO_STOP_MINUTES}). Initiating shutdown.`);
         try {
             await stopServer();
         } catch (err) {
-            console.error("[AutoStop] Failed to stop server:", err);
+            autoStopLogger.error(`Failed to stop server: ${err.message}`);
         }
         emptySince  = null;
         warningSent = false;
@@ -338,12 +397,12 @@ setInterval(async () => {
 // ================================================================
 
 client.on("ready", (c) => {
-    console.log(`✅ ${c.user.username} is online.`);
+    discordLogger.info(`✅ ${c.user.username} is online.`);
 });
 
 client.once("ready", async () => {
-    console.log(`Logged in as ${client.user.tag}`);
-    console.log(`Managing systemd service: ${MC_SERVICE}`);
+    discordLogger.info(`Logged in as ${client.user.tag}`);
+    systemdLogger.info(`Managing systemd service: ${MC_SERVICE}`);
 
     await updateBotPresence();
     setInterval(updateBotPresence, 60_000);
@@ -358,6 +417,7 @@ client.on("interactionCreate", async (interaction) => {
 
     // ── PING ───────────────────────────────────────────────────
     if (interaction.commandName === "ping") {
+        discordLogger.info(`Ping command from ${interaction.user.tag}`);
         const sent = await interaction.reply({ content: "🏓 Pinging...", fetchReply: true });
         const latency = sent.createdTimestamp - interaction.createdTimestamp;
         return interaction.editReply({
@@ -371,6 +431,7 @@ client.on("interactionCreate", async (interaction) => {
 
     // ── START ──────────────────────────────────────────────────
     if (interaction.commandName === "start") {
+        systemdLogger.info(`Start command from ${interaction.user.tag}`);
         const state = await getServiceState();
 
         if (state === "active") {
@@ -409,7 +470,7 @@ client.on("interactionCreate", async (interaction) => {
                 }],
             });
         } catch (err) {
-            console.error("[/start]", err);
+            systemdLogger.error(`Start command failed: ${err.message}`);
             return interaction.followUp({
                 embeds: [{
                     title: "❌ Start Failed",
@@ -422,6 +483,7 @@ client.on("interactionCreate", async (interaction) => {
 
     // ── STOP ───────────────────────────────────────────────────
     if (interaction.commandName === "stop") {
+        systemdLogger.info(`Stop command from ${interaction.user.tag}`);
         const running = await isServerRunning();
 
         if (!running) {
@@ -451,7 +513,7 @@ client.on("interactionCreate", async (interaction) => {
                 }],
             });
         } catch (err) {
-            console.error("[/stop]", err);
+            systemdLogger.error(`Stop command failed: ${err.message}`);
             return interaction.followUp({
                 embeds: [{
                     title: "❌ Stop Failed",
@@ -464,6 +526,7 @@ client.on("interactionCreate", async (interaction) => {
 
     // ── RESTART ────────────────────────────────────────────────
     if (interaction.commandName === "restart") {
+        systemdLogger.info(`Restart command from ${interaction.user.tag}`);
         const running = await isServerRunning();
 
         if (!running) {
@@ -493,7 +556,7 @@ client.on("interactionCreate", async (interaction) => {
                 }],
             });
         } catch (err) {
-            console.error("[/restart]", err);
+            systemdLogger.error(`Restart command failed: ${err.message}`);
             return interaction.followUp({
                 embeds: [{
                     title: "❌ Restart Failed",
@@ -506,6 +569,7 @@ client.on("interactionCreate", async (interaction) => {
 
     // ── ADDRESS ────────────────────────────────────────────────
     if (interaction.commandName === "address") {
+        discordLogger.info(`Address command from ${interaction.user.tag}`);
         if (!MAIN_ADDRESS) {
             return interaction.reply({
                 embeds: [{
@@ -531,12 +595,14 @@ client.on("interactionCreate", async (interaction) => {
 
     // ── STATUS ─────────────────────────────────────────────────
     if (interaction.commandName === "status") {
+        systemdLogger.info(`Status command from ${interaction.user.tag}`);
         await interaction.deferReply();
 
         const state = await getServiceState();
 
         // Offline / failed
         if (state !== "active" && state !== "activating") {
+            systemdLogger.warn(`Server offline, state: ${state}`);            
             return interaction.editReply({
                 embeds: [{
                     title: "🖥️ Server Status",
@@ -548,6 +614,7 @@ client.on("interactionCreate", async (interaction) => {
 
         // Still starting up
         if (state === "activating") {
+            systemdLogger.info("Server is activating, RCON not ready yet");           
             return interaction.editReply({
                 embeds: [{
                     title: "🖥️ Server Status",
@@ -558,6 +625,8 @@ client.on("interactionCreate", async (interaction) => {
         }
 
         // Active — gather stats
+        // [STATUS QUERY] Starting stat collection
+        const statsStartTime = Date.now();
         const uptimeText = await getServiceUptime();
 
         let tps = null, players = null, ping = null, rconOk = false;
@@ -572,7 +641,15 @@ client.on("interactionCreate", async (interaction) => {
         if (playersRes.status === "fulfilled") players = playersRes.value;
         if (pingRes.status    === "fulfilled") ping    = pingRes.value;
 
+        if (tpsRes.status === "rejected") rconLogger.warn(`TPS query failed: ${tpsRes.reason.message}`);
+        if (playersRes.status === "rejected") rconLogger.warn(`Player list query failed: ${playersRes.reason.message}`);
+        if (pingRes.status === "rejected") rconLogger.warn(`Ping measurement failed: ${pingRes.reason.message}`);        
         rconOk = !!(tps || players);
+        
+        // [STATUS QUERY] Log completed stats with query time
+        const statsEndTime = Date.now();
+        const queryTime = statsEndTime - statsStartTime;
+        systemdLogger.debug(`Status query completed in ${queryTime}ms | TPS: ${tps || "N/A"} | Players Online: ${players ? players.split(":").pop().trim().substring(0, 40) : "N/A"} | RCON RTT: ${ping || "N/A"}ms`);
 
         // Parse player line
         let playersLine = "N/A";
