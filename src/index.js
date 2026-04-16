@@ -4,6 +4,7 @@
 // ============================================================
 //  CraftDaemon  |  A Discord bot for managing your Minecraft server on Linux
 //  Server management via systemd  |  Stats via RCON
+//  Required external files: .env (configuration), logger.js (custom logging utility)
 // ============================================================
 
 // Make sure to fill in the .env file with the appropriate values before running the bot.
@@ -201,7 +202,11 @@ function rconCommand(cmd, timeout = 2500) {
         });
 
         conn.on("error", (err) => { 
-            rconLogger.error(`RCON error: ${err.message}`);
+            if (err.code === 'ECONNREFUSED') {
+                rconLogger.warn(`RCON connection refused (server may not be running): ${err.message}`);
+            } else {
+                rconLogger.error(`RCON error: ${err.message}`);
+            }
             cleanup(); 
             reject(err); 
         });
@@ -432,6 +437,7 @@ setInterval(async () => {
         try {
             await stopServer();
             await sendAutoStopShutdown();
+            autoStopLogger.warn(`Server stopped due to inactivity. Shutdown notification sent.`);
         } catch (err) {
             autoStopLogger.error(`Failed to stop server: ${err.message}`);
         }
@@ -467,7 +473,7 @@ client.on("interactionCreate", async (interaction) => {
     // ── PING ───────────────────────────────────────────────────
     if (interaction.commandName === "ping") {
         discordLogger.info(`Ping command from ${interaction.user.tag}`);
-        const sent = await interaction.reply({ content: "🏓 Pinging...", fetchReply: true });
+        const sent = await interaction.reply({ content: "🏓 Pinging...", withResponse: true });
         const latency = sent.createdTimestamp - interaction.createdTimestamp;
         return interaction.editReply({
             embeds: [{
