@@ -12,12 +12,12 @@
     their own Linux server and want Discord as the control panel.
   </h4>
 
-  <img src="https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white" />&nbsp;
-  <img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white" />&nbsp;
-  <img src="https://img.shields.io/badge/Linux-systemd-FCC624?style=flat-square&logo=linux&logoColor=black" />&nbsp;
-  <img src="https://img.shields.io/badge/Paper-Recommended-F96854?style=flat-square" />&nbsp;
-  <img src="https://img.shields.io/badge/Self--Hosted-Required-red?style=flat-square" />&nbsp;
-  <img src="https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=flat-square" />
+  <a href="https://nodejs.org" target="_blank"><img src="https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white" /></a>&nbsp;
+  <a href="https://discord.js.org" target="_blank"><img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white" /></a>&nbsp;
+  <a href="https://systemd.io" target="_blank"><img src="https://img.shields.io/badge/Linux-systemd-FCC624?style=flat-square&logo=linux&logoColor=white" /></a>&nbsp;
+  <a href="https://papermc.io" target="_blank"><img src="https://img.shields.io/badge/Paper-Recommended-F96854?style=flat-square" /></a>&nbsp;
+  <a href="https://github.com/d1vid3d/CraftDaemon" target="_blank"><img src="https://img.shields.io/badge/Self--Hosted-Required-red?style=flat-square" /></a>&nbsp;
+  <a href="https://github.com/d1vid3d/CraftDaemon/releases" target="_blank"><img src="https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=flat-square" /></a>
 
 </div>
 
