@@ -473,7 +473,7 @@ client.on("interactionCreate", async (interaction) => {
     // ── PING ───────────────────────────────────────────────────
     if (interaction.commandName === "ping") {
         discordLogger.info(`Ping command from ${interaction.user.tag}`);
-        const sent = await interaction.reply({ content: "🏓 Pinging...", withResponse: true });
+        const sent = await interaction.reply({ content: "🏓 Pinging...", fetchReply: true });
         const latency = sent.createdTimestamp - interaction.createdTimestamp;
         return interaction.editReply({
             embeds: [{
