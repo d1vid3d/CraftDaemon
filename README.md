@@ -14,7 +14,7 @@
 
   <a href="https://nodejs.org" target="_blank"><img src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=node.js&logoColor=white" /></a>&nbsp;
   <a href="https://discord.js.org" target="_blank"><img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=for-the-badge&logo=discord&logoColor=white" /></a>&nbsp;
-  <a href="https://systemd.io" target="_blank"><img src="https://img.shields.io/badge/Linux-systemd-FCC624?style=for-the-badge&logo=linux&logoColor=black" /></a>&nbsp;
+  <a href="https://systemd.io" target="_blank"><img src="https://img.shields.io/badge/Linux-systemd-FCC624?style=for-the-badge&logo=linux&logoColor=white" /></a>&nbsp;
   <a href="https://papermc.io" target="_blank"><img src="https://img.shields.io/badge/Paper-Recommended-F96854?style=for-the-badge" /></a>&nbsp;
   <a href="https://github.com/d1vid3d/CraftDaemon" target="_blank"><img src="https://img.shields.io/badge/Self--Hosted-Required-red?style=for-the-badge" /></a>&nbsp;
   <a href="https://github.com/d1vid3d/CraftDaemon/releases" target="_blank"><img src="https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=for-the-badge" /></a>
