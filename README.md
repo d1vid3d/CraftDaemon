@@ -27,6 +27,8 @@ CraftDaemon gives you Discord slash commands to start, stop, restart, and monito
 
 It works by sitting alongside your Minecraft server on the same host — both running as **systemd services**. The bot controls the server by calling `systemctl` commands, and reads live stats (TPS, player list, RCON latency) by talking directly to the server over **RCON**.
 
+Current releases use a **persistent RCON connection manager** with keepalive, reconnect handling, and command queueing. This avoids frequent connect/disconnect churn and keeps presence/stat data more stable.
+
 ### How it works, at a glance
 
 ```
@@ -111,7 +113,7 @@ The `/status` command is the most information-dense response in the bot. When th
 
 ### Smart Bot Presence
 
-The bot's Discord status updates automatically every 60 seconds to reflect the server's real state:
+The bot's Discord status is event-driven from the persistent RCON manager, with a systemd fallback while RCON is unavailable:
 
 | State | Bot status | Activity shown |
 |---|---|---|
@@ -123,7 +125,7 @@ The bot's Discord status updates automatically every 60 seconds to reflect the s
 
 When the server has been empty for a configurable amount of time (default: **10 minutes**), CraftDaemon automatically stops it to save resources. Before that, at the **8-minute** mark, it posts a warning to your configured status channel. Both thresholds and the check interval are fully configurable in your `.env`.
 
-This is entirely handled through RCON player count polling — no modifications to the server needed.
+This is handled through the persistent RCON keepalive/player stream — no server mods needed.
 
 ---
 
@@ -156,7 +158,7 @@ This isn't meant to gatekeep — the documentation tries to be as clear as possi
 ### 1. Clone the repository
 
 ```bash
-git clone --branch v1.1.0 https://github.com/d1vid3d/CraftDaemon
+git clone https://github.com/d1vid3d/CraftDaemon
 cd CraftDaemon
 ```
 
@@ -246,7 +248,16 @@ nano .env
 | `MC_SERVICE` | ✅ | Your Minecraft server's systemd service name (e.g. `minecraft`) |
 | `AUTO_STOP_MINUTES` | ✅ | Minutes of inactivity before the server auto-stops (set to `0` to disable) |
 | `WARNING_MINUTES` | ✅ | Minutes of inactivity before the warning message is posted |
-| `CHECK_INTERVAL` | ✅ | How often in milliseconds the bot polls for player activity (e.g. `30000` = 30s) |
+| `CHECK_INTERVAL_MS` | ✅ | How often in milliseconds auto-stop checks run (e.g. `30000` = 30s). Legacy `CHECK_INTERVAL` is still accepted. |
+| `SAVEALL_DELAY_MS` | ✅ | Delay between `save-all` and stop/restart, to let world data flush cleanly |
+| `PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS` | ✅ | How often presence fallback checks systemd while RCON is disconnected |
+| `RCON_KEEPALIVE_INTERVAL_MS` | ✅ | Interval for persistent RCON keepalive (`list`) |
+| `RCON_RECONNECT_INTERVAL_MS` | ✅ | Delay between reconnect attempts when RCON is down |
+| `RCON_STARTING_GRACE_PERIOD_MS` | ✅ | How long to keep "Server Starting..." after reconnect before live presence |
+| `RCON_COMMAND_TIMEOUT_MS` | ✅ | Timeout for individual RCON commands |
+| `RCON_MAX_KEEPALIVE_FAILURES` | ✅ | Consecutive keepalive failures before forcing reconnect |
+| `RCON_REFUSED_LOG_INTERVAL_MS` | ✅ | Refused-connection warning cadence; set `0` for "first log only" mode |
+| `LOG_LEVEL` | ✅ | Global logging level: `DEBUG`, `INFO`, `WARN`, or `ERROR` |
 | `JAVA_EDITION_VERSION` | ☑️ | Java edition version string shown in `/address` (e.g. `1.21.4`) |
 | `MAIN_ADDRESS` | ☑️ | Your public server address shown in `/address` and `/status` (e.g. a playit.gg tunnel or port-forwarded address) |
 | `LOCAL_ADDRESS` | ☑️ | Your LAN address shown in `/address` (e.g. `192.168.1.100:25565`) |
@@ -371,7 +382,10 @@ Both services are now managed by systemd and will survive reboots.
 CraftDaemon/
 ├── src/
 │   ├── index.js               # Bot entry point
-│   └── register-commands.js   # Slash command registration (run once)
+│   ├── register-commands.js   # Slash command registration (run once)
+│   └── services/
+│       ├── rconmanager.js     # Persistent RCON connection lifecycle + command pipeline
+│       └── logger.js          # Structured logging utility used across bot modules
 ├── .env.example               # Environment variable template
 ├── package.json
 └── README.md
@@ -444,15 +458,14 @@ journalctl -u craftdaemon --since "1 hour ago"
 <details>
 <summary><b>Click to expand</b></summary>
 
-### The bot uses a structured logging system with category-based prefixes, timestamps, and color-coded log levels. This makes it easier to track what's happening across different components. Almost all aspect of the logging system is customizable.
+### The bot uses a structured logging system with category-based prefixes, timestamps, and color-coded log levels. This makes it easier to track what's happening across different components.
 
 ## Log Categories
 
-The logger supports the following categories (Customizable):
+The logger supports the following categories:
 
 - **[Bot]** - General bot operation and lifecycle events
 - **[Discord]** - Discord.js and API interactions
-- **[Node]** - Node.js runtime errors and events
 - **[Minecraft]** - Minecraft server-specific events
 - **[RCON]** - RCON (Remote Console) communication with the Minecraft server
 - **[AutoStop]** - Auto-shutdown feature activities
@@ -460,14 +473,14 @@ The logger supports the following categories (Customizable):
 
 ## Log Levels
 
-Each log entry includes a level indicator (Customizable):
+Each log entry includes a level indicator:
 
 - **[DEBUG]** (gray) - Detailed debugging information, suppressed by default
 - **[INFO]** (green) - General informational messages about normal operations
 - **[WARN]** (yellow) - Warning conditions that might need attention
 - **[ERROR]** (red) - Error conditions that need investigation
 
-## Log Format (Customizable)
+## Log Format
 
 ```
 HH:MM:SS [Category] [Level] Message
@@ -476,28 +489,21 @@ HH:MM:SS [Category] [Level] Message
 Example:
 ```
 12:35:47 [RCON] [DEBUG] Sending command: list
-12:35:47 [RCON] [INFO] Response received for command: list
+12:35:47 [RCON] [DEBUG] RCON response received: There are 0 of a max of 20 players online
 12:36:02 [AutoStop] [WARN] Server has been empty for 8 minutes
 12:36:12 [SystemD] [ERROR] Failed to start server: Permission denied
 ```
 
 ## Enabling Debug Logging
 
-To enable debug-level logging, modify `src/index.js` and change the logger minimum level:
+Use `.env`:
 
-```javascript
-const { createLogger, LogLevel } = require("./logger");
-
-// Change LogLevel.INFO to LogLevel.DEBUG
-const botLogger = createLogger('Bot', LogLevel.DEBUG);
+```env
+LOG_LEVEL="DEBUG"
 ```
 
-Or import and set globally:
-
-```javascript
-const { mainLogger, LogLevel } = require("./logger");
-mainLogger.setMinLevel(LogLevel.DEBUG);
-```
+Valid values are `DEBUG`, `INFO`, `WARN`, `ERROR`.  
+No code changes required.
 
 ## Color Reference
 
@@ -505,7 +511,7 @@ Terminal colors used in logs:
 
 - **Cyan** - Bot category
 - **Blue** - Discord category
-- **Green** - Node category & INFO level
+- **Green** - INFO level
 - **Red** - Minecraft category & ERROR level
 - **Magenta** - RCON category
 - **Yellow** - AutoStop category & WARN level
@@ -521,11 +527,11 @@ Terminal colors used in logs:
 08:15:30 [Discord] [INFO] ✅ bot is online.
 ```
 
-### RCON communication issue
+### RCON communication issue (with persistent manager)
 ```
 10:22:45 [RCON] [DEBUG] Sending command: list
-10:22:47 [RCON] [WARN] RCON command timed out after 2500ms
-10:22:48 [Discord] [WARN] Server is running, but RCON is not responding yet.
+10:22:47 [RCON] [WARN] sendCommand("list") timed out after 8000ms.
+10:22:48 [RCON] [WARN] Keepalive command failed (1/2): RCON command timed out after 8000ms.
 ```
 
 ### Auto-stop triggered
@@ -548,7 +554,7 @@ If you're not seeing expected logs:
 To add logging to your own functions:
 
 ```javascript
-const { createLogger } = require("./logger");
+const { createLogger } = require("./services/logger");
 const myLogger = createLogger('MyComponent');
 
 // Use it:
@@ -582,10 +588,10 @@ Command sent from Discord user:
 Apr 16 03:16:29 node-0 node[3040518]: 03:16:29 [SystemD] [INFO] Start command from steve
 ```
 
-RCON Error log:
+RCON refused (throttled) log:
 ``` bash
-Apr 16 03:16:30 node-0 node[3040518]: 03:16:30 [RCON] [ERROR] RCON error: connect ECONNREFUSED 127.0.0.1:25575
-Apr 16 03:16:31 node-0 node[3040518]: 03:16:31 [RCON] [ERROR] RCON error: connect ECONNREFUSED 127.0.0.1:25575
+Apr 18 12:32:41 node-0 node[3348127]: 12:32:41 [RCON] [WARN] RCON connection refused (server may be offline/starting). Retrying every 5s. [connect ECONNREFUSED 127.0.0.1:25575]
+Apr 18 12:33:41 node-0 node[3348127]: 12:33:41 [RCON] [WARN] RCON connection refused (server may be offline/starting). Retrying every 5s. (+11 similar refusals suppressed) [connect ECONNREFUSED 127.0.0.1:25575]
 ```
 
 AutoStop engaging:
@@ -613,7 +619,7 @@ Apr 16 03:27:00 node-0 node[3040518]: 03:27:00 [AutoStop] [INFO] Server empty fo
 <details>
 <summary><b>Click to expand</b></summary>
 
-The bot polls player count via RCON on the interval defined by `CHECK_INTERVAL` in your `.env`. The shutdown sequence works like this:
+The bot uses persistent RCON player count state and checks it on the interval defined by `CHECK_INTERVAL_MS` (or legacy `CHECK_INTERVAL`) in your `.env`. The shutdown sequence works like this:
 
 1. Server is running, 0 players online → inactivity timer starts
 2. After `WARNING_MINUTES` of being empty → warning message posted to `STATUS_CHANNEL_ID`
@@ -628,12 +634,16 @@ Setting `AUTO_STOP_MINUTES=0` in your `.env` disables auto-shutdown entirely. `W
 
 ## Customization
 
-CraftDaemon's codebase is intentionally small and readable. If the default behavior doesn't quite fit your setup, you're encouraged to open `src/index.js` and adjust things directly — you don't need to be an expert, just comfortable reading through code and making small targeted changes.
+CraftDaemon's codebase is intentionally small and readable, and most behavior is configurable via `.env`; code edits should be the exception. But if the default behavior doesn't quite fit your setup, you're 
+encouraged to open `src/index.js` and adjust things directly — you don't need to be an expert, just comfortable reading 
+through code and making small targeted changes.
 
-Some things that are straightforward to modify:
+Some common customization points:
 
-- **Bot presence update frequency** — the `setInterval(updateBotPresence, 60_000)` call controls how often the bot's Discord status refreshes. Change `60_000` to any value in milliseconds.
-- **RCON command timeout** — the `rconCommand` function has a default timeout of `2500ms`. If your server is slow to respond, bump this up.
+- **Log verbosity** — set `LOG_LEVEL` in `.env` (`DEBUG`, `INFO`, `WARN`, `ERROR`).
+- **RCON retry/refusal logs** — tune `RCON_REFUSED_LOG_INTERVAL_MS` (`0` = first refusal only).
+- **RCON command timeout** — tune `RCON_COMMAND_TIMEOUT_MS` in `.env`.
+- **RCON reconnect/keepalive cadence** — tune `RCON_RECONNECT_INTERVAL_MS` and `RCON_KEEPALIVE_INTERVAL_MS`.
 - **Embed styling** — all Discord embeds are plain objects inside the slash command handlers. Colors, field labels, and copy are easy to change without touching any bot logic.
 - **Auto-shutdown behavior** — configurable via `.env`, but the underlying logic lives in the `setInterval` block near the bottom of `index.js` if you want to change how it actually works.
 
@@ -650,7 +660,7 @@ Run `node src/register-commands.js` and wait a few minutes. Make sure your bot i
 The sudoers rule isn't set up correctly, is configured for the wrong user, or the service name in the sudoers file doesn't match `MC_SERVICE`. Re-check step 7.
 
 **`/status` shows RCON not responding right after `/start`**
-This is expected — Paper takes 20–30 seconds to fully boot and open the RCON port. Run `/status` again after a moment.
+This is expected — Paper takes time to boot and open RCON. During this window, bot presence should show `Server Starting...` and RCON logs may show refused retries.
 
 **TPS not showing in `/status`**
 TPS is read via the `tps` command which only exists on Paper. Vanilla servers will show N/A here.

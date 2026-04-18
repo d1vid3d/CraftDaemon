@@ -1,6 +1,6 @@
 .env
 node_modules/
-PatchNotes/
+patchnotes/
 logs/
 docs/
 misc_stuff/

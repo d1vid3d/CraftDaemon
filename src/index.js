@@ -4,20 +4,30 @@
 // ============================================================
 //  CraftDaemon  |  A Discord bot for managing your Minecraft server on Linux
 //  Server management via systemd  |  Stats via RCON
-//  Required external files: .env (configuration), logger.js (custom logging utility)
+//  Required external files: .env (configuration), logger.js (custom logging utility), rconmanager.js (RCON manager)
 // ============================================================
 
 // Make sure to fill in the .env file with the appropriate values before running the bot.
 // and run `node src/register-commands.js` once to set up the slash commands in your Discord server.
 
 require("dotenv").config();
-const { Client, IntentsBitField, GatewayIntentBits, ActivityType } = require("discord.js");
+const { Client, GatewayIntentBits, ActivityType, PermissionFlagsBits } = require("discord.js");
 const { exec } = require("child_process");
 const { promisify } = require("util");
-const Rcon = require("rcon");
+// RconManager replaces the old stateless rcon helper.
+// The raw `rcon` package is now an internal detail of RconManager only.
+const {
+    RconManager,
+    DEFAULT_KEEPALIVE_INTERVAL_MS,
+    DEFAULT_RECONNECT_INTERVAL_MS,
+    DEFAULT_STARTING_GRACE_PERIOD_MS,
+    DEFAULT_COMMAND_TIMEOUT_MS,
+    DEFAULT_MAX_KEEPALIVE_FAILURES,
+    DEFAULT_REFUSED_LOG_INTERVAL_MS,
+} = require("./services/rconmanager");
 
 // Import custom logger
-const { createLogger, LogLevel } = require("./logger");
+const { createLogger, mainLogger, LogLevel } = require("./services/logger");
 
 // Promisified exec for easier async/await usage
 const execAsync = promisify(exec);
@@ -25,11 +35,13 @@ const execAsync = promisify(exec);
 // Create category-specific loggers (Create your own categories as needed by calling createLogger with a custom name in your modules)
 const botLogger = createLogger('Bot');
 const discordLogger = createLogger('Discord');
-const nodeLogger = createLogger('Node');
 const minecraftLogger = createLogger('Minecraft');
-const rconLogger = createLogger('RCON');
 const autoStopLogger = createLogger('AutoStop');
 const systemdLogger = createLogger('SystemD');
+
+const LOG_LEVEL_NAME_BY_VALUE = Object.fromEntries(
+    Object.entries(LogLevel).map(([name, value]) => [value, name])
+);
 
 // ---- Example Config [CHANGE IN .ENV] (check .env.example for details) ----------------------------------------
 //
@@ -47,31 +59,63 @@ const systemdLogger = createLogger('SystemD');
 
 // Hardcoding is not reccomended for these values since they may differ between environments, but you can change the defaults here if you want:
 
-const RCON_HOST        = process.env.RCON_HOST     || "127.0.0.1";
-const RCON_PORT        = parseInt(process.env.RCON_PORT || "25575", 10);
-const RCON_PASSWORD    = process.env.RCON_PASSWORD || "";
-const MC_SERVICE        = process.env.MC_SERVICE       || "minecraft";
-const STATUS_CHANNEL_ID = process.env.STATUS_CHANNEL_ID;
-const MAIN_ADDRESS      = process.env.MAIN_ADDRESS     || null;
+function getEnvInt(name, fallback, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) {
+    const raw = process.env[name];
+    if (raw === undefined || raw === null || raw === "") return fallback;
+    const parsed = parseInt(raw, 10);
+    if (Number.isNaN(parsed)) return fallback;
+    return Math.max(min, Math.min(max, parsed));
+}
+
+const RCON_HOST = process.env.RCON_HOST || "127.0.0.1";
+const RCON_PORT = getEnvInt("RCON_PORT", 25575, { min: 1, max: 65535 });
+const RCON_PASSWORD = process.env.RCON_PASSWORD || "";
+const MC_SERVICE = process.env.MC_SERVICE || "minecraft";
+const STATUS_CHANNEL_ID = process.env.STATUS_CHANNEL_ID || null;
+const MAIN_ADDRESS = process.env.MAIN_ADDRESS || null;
 
 // Auto-shutdown configuration (from .env with defaults)
 
-const AUTO_STOP_MINUTES = parseInt(process.env.AUTO_STOP_MINUTES || "10", 10);
-const WARNING_MINUTES   = parseInt(process.env.WARNING_MINUTES || "8", 10);
-const CHECK_INTERVAL    = parseInt(process.env.CHECK_INTERVAL || "30000", 10); //ms
+const AUTO_STOP_MINUTES = getEnvInt("AUTO_STOP_MINUTES", 10, { min: 0, max: 10_080 }); // 7 days max
+const WARNING_MINUTES = getEnvInt("WARNING_MINUTES", 8, { min: 0, max: 10_080 });
+const EFFECTIVE_WARNING_MINUTES = WARNING_MINUTES > 0
+    ? Math.min(WARNING_MINUTES, Math.max(AUTO_STOP_MINUTES - 1, 1))
+    : 0;
+const CHECK_INTERVAL_MS = getEnvInt(
+    "CHECK_INTERVAL_MS",
+    getEnvInt("CHECK_INTERVAL", 30_000, { min: 5_000, max: 300_000 }), // backward-compatible legacy key
+    { min: 5_000, max: 300_000 }
+);
+const PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS = getEnvInt("PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS", 15_000, { min: 5_000, max: 120_000 });
+const SAVEALL_DELAY_MS = getEnvInt("SAVEALL_DELAY_MS", 1_000, { min: 0, max: 30_000 });
+
+const RCON_KEEPALIVE_INTERVAL_MS = getEnvInt("RCON_KEEPALIVE_INTERVAL_MS", DEFAULT_KEEPALIVE_INTERVAL_MS, { min: 10_000, max: 300_000 });
+const RCON_RECONNECT_INTERVAL_MS = getEnvInt("RCON_RECONNECT_INTERVAL_MS", DEFAULT_RECONNECT_INTERVAL_MS, { min: 1_000, max: 60_000 });
+const RCON_STARTING_GRACE_PERIOD_MS = getEnvInt("RCON_STARTING_GRACE_PERIOD_MS", DEFAULT_STARTING_GRACE_PERIOD_MS, { min: 0, max: 120_000 });
+const RCON_COMMAND_TIMEOUT_MS = getEnvInt("RCON_COMMAND_TIMEOUT_MS", DEFAULT_COMMAND_TIMEOUT_MS, { min: 1_000, max: 60_000 });
+const RCON_MAX_KEEPALIVE_FAILURES = getEnvInt("RCON_MAX_KEEPALIVE_FAILURES", DEFAULT_MAX_KEEPALIVE_FAILURES, { min: 1, max: 10 });
+const RCON_REFUSED_LOG_INTERVAL_MS = getEnvInt("RCON_REFUSED_LOG_INTERVAL_MS", DEFAULT_REFUSED_LOG_INTERVAL_MS, { min: 0, max: 300_000 });
 
 // ---- Runtime state ---------------------------------------------
 let emptySince   = null;
 let warningSent  = false;
 
+// rconManager is declared here so every part of this file can reference it,
+// but it is only *initialised* inside client.once("clientReady") - after the
+// Discord client is fully logged in - because the manager drives bot presence.
+/** @type {import("./services/rconmanager").RconManager|null} */
+let rconManager  = null;
+
 // ========== STARTUP CONFIG LOGGING (Default Console Broadcast when bot starts) ==========
 botLogger.info("========== BOT STARTUP CONFIGURATION ==========");
+botLogger.info(`Active log level: ${LOG_LEVEL_NAME_BY_VALUE[mainLogger.minLevel] || "INFO"}`);
 botLogger.info(`RCON Host: ${RCON_HOST}`);
 botLogger.info(`RCON Port: ${RCON_PORT}`);
 botLogger.info(`Minecraft Service: ${MC_SERVICE}`);
-botLogger.info(`Auto-stop enabled: Yes (${AUTO_STOP_MINUTES} min idle, warning at ${WARNING_MINUTES} min)`);
+botLogger.info(`Auto-stop enabled: ${AUTO_STOP_MINUTES > 0 ? `Yes (${AUTO_STOP_MINUTES} min idle, warning at ${EFFECTIVE_WARNING_MINUTES || "disabled"} min)` : "No"}`);
 botLogger.info(`Status channel ID: ${STATUS_CHANNEL_ID || "NOT SET"}`);
 botLogger.info(`Main address: ${MAIN_ADDRESS || "NOT SET"}`);
+botLogger.info(`RCON keepalive/reconnect/timeout: ${RCON_KEEPALIVE_INTERVAL_MS}ms / ${RCON_RECONNECT_INTERVAL_MS}ms / ${RCON_COMMAND_TIMEOUT_MS}ms`);
 botLogger.info("=============================================");
 
 // ================================================================
@@ -103,31 +147,38 @@ async function startServer() {
     await execAsync(`sudo systemctl start ${MC_SERVICE}`);
 }
 
-// Send /save-all command via RCON to save world data (To prevent unexpected data loss on shutdown/restart). This is called before stopServer() and restartServer().
+// Send /save-all command via RCON to save world data (to prevent unexpected
+// data loss on shutdown/restart). Called before stopServer() and restartServer().
+// Uses rconSend() (backed by the persistent manager) rather than the old
+// stateless rconCommand() helper that was removed in v1.2.0.
 async function saveAll() {
     try {
         minecraftLogger.info("Sending /save-all command via RCON...");
-        const res = await rconCommand("save-all");
-        minecraftLogger.info(`Save-all response: ${res}`);
+        const res = await rconSend("save-all");
+        if (res !== null) {
+            minecraftLogger.info(`Save-all response: ${res}`);
+        } else {
+            minecraftLogger.warn("Save-all returned no response (RCON may not be connected). Continuing with shutdown.");
+        }
     } catch (err) {
         minecraftLogger.error(`Failed to send save-all: ${err.message}`);
-        // Don't throw - continue with shutdown even if save fails
+        // Don't throw — continue with shutdown even if save fails.
     }
 }
 
 // Runs systemctl stop and resolves when the command returns
 async function stopServer() {
     await saveAll();
-    // Give the server a moment to process the save command
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Give the server a moment to process the save command.
+    await new Promise(resolve => setTimeout(resolve, SAVEALL_DELAY_MS));
     await execAsync(`sudo systemctl stop ${MC_SERVICE}`);
 }
 
 // Runs systemctl restart and resolves when the command returns
 async function restartServer() {
     await saveAll();
-    // Give the server a moment to process the save command
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Give the server a moment to process the save command.
+    await new Promise(resolve => setTimeout(resolve, SAVEALL_DELAY_MS));
     await execAsync(`sudo systemctl restart ${MC_SERVICE}`);
 }
 
@@ -159,109 +210,61 @@ async function getServiceUptime() {
 }
 
 // ================================================================
-//  RCON helpers 
+//  RCON helpers
+//  NOTE: Low-level rcon helpers (rconCommand, cleanMinecraftFormatting,
+//  getOnlinePlayerCount, etc.) have been removed in v1.2.0.
+//  All RCON I/O now goes through the persistent `rconManager` instance
+//  defined in the clientReady handler below.
+//
+//  Thin wrappers are kept here so the /status command can issue ad-hoc
+//  commands via the manager without duplicating the send/await pattern.
 // ================================================================
 
-// Strip Minecraft formatting codes like §a, §r from RCON responses for cleaner display in Discord
-function cleanMinecraftFormatting(str) {
-    if (!str || typeof str !== "string") return "";
-    return str.replace(/§[0-9A-FK-OR]/gi, "");
+/**
+ * Sends an RCON command through the persistent manager and returns the
+ * cleaned response string.  Returns null (never throws) so callers can
+ * safely use it inside Promise.allSettled() chains.
+ *
+ * @param {string} cmd
+ * @returns {Promise<string|null>}
+ */
+async function rconSend(cmd) {
+    try {
+        return await rconManager.sendCommand(cmd);
+    } catch (err) {
+        minecraftLogger.warn(`rconSend("${cmd}") failed: ${err.message}`);
+        return null;
+    }
 }
 
-// Send a single RCON command and resolve with the cleaned response
-function rconCommand(cmd, timeout = 2500) {
-    return new Promise((resolve, reject) => {
-        if (!RCON_PASSWORD)
-            return reject(new Error("RCON_PASSWORD is not set in .env"));
-
-        const conn = new Rcon(RCON_HOST, RCON_PORT, RCON_PASSWORD);
-        let responded = false;
-        let timer = null;
-
-        const cleanup = () => {
-            try { conn.disconnect(); } catch (_) {}
-            if (timer) clearTimeout(timer);
-        };
-
-        conn.on("auth", () => {
-            try { 
-                rconLogger.debug(`Sending command: ${cmd}`);
-                conn.send(cmd); 
-            } catch (e) { 
-                rconLogger.error(`Failed to send command: ${e.message}`);
-                cleanup(); 
-                reject(e); 
-            }
-        });
-
-        conn.on("response", (str) => {
-            responded = true;
-            rconLogger.debug(`Response received for command: ${cmd}`);
-            cleanup();
-            resolve(cleanMinecraftFormatting(String(str)));
-        });
-
-        conn.on("error", (err) => { 
-            if (err.code === 'ECONNREFUSED') {
-                rconLogger.warn(`RCON connection refused (server may not be running): ${err.message}`);
-            } else {
-                rconLogger.error(`RCON error: ${err.message}`);
-            }
-            cleanup(); 
-            reject(err); 
-        });
-
-        conn.on("end", () => {
-            if (!responded) { 
-                rconLogger.warn("RCON connection ended before response");
-                cleanup(); 
-                reject(new Error("RCON connection ended before response.")); 
-            }
-        });
-
-        timer = setTimeout(() => {
-            if (!responded) { 
-                rconLogger.warn(`RCON command timed out after ${timeout}ms`);
-                cleanup(); 
-                reject(new Error("RCON timed out")); 
-            }
-        }, timeout);
-
-        try { conn.connect(); } catch (e) { 
-            rconLogger.error(`Failed to connect to RCON: ${e.message}`);
-            cleanup(); 
-            reject(e); 
-        }
-    });
-}
-
+/**
+ * Fetches the current TPS via RCON and strips any residual formatting codes.
+ * @returns {Promise<string|null>}
+ */
 async function getTps() {
-    const res = await rconCommand("tps");
-    return res.replace(/§./g, "").trim();
+    const res = await rconSend("tps");
+    return res ? res.replace(/§./g, "").trim() : null;
 }
 
+/**
+ * Fetches the full "list" response (player names + count) via RCON.
+ * @returns {Promise<string|null>}
+ */
 async function getPlayerList() {
-    return rconCommand("list");
+    return rconSend("list");
 }
 
-async function getOnlinePlayerCount() {
-    try {
-        const res = await rconCommand("list");
-        const match = res.match(/There are (\d+) of a max of (\d+)/i);
-        return match ? parseInt(match[1], 10) : null;
-    } catch {
-        return null;
-    }
-}
-
-async function measureRconPing() {
+/**
+ * Fetches the full "list" response and the measured command round-trip time.
+ * @returns {Promise<{ players: string|null, ping: number|null }>}
+ */
+async function getPlayerListWithPing() {
     const start = Date.now();
-    try {
-        await rconCommand("list", 3000);
-        return Date.now() - start;
-    } catch {
-        return null;
-    }
+    const players = await getPlayerList();
+    return {
+        players,
+        ping: players !== null ? Date.now() - start : null,
+    };
 }
 
 // ================================================================
@@ -270,59 +273,17 @@ async function measureRconPing() {
 
 const client = new Client({
     intents: [
-        IntentsBitField.Flags.Guilds,
-        IntentsBitField.Flags.GuildMembers,
-        IntentsBitField.Flags.GuildMessages,
-        IntentsBitField.Flags.MessageContent,
         GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
     ],
 });
 
 // ================================================================
-//  Bot presence  driven by systemd state and RCON availability
+//  Bot presence  (driven by RconManager events, not polling)
+//  ── See client.once("clientReady") for the event wiring ──────
 // ================================================================
-
-async function updateBotPresence() {
-    try {
-        const running = await isServerRunning();
-
-            if (!running) {
-            // [PRESENCE UPDATE] Server is offline
-            discordLogger.debug("Updating presence: Server Offline (DND status)");
-            client.user.setPresence({
-                status: "dnd",
-                activities: [{ name: "🟥 Server Offline", type: ActivityType.Watching }],
-            });
-            return;
-        }
-
-        // Server is active — try to get player count via RCON
-        const players = await getOnlinePlayerCount();
-
-        if (players === null) {
-            // Active but RCON not ready yet (still starting up)
-            // [PRESENCE UPDATE] Server is starting
-            discordLogger.debug("Updating presence: Server Starting (IDLE status)");
-            client.user.setPresence({
-                status: "idle",
-                activities: [{ name: "🟡 Server Starting...", type: ActivityType.Watching }],
-            });
-            return;
-        }
-
-        // [PRESENCE UPDATE] Server is running with players
-        discordLogger.debug(`Updating presence: Server Online (${players} player${players !== 1 ? "s" : ""})`);
-        client.user.setPresence({
-            status: "online",
-            activities: [{
-                name: `🟩 ${players} player${players !== 1 ? "s" : ""} online`,
-                type: ActivityType.Watching,
-            }],
-        });
-    } catch (err) {
-        discordLogger.error(`Presence update failed: ${err.message}`);
-    }
-}
 
 // ================================================================
 //  Auto-shutdown  (Uses stopServer())
@@ -336,12 +297,12 @@ async function sendAutoStopWarning(minutesLeft) {
             return;
         }
 
-        // Check bot permissions
-        if (!channel.permissionsFor(client.user).has("SEND_MESSAGES")) {
-            autoStopLogger.warn("Bot missing SEND_MESSAGES permission");
+        // Check bot permissions.
+        if (!channel.permissionsFor(client.user).has(PermissionFlagsBits.SendMessages)) {
+            autoStopLogger.warn("Bot missing SendMessages permission.");
         }
-        if (!channel.permissionsFor(client.user).has("EMBED_LINKS")) {
-            autoStopLogger.error("Bot missing EMBED_LINKS permission - cannot send embeds");
+        if (!channel.permissionsFor(client.user).has(PermissionFlagsBits.EmbedLinks)) {
+            autoStopLogger.error("Bot missing EmbedLinks permission - cannot send embeds.");
             return;
         }
         
@@ -365,12 +326,12 @@ async function sendAutoStopShutdown() {
             return;
         }
 
-        // Check bot permissions
-        if (!channel.permissionsFor(client.user).has("SEND_MESSAGES")) {
-            autoStopLogger.warn("Bot missing SEND_MESSAGES permission");
+        // Check bot permissions.
+        if (!channel.permissionsFor(client.user).has(PermissionFlagsBits.SendMessages)) {
+            autoStopLogger.warn("Bot missing SendMessages permission.");
         }
-        if (!channel.permissionsFor(client.user).has("EMBED_LINKS")) {
-            autoStopLogger.error("Bot missing EMBED_LINKS permission - cannot send embeds");
+        if (!channel.permissionsFor(client.user).has(PermissionFlagsBits.EmbedLinks)) {
+            autoStopLogger.error("Bot missing EmbedLinks permission - cannot send embeds.");
             return;
         }
         
@@ -386,10 +347,22 @@ async function sendAutoStopShutdown() {
     }
 }
 
-setInterval(async () => {
-    const running = await isServerRunning();
+// ================================================================
+//  Auto-stop interval
+//  Player count is sourced from rconManager.playerCount (kept fresh
+//  by the manager's keepalive loop) rather than making separate RCON
+//  calls, which eliminates double-polling and log spam.
+// ================================================================
 
-    if (!running) {
+setInterval(async () => {
+    if (AUTO_STOP_MINUTES <= 0) return; // Explicitly disabled by config.
+
+    // If the manager hasn't been initialised yet (pre-ready), skip this tick.
+    if (!rconManager) return;
+
+    // Use the manager's connection state as the authoritative "is server up"
+    // signal, replacing the old isServerRunning() systemctl check.
+    if (!rconManager.connected) {
         if (emptySince !== null) {
             // [AUTO-STOP TRACKING] Server offline - reset timer
             autoStopLogger.info("Server went offline. Resetting auto-stop timer.");
@@ -399,7 +372,8 @@ setInterval(async () => {
         return;
     }
 
-    const players = await getOnlinePlayerCount();
+    // playerCount is null if the keepalive hasn't resolved yet (still starting).
+    const players = rconManager.playerCount;
     if (players === null) return; // RCON not ready yet, skip this tick
 
     if (players > 0) {
@@ -423,7 +397,7 @@ setInterval(async () => {
 
     const minutesEmpty = (Date.now() - emptySince) / 60_000;
 
-    if (minutesEmpty >= WARNING_MINUTES && !warningSent) {
+    if (EFFECTIVE_WARNING_MINUTES > 0 && minutesEmpty >= EFFECTIVE_WARNING_MINUTES && !warningSent) {
         const minutesLeft = Math.ceil(AUTO_STOP_MINUTES - minutesEmpty);
         // [AUTO-STOP TRACKING] Sending warning
         autoStopLogger.warn(`Server empty for ${minutesEmpty.toFixed(1)} minutes. Warning sent (${minutesLeft} min until shutdown).`);
@@ -445,7 +419,7 @@ setInterval(async () => {
         warningSent = false;
     }
 
-}, CHECK_INTERVAL);
+}, CHECK_INTERVAL_MS);
 
 // ================================================================
 //  Ready
@@ -459,8 +433,113 @@ client.once("clientReady", async () => {
     discordLogger.info(`Logged in as ${client.user.tag}`);
     systemdLogger.info(`Managing systemd service: ${MC_SERVICE}`);
 
-    await updateBotPresence();
-    setInterval(updateBotPresence, 60_000);
+    // ── Initialise RconManager ───────────────────────────────
+    //  Must happen here (post-login) because the manager immediately
+    //  drives client.user.setPresence(), which requires an authenticated
+    //  Discord session.  Creating it at module scope would crash on
+    //  startup before login completes.
+
+    rconManager = new RconManager({
+        host:     RCON_HOST,
+        port:     RCON_PORT,
+        password: RCON_PASSWORD,
+        keepaliveIntervalMs: RCON_KEEPALIVE_INTERVAL_MS,
+        reconnectIntervalMs: RCON_RECONNECT_INTERVAL_MS,
+        startingGracePeriodMs: RCON_STARTING_GRACE_PERIOD_MS,
+        commandTimeoutMs: RCON_COMMAND_TIMEOUT_MS,
+        maxKeepaliveFailures: RCON_MAX_KEEPALIVE_FAILURES,
+        refusedLogIntervalMs: RCON_REFUSED_LOG_INTERVAL_MS,
+    });
+
+    // ── Presence event wiring ────────────────────────────────
+    //  Each handler is a single setPresence call, keeping presence
+    //  logic co-located and easy to audit.
+
+    /**
+     * Fallback presence resolver used while RCON is disconnected.
+     * If systemd says the service is active/activating, show "Starting";
+     * otherwise show "Offline".
+     */
+    async function setDisconnectedPresenceFromSystemd() {
+        if (!rconManager || rconManager.connected) return;
+
+        try {
+            const state = await getServiceState();
+            if (rconManager.connected) return; // avoid stale async updates
+
+            if (state === "active" || state === "activating") {
+                discordLogger.debug(`[PRESENCE] systemd fallback → starting (${state}).`);
+                client.user.setPresence({
+                    status: "idle",
+                    activities: [{ name: "🟡 Server Starting...", type: ActivityType.Watching }],
+                });
+                return;
+            }
+        } catch (err) {
+            systemdLogger.warn(`Presence systemd fallback failed: ${err.message}`);
+        }
+
+        discordLogger.debug("[PRESENCE] systemd fallback → offline.");
+        client.user.setPresence({
+            status: "dnd",
+            activities: [{ name: "🟥 Server Offline", type: ActivityType.Watching }],
+        });
+    }
+
+    /**
+     * Fired by RconManager every keepalive cycle with the live player count.
+     * Also re-fired when the starting grace period ends.
+     * This is the normal "server is healthy" presence path.
+     */
+    rconManager.on("playerCount", (count) => {
+        // During the starting grace period, ignore live counts — the
+        // "starting" event handler already set the correct presence.
+        if (rconManager.isStarting) return;
+
+        discordLogger.debug(`[PRESENCE] playerCount event → ${count} player(s) online.`);
+        client.user.setPresence({
+            status: "online",
+            activities: [{
+                name: `🟩 ${count} player${count !== 1 ? "s" : ""} online`,
+                type: ActivityType.Watching,
+            }],
+        });
+    });
+
+    /**
+     * Fired when RCON socket is lost.  Covers both clean disconnects
+     * and error-induced drops.  The manager will reconnect automatically.
+     */
+    rconManager.on("offline", () => {
+        void setDisconnectedPresenceFromSystemd();
+    });
+
+    /**
+     * Fired for STARTING_GRACE_PERIOD_MS immediately after a *re*connect
+     * (not the very first connect).  Lets players know the server is coming
+     * back up without showing a premature player count.
+     */
+    rconManager.on("starting", () => {
+        discordLogger.debug("[PRESENCE] starting event → Server Starting…");
+        client.user.setPresence({
+            status: "idle",
+            activities: [{ name: "🟡 Server Starting...", type: ActivityType.Watching }],
+        });
+    });
+
+    // ── Start the persistent connection ─────────────────────
+    //  This triggers the first connect attempt and kicks off the
+    //  keepalive + reconnect lifecycle.
+    rconManager.start();
+
+    // While disconnected, periodically refine presence from systemd state so
+    // startup is shown as "Starting..." instead of always "Offline".
+    setInterval(() => {
+        void setDisconnectedPresenceFromSystemd();
+    }, PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS);
+
+    // Prime presence immediately on startup before the first manager events.
+    void setDisconnectedPresenceFromSystemd();
 });
 
 // ================================================================
@@ -693,19 +772,19 @@ client.on("interactionCreate", async (interaction) => {
 
         let tps = null, players = null, ping = null, rconOk = false;
 
-        const [tpsRes, playersRes, pingRes] = await Promise.allSettled([
+        const [tpsRes, playersWithPingRes] = await Promise.allSettled([
             getTps(),
-            getPlayerList(),
-            measureRconPing(),
+            getPlayerListWithPing(),
         ]);
 
         if (tpsRes.status     === "fulfilled") tps     = tpsRes.value;
-        if (playersRes.status === "fulfilled") players = playersRes.value;
-        if (pingRes.status    === "fulfilled") ping    = pingRes.value;
+        if (playersWithPingRes.status === "fulfilled") {
+            players = playersWithPingRes.value.players;
+            ping = playersWithPingRes.value.ping;
+        }
 
-        if (tpsRes.status === "rejected") rconLogger.warn(`TPS query failed: ${tpsRes.reason.message}`);
-        if (playersRes.status === "rejected") rconLogger.warn(`Player list query failed: ${playersRes.reason.message}`);
-        if (pingRes.status === "rejected") rconLogger.warn(`Ping measurement failed: ${pingRes.reason.message}`);        
+        if (tpsRes.status === "rejected") minecraftLogger.warn(`TPS query failed: ${tpsRes.reason.message}`);
+        if (playersWithPingRes.status === "rejected") minecraftLogger.warn(`Player list query failed: ${playersWithPingRes.reason.message}`);
         rconOk = !!(tps || players);
         
         // [STATUS QUERY] Log completed stats with query time

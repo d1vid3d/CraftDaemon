@@ -104,13 +104,54 @@ class Logger {
     }
 }
 
-// Create main logger instance
-const mainLogger = new Logger('Bot', LogLevel.INFO);
+/**
+ * Parses LOG_LEVEL from env and maps it to the internal numeric enum.
+ * Accepted values: DEBUG, INFO, WARN, ERROR (case-insensitive).
+ *
+ * @returns {number}
+ */
+function getInitialLogLevel() {
+    const raw = String(process.env.LOG_LEVEL || "INFO").trim().toUpperCase();
+    if (Object.prototype.hasOwnProperty.call(LogLevel, raw)) {
+        return LogLevel[raw];
+    }
+    return LogLevel.INFO;
+}
+
+// Create main logger instance using env-configured level.
+const mainLogger = new Logger('Bot', getInitialLogLevel());
+
+/** @type {Set<Logger>} */
+const loggerRegistry = new Set([mainLogger]);
+
+/**
+ * Sets minimum log level globally for all existing and future loggers.
+ * Accepts either enum number or string level name.
+ *
+ * @param {number|string} level
+ */
+function setGlobalLogLevel(level) {
+    const resolved = typeof level === "string"
+        ? LogLevel[String(level).trim().toUpperCase()]
+        : level;
+    if (resolved === undefined) return;
+    mainLogger.setMinLevel(resolved);
+    for (const logger of loggerRegistry) {
+        logger.setMinLevel(resolved);
+    }
+}
+
+function createLogger(category) {
+    const logger = new Logger(category, mainLogger.minLevel);
+    loggerRegistry.add(logger);
+    return logger;
+}
 
 // Export for use in other modules
 module.exports = {
     Logger,
     LogLevel,
     mainLogger,
-    createLogger: (category) => new Logger(category, mainLogger.minLevel),
+    createLogger,
+    setGlobalLogLevel,
 };
