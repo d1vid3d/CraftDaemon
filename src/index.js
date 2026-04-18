@@ -89,6 +89,8 @@ const CHECK_INTERVAL_MS = getEnvInt(
 const PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS = getEnvInt("PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS", 15_000, { min: 5_000, max: 120_000 });
 const SAVEALL_DELAY_MS = getEnvInt("SAVEALL_DELAY_MS", 1_000, { min: 0, max: 30_000 });
 
+const COMMAND_COOLDOWN_MS = getEnvInt("COMMAND_COOLDOWN_MS", 10_000, { min: 2_000, max: 60_000 });
+
 const RCON_KEEPALIVE_INTERVAL_MS = getEnvInt("RCON_KEEPALIVE_INTERVAL_MS", DEFAULT_KEEPALIVE_INTERVAL_MS, { min: 10_000, max: 300_000 });
 const RCON_RECONNECT_INTERVAL_MS = getEnvInt("RCON_RECONNECT_INTERVAL_MS", DEFAULT_RECONNECT_INTERVAL_MS, { min: 1_000, max: 60_000 });
 const RCON_STARTING_GRACE_PERIOD_MS = getEnvInt("RCON_STARTING_GRACE_PERIOD_MS", DEFAULT_STARTING_GRACE_PERIOD_MS, { min: 0, max: 120_000 });
@@ -99,6 +101,11 @@ const RCON_REFUSED_LOG_INTERVAL_MS = getEnvInt("RCON_REFUSED_LOG_INTERVAL_MS", D
 // ---- Runtime state ---------------------------------------------
 let emptySince   = null;
 let warningSent  = false;
+
+// Command lock state for state-changing commands
+let commandLock = false;
+let commandLockTimeout = null;
+let lastCommand = '';
 
 // rconManager is declared here so every part of this file can reference it,
 // but it is only *initialised* inside client.once("clientReady") - after the
@@ -546,6 +553,53 @@ client.once("clientReady", async () => {
 //  Slash command handler
 // ================================================================
 
+/**
+ * Acquires a command execution lock to prevent spam and ensure sequential processing.
+ * Implements a cooldown timeout mechanism that prevents multiple state-changing commands
+ * (start, stop, restart) from executing simultaneously, which could cause conflicts or
+ * race conditions.
+ *
+ * @param {Object} interaction - The Discord interaction object from the command
+ * @param {string} commandName - The name of the command being executed (for logging)
+ * @returns {Promise<boolean>} - true if lock is already held (command rejected), false if lock acquired (command may proceed)
+ */
+async function acquireLock(interaction, commandName) {
+    // If another command is still processing, reject this one and inform the user
+    if (commandLock) {
+        await interaction.reply({
+            embeds: [{
+                title: "⏳ Command Busy",
+                description: `Previous \`${lastCommand}\` command is still processing. Please wait...`,
+                color: 0xffcc00,
+            }],
+            ephemeral: true,
+        });
+        return true;  // locked — command rejected
+    }
+
+    // Lock acquired: prevent other commands from executing
+    commandLock = true;
+    lastCommand = commandName;
+
+    // Set a timeout to automatically release the lock after COMMAND_COOLDOWN_MS.
+    // This prevents the bot from being permanently locked if a command fails or hangs.
+    commandLockTimeout = setTimeout(() => {
+        commandLock = false;
+        commandLockTimeout = null;
+    }, COMMAND_COOLDOWN_MS);
+
+    return false;  // acquired — command may proceed
+}
+
+function releaseLock() {
+    if (commandLockTimeout) {
+        clearTimeout(commandLockTimeout);
+        commandLockTimeout = null;
+    }
+    commandLock = false;
+    lastCommand = '';
+}
+
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -573,6 +627,7 @@ client.on("interactionCreate", async (interaction) => {
     // ── START ──────────────────────────────────────────────────
     if (interaction.commandName === "start") {
         systemdLogger.info(`Start command from ${interaction.user.tag}`);
+        if (await acquireLock(interaction, 'start')) return;
         const state = await getServiceState();
 
         if (state === "active") {
@@ -603,6 +658,7 @@ client.on("interactionCreate", async (interaction) => {
         });
         try {
             await startServer();
+            releaseLock();
             return interaction.followUp({
                 embeds: [{
                     title: "✅ Start Command Sent",
@@ -612,6 +668,7 @@ client.on("interactionCreate", async (interaction) => {
             });
         } catch (err) {
             systemdLogger.error(`Start command failed: ${err.message}`);
+            releaseLock();
             return interaction.followUp({
                 embeds: [{
                     title: "❌ Start Failed",
@@ -625,6 +682,7 @@ client.on("interactionCreate", async (interaction) => {
     // ── STOP ───────────────────────────────────────────────────
     if (interaction.commandName === "stop") {
         systemdLogger.info(`Stop command from ${interaction.user.tag}`);
+        if (await acquireLock(interaction, 'stop')) return;
         const running = await isServerRunning();
 
         if (!running) {
@@ -668,6 +726,7 @@ client.on("interactionCreate", async (interaction) => {
     // ── RESTART ────────────────────────────────────────────────
     if (interaction.commandName === "restart") {
         systemdLogger.info(`Restart command from ${interaction.user.tag}`);
+        if (await acquireLock(interaction, 'restart')) return;
         const running = await isServerRunning();
 
         if (!running) {
