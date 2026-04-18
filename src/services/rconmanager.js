@@ -544,11 +544,15 @@ class RconManager extends require("events").EventEmitter {
         // would never be called and the manager would silently freeze — no
         // retries, no presence update, no recovery. Ever.
         //
-        // RECONNECTING is correctly excluded: a reconnect timer is already
-        // scheduled; stacking a second one would cause exponential timer drift.
-        //
         // DISCONNECTED means destroy() was called — no reconnect desired.
-        if (this._state === State.DISCONNECTED || this._state === State.RECONNECTING) {
+        //
+        // NOTE:
+        // We intentionally do NOT bail out for RECONNECTING. During reconnect
+        // attempts, a failed connect() can emit ECONNREFUSED while state is
+        // RECONNECTING; if we returned early here, no new reconnect timer
+        // would be scheduled and the manager could get stuck offline after a
+        // single failed retry (common during /restart windows).
+        if (this._state === State.DISCONNECTED) {
             return;
         }
 
