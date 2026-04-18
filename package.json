@@ -1,5 +1,5 @@
 {
-  "name": "CraftDaemon",
+  "name": "craftdaemon",
   "version": "1.2.0",
   "description": "A Discord bot for managing your Minecraft server on Linux",
   "main": "src/index.js",
