@@ -250,6 +250,7 @@ nano .env
 | `WARNING_MINUTES` | ✅ | Minutes of inactivity before the warning message is posted |
 | `CHECK_INTERVAL_MS` | ✅ | How often in milliseconds auto-stop checks run (e.g. `30000` = 30s). Legacy `CHECK_INTERVAL` is still accepted. |
 | `SAVEALL_DELAY_MS` | ✅ | Delay between `save-all` and stop/restart, to let world data flush cleanly |
+| `COMMAND_COOLDOWN_MS` | ✅ | Cooldown timeout in milliseconds between accepting start/stop/restart commands to prevent spam (set `0` to disable, not recommended) |
 | `PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS` | ✅ | How often presence fallback checks systemd while RCON is disconnected |
 | `RCON_KEEPALIVE_INTERVAL_MS` | ✅ | Interval for persistent RCON keepalive (`list`) |
 | `RCON_RECONNECT_INTERVAL_MS` | ✅ | Delay between reconnect attempts when RCON is down |
