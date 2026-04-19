@@ -2,7 +2,10 @@
 // Make sure to fill in the .env file with the appropriate values before running this script.
 // Example Usage: node src/register-commands.js
 
-require('dotenv').config();
+const fs = require("fs");
+const path = require("path");
+
+require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
 const { REST, Routes, ApplicationCommandOptionType } = require('discord.js');
 
 const commands = [

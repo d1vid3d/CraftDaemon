@@ -4,16 +4,21 @@
 // ============================================================
 //  CraftDaemon  |  A Discord bot for managing your Minecraft server on Linux
 //  Server management via systemd  |  Stats via RCON
-//  Required external files: .env (configuration), logger.js (custom logging utility), rconmanager.js (RCON manager)
+//  Required external files: config/.env (configuration), logger.js (custom logging utility), rconmanager.js (RCON manager)
 // ============================================================
 
-// Make sure to fill in the .env file with the appropriate values before running the bot.
+// Make sure to fill in config/.env file with the appropriate values before running the bot.
 // and run `node src/register-commands.js` once to set up the slash commands in your Discord server.
 
-require("dotenv").config();
-const { Client, GatewayIntentBits, ActivityType, PermissionFlagsBits } = require("discord.js");
+const fs = require("fs");
+const path = require("path");
+
+require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
+
+const { Client, Collection, GatewayIntentBits, ActivityType, PermissionFlagsBits } = require("discord.js");
 const { exec } = require("child_process");
 const { promisify } = require("util");
+const { permissionMiddleware } = require("./permissions/middleware");
 // RconManager replaces the old stateless rcon helper.
 // The raw `rcon` package is now an internal detail of RconManager only.
 const {
@@ -43,7 +48,102 @@ const LOG_LEVEL_NAME_BY_VALUE = Object.fromEntries(
     Object.entries(LogLevel).map(([name, value]) => [value, name])
 );
 
-// ---- Example Config [CHANGE IN .ENV] (check .env.example for details) ----------------------------------------
+
+// Config warnings checks
+// This is a best-effort heuristic system to catch common misconfigurations like forgetting to fill in the RBAC config or leaving placeholder values in .env.
+// It runs once on startup and logs any warnings it finds, but it does not prevent the bot from running since some warnings may be non-critical
+// depending on your use case (e.g. you might intentionally not use RBAC or have a separate presence monitoring system instead of RCON).
+// Review the logged warnings and ensure your environment is set up correctly before relying on the bot in production.
+
+/** @type {any} */
+let permissionConfig = null;
+try {
+    // eslint-disable-next-line global-require, import/no-dynamic-require
+    permissionConfig = require("../config/permission-config");
+} catch {
+    permissionConfig = null;
+}
+
+function isAllSameDigitSnowflake(id) {
+    return /^\d{17,20}$/.test(id) && /^(\d)\1+$/.test(id);
+}
+
+function looksLikeTemplatePermissionConfig(cfg) {
+    if (!cfg || typeof cfg !== "object") return true;
+
+    const templateIds = new Set([
+        "123456789012345678",
+        "111111111111111111",
+        "222222222222222222",
+        "444444444444444444",
+    ]);
+
+    const owners = Array.isArray(cfg.owner) ? cfg.owner : [];
+    if (owners.some((id) => templateIds.has(String(id)))) return true;
+
+    const roles = cfg.roles && typeof cfg.roles === "object" ? cfg.roles : {};
+    for (const roleId of Object.values(roles)) {
+        const id = String(roleId || "");
+        if (!id) continue;
+        if (templateIds.has(id)) return true;
+        if (isAllSameDigitSnowflake(id)) return true;
+    }
+
+    const users = cfg.users && typeof cfg.users === "object" ? cfg.users : {};
+    for (const userId of Object.keys(users)) {
+        if (templateIds.has(String(userId))) return true;
+    }
+
+    return false;
+}
+
+function envLooksUnsetOrPlaceholder(raw) {
+    const v = String(raw ?? "").trim();
+    if (!v) return true;
+    const upper = v.toUpperCase();
+    if (upper.includes("YOUR_")) return true;
+    if (upper.includes("CHANGE_ME")) return true;
+    if (upper.includes("REPLACE_ME")) return true;
+    if (upper.includes("TODO")) return true;
+    return false;
+}
+
+function collectLikelyMisconfigWarnings() {
+    /** @type {string[]} */
+    const warnings = [];
+
+    if (!permissionConfig) {
+        warnings.push("RBAC config not found (expected `config/permission-config.js`).");
+    } else if (looksLikeTemplatePermissionConfig(permissionConfig)) {
+        warnings.push("RBAC config still looks like the template (`config/permission-config.js`). Replace example owner/role/user IDs with real Discord IDs.");
+    }
+
+    if (envLooksUnsetOrPlaceholder(process.env.TOKEN)) warnings.push("Discord `TOKEN` is missing or still looks like a placeholder.");
+    if (envLooksUnsetOrPlaceholder(process.env.CLIENT_ID)) warnings.push("Discord `CLIENT_ID` is missing or still looks like a placeholder.");
+    if (envLooksUnsetOrPlaceholder(process.env.GUILD_ID)) warnings.push("Discord `GUILD_ID` is missing or still looks like a placeholder.");
+
+    if (envLooksUnsetOrPlaceholder(process.env.RCON_PASSWORD)) {
+        warnings.push("Minecraft `RCON_PASSWORD` is missing or still looks like a placeholder (RCON features will not work reliably).");
+    }
+
+    if (AUTO_STOP_MINUTES > 0 && envLooksUnsetOrPlaceholder(process.env.STATUS_CHANNEL_ID)) {
+        warnings.push("Auto-stop is enabled, but `STATUS_CHANNEL_ID` is missing or still looks like a placeholder (warnings/shutdown posts may fail).");
+    }
+
+    return warnings;
+}
+
+function warnStartupOperatorChecklist() {
+    const warnings = collectLikelyMisconfigWarnings();
+    if (!warnings.length) return;
+
+    botLogger.warn("Startup checklist: please verify your environment + RBAC config before relying on this bot in production.");
+    for (const w of warnings) botLogger.warn(`- ${w}`);
+}
+
+let startupOperatorChecklistWarned = false;
+
+// ---- Example Config [CHANGE IN .ENV] (check config/.env.example for details) ----------------------------------------
 //
 //  TOKEN=
 //  GUILD_ID=
@@ -288,6 +388,31 @@ const client = new Client({
 });
 
 // ================================================================
+//  Commands (config-driven RBAC expects command objects)
+// ================================================================
+
+client.commands = new Collection();
+const commandsPath = path.join(__dirname, "commands");
+if (fs.existsSync(commandsPath)) {
+    const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith(".js"));
+    for (const file of commandFiles) {
+        const filePath = path.join(commandsPath, file);
+        // eslint-disable-next-line global-require, import/no-dynamic-require
+        const command = require(filePath);
+        if (command?.data?.name) {
+            client.commands.set(command.data.name, command);
+        }
+    }
+}
+
+// ================================================================
+//  Events
+// ================================================================
+
+const registerInteractionCreate = require("./events/interactionCreate");
+registerInteractionCreate(client);
+
+// ================================================================
 //  Bot presence  (driven by RconManager events, not polling)
 //  ── See client.once("clientReady") for the event wiring ──────
 // ================================================================
@@ -439,6 +564,11 @@ client.on("clientReady", (c) => {
 client.once("clientReady", async () => {
     discordLogger.info(`Logged in as ${client.user.tag}`);
     systemdLogger.info(`Managing systemd service: ${MC_SERVICE}`);
+
+    if (!startupOperatorChecklistWarned) {
+        startupOperatorChecklistWarned = true;
+        warnStartupOperatorChecklist();
+    }
 
     // ── Initialise RconManager ───────────────────────────────
     //  Must happen here (post-login) because the manager immediately
@@ -602,6 +732,25 @@ function releaseLock() {
 
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
+
+    // If this command is handled by the new RBAC-backed command system,
+    // let `src/events/interactionCreate.js` run it (with middleware).
+    if (client.commands?.has(interaction.commandName)) return;
+
+    // RBAC for legacy inline commands in this file.
+    const legacyPermissionByCommand = {
+        ping: null, // no permission required
+        start: "server.start",
+        stop: "server.stop",
+        restart: "server.restart",
+        status: "server.status",
+        address: "server.address",
+    };
+    const legacyPermission = legacyPermissionByCommand[interaction.commandName];
+    if (legacyPermission !== undefined) {
+        const allowed = await permissionMiddleware(interaction, { permission: legacyPermission });
+        if (!allowed) return;
+    }
 
     // ── PING ───────────────────────────────────────────────────
     if (interaction.commandName === "ping") {

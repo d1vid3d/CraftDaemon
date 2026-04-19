@@ -123,7 +123,7 @@ The bot's Discord status is event-driven from the persistent RCON manager, with 
 
 ### Auto-Shutdown
 
-When the server has been empty for a configurable amount of time (default: **10 minutes**), CraftDaemon automatically stops it to save resources. Before that, at the **8-minute** mark, it posts a warning to your configured status channel. Both thresholds and the check interval are fully configurable in your `.env`.
+When the server has been empty for a configurable amount of time (default: **10 minutes**), CraftDaemon automatically stops it to save resources. Before that, at the **8-minute** mark, it posts a warning to your configured status channel. Both thresholds and the check interval are fully configurable in your `config/.env`.
 
 This is handled through the persistent RCON keepalive/player stream — no server mods needed.
 
@@ -224,7 +224,13 @@ This will install all required packages, including:
 
 ### 4. Configure your environment
 
-Your `.env` file is how you configure CraftDaemon. It's a plain text file that lives in the project root and is loaded automatically by the bot on startup via `dotenv`. It's never committed to version control — it stays on your machine only.
+<details>
+<summary><b>Click to expand — Configuration setup and references</b></summary>
+
+<br>
+
+Your `config/.env` file is how you configure CraftDaemon. It's a plain text file that lives in the `config/` folder and is loaded automatically by the bot on startup via `dotenv`. It's never committed to version control — it stays on your machine only.
+
 
 Copy the example file and fill it in:
 
@@ -233,37 +239,95 @@ cp .env.example .env
 nano .env
 ```
 
-<details>
-<summary><b>Click to expand — full .env variable reference</b></summary>
+## Environment Variables Reference
 
-| Variable | Required | Description |
+Your `.env` file contains all configuration for CraftDaemon. It's placed in the project root and loaded automatically on startup via `dotenv`. Never commit it to version control — it contains credentials.
+
+| Variable | Required | Description | Suggested Range |
+|---|---|---|---|
+| **Discord Configuration** | | | |
+| `TOKEN` | ✅ | Your Discord bot token (from step 3b) | — |
+| `CLIENT_ID` | ✅ | Your bot's application/client ID (from step 3c) | — |
+| `GUILD_ID` | ✅ | Your Discord server ID (from step 3e) | — |
+| `STATUS_CHANNEL_ID` | ✅ | Channel ID where auto-shutdown warnings are posted (from step 3f) | — |
+| **Minecraft & systemd Configuration** | | | |
+| `MC_SERVICE` | ✅ | Your Minecraft server's systemd service name (e.g. `minecraft`) | — |
+| **RCON Connection** | | | |
+| `RCON_HOST` | ✅ | RCON host IP address (default: `127.0.0.1` if bot and server are on the same machine) | — |
+| `RCON_PORT` | ✅ | RCON port (default: `25575`) | `1–65535` |
+| `RCON_PASSWORD` | ✅ | RCON password from your `server.properties` — must match exactly | — |
+| **Auto-Stop Behavior** | | | |
+| `AUTO_STOP_MINUTES` | ✅ | Minutes of inactivity before the server auto-stops (default: `10`, set to `0` to disable) | `0` or `5–60` |
+| `WARNING_MINUTES` | ✅ | Minutes of inactivity before warning message is posted (default: `8`, **must be lower than `AUTO_STOP_MINUTES`**) | Below `AUTO_STOP_MINUTES` |
+| `CHECK_INTERVAL_MS` | ✅ | How often (in milliseconds) to check for idle timeout (default: `30000` = 30 seconds) | `10000–60000` |
+| `SAVEALL_DELAY_MS` | ✅ | Delay (in milliseconds) between `save-all` command and stop/restart to allow world data to flush (default: `1000`) | `500–3000` |
+| **Command Behavior** | | | |
+| `COMMAND_COOLDOWN_MS` | ✅ | Cooldown timeout (in milliseconds) between accepting start/stop/restart commands to prevent spam (default: `10000`, set to `0` to disable) | `2000–60000` |
+| **RCON Manager Tuning** | | | |
+| `RCON_KEEPALIVE_INTERVAL_MS` | ✅ | Interval (in milliseconds) for persistent RCON keepalive heartbeat (default: `45000`) | `30000–60000` |
+| `RCON_RECONNECT_INTERVAL_MS` | ✅ | Delay (in milliseconds) between reconnect attempts when RCON is down (default: `5000`) | `3000–10000` |
+| `RCON_STARTING_GRACE_PERIOD_MS` | ✅ | Duration (in milliseconds) to keep "Server Starting..." status after reconnect (default: `10000`) | `5000–20000` |
+| `RCON_COMMAND_TIMEOUT_MS` | ✅ | Timeout (in milliseconds) for individual RCON command calls (default: `8000`) | `5000–15000` |
+| `RCON_MAX_KEEPALIVE_FAILURES` | ✅ | Consecutive keepalive failures before forcing reconnect (default: `2`) | `1–3` |
+| `PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS` | ✅ | Interval (in milliseconds) to check systemd state while RCON is disconnected (default: `15000`) | `10000–30000` |
+| `RCON_REFUSED_LOG_INTERVAL_MS` | ✅ | Cadence (in milliseconds) for repeated "connection refused" warnings; `0` = first-only mode (default: `60000`) | `0` or `30000–120000` |
+| **Logging & Debugging** | | | |
+| `LOG_LEVEL` | ✅ | Global logging level (default: `INFO`) | `DEBUG`, `INFO`, `WARN`, `ERROR` |
+| `DEBUG_PERMS` | ✅ | Set to `"true"` to enable RBAC decision logging (default: `"false"`) | — |
+| **Optional Address Display** | | | |
+| `JAVA_EDITION_VERSION` | ☑️ | Java edition version string shown in `/address` (e.g. `1.21.4`) | — |
+| `MAIN_ADDRESS` | ☑️ | Your public server address shown in `/address` and `/status` (e.g. a playit.gg tunnel or port-forwarded address) | — |
+| `LOCAL_ADDRESS` | ☑️ | Your LAN/local network address shown in `/address` (e.g. `192.168.1.100:25565`) | — |
+
+**Legend:** ✅ = Required • ☑️ = Optional (shows "Not configured" if blank)
+
+**Key notes:** `WARNING_MINUTES` must be lower than `AUTO_STOP_MINUTES`. All `_MS` suffix values are in milliseconds. `AUTO_STOP_MINUTES=0` disables auto-stop entirely.
+
+<br>
+
+## Configure permissions (`config/permission-config.js`)
+
+RBAC (Role-Based Access Control) determines who can run which commands via `config/permission-config.js`.
+
+#### RBAC Configuration Reference
+
+| Structure | Description | Example |
 |---|---|---|
-| `TOKEN` | ✅ | Your Discord bot token (from step 3b) |
-| `CLIENT_ID` | ✅ | Your bot's application/client ID (from step 3c) |
-| `GUILD_ID` | ✅ | Your Discord server ID (from step 3e) |
-| `STATUS_CHANNEL_ID` | ✅ | Channel ID where auto-shutdown warnings are posted (from step 3f) |
-| `RCON_HOST` | ✅ | RCON host — `127.0.0.1` if bot and server are on the same machine |
-| `RCON_PORT` | ✅ | RCON port (default: `25575`) |
-| `RCON_PASSWORD` | ✅ | RCON password from your `server.properties` |
-| `MC_SERVICE` | ✅ | Your Minecraft server's systemd service name (e.g. `minecraft`) |
-| `AUTO_STOP_MINUTES` | ✅ | Minutes of inactivity before the server auto-stops (set to `0` to disable) |
-| `WARNING_MINUTES` | ✅ | Minutes of inactivity before the warning message is posted |
-| `CHECK_INTERVAL_MS` | ✅ | How often in milliseconds auto-stop checks run (e.g. `30000` = 30s). Legacy `CHECK_INTERVAL` is still accepted. |
-| `SAVEALL_DELAY_MS` | ✅ | Delay between `save-all` and stop/restart, to let world data flush cleanly |
-| `COMMAND_COOLDOWN_MS` | ✅ | Cooldown timeout in milliseconds between accepting start/stop/restart commands to prevent spam (set `0` to disable, not recommended) |
-| `PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS` | ✅ | How often presence fallback checks systemd while RCON is disconnected |
-| `RCON_KEEPALIVE_INTERVAL_MS` | ✅ | Interval for persistent RCON keepalive (`list`) |
-| `RCON_RECONNECT_INTERVAL_MS` | ✅ | Delay between reconnect attempts when RCON is down |
-| `RCON_STARTING_GRACE_PERIOD_MS` | ✅ | How long to keep "Server Starting..." after reconnect before live presence |
-| `RCON_COMMAND_TIMEOUT_MS` | ✅ | Timeout for individual RCON commands |
-| `RCON_MAX_KEEPALIVE_FAILURES` | ✅ | Consecutive keepalive failures before forcing reconnect |
-| `RCON_REFUSED_LOG_INTERVAL_MS` | ✅ | Refused-connection warning cadence; set `0` for "first log only" mode |
-| `LOG_LEVEL` | ✅ | Global logging level: `DEBUG`, `INFO`, `WARN`, or `ERROR` |
-| `JAVA_EDITION_VERSION` | ☑️ | Java edition version string shown in `/address` (e.g. `1.21.4`) |
-| `MAIN_ADDRESS` | ☑️ | Your public server address shown in `/address` and `/status` (e.g. a playit.gg tunnel or port-forwarded address) |
-| `LOCAL_ADDRESS` | ☑️ | Your LAN address shown in `/address` (e.g. `192.168.1.100:25565`) |
+| `owner` | Array of Discord user IDs with all permissions (no role required) | `["123456789012345678"]` |
+| `roles` | Map descriptive role names to Discord role IDs | `{ ADMIN: "111111111111111111", MOD: "222222222222222222" }` |
+| `commands` | Map permission strings to arrays of allowed role names | `{ "server.start": ["ADMIN", "MOD"], "server.restart": ["ADMIN"] }` |
+| `users` | Map Discord user IDs to permission strings (direct overrides, takes precedence) | `{ "444444444444444444": ["server.address"] }` |
 
-> ✅ = Required for the bot to function. ☑️ = Optional, but `/address` will show "Not configured" for anything left blank.
+#### Permission Strings & Defaults
+
+| Command | Permission | Default Roles |
+|---|---|---|
+| `/start` | `server.start` | `ADMIN`, `MOD` |
+| `/stop` | `server.stop` | `ADMIN`, `MOD` |
+| `/restart` | `server.restart` | `ADMIN` |
+| `/status` | `server.status` | `ADMIN`, `MOD` |
+| `/address` | `server.address` | `ADMIN`, `MOD` |
+| `/ping` | *(none)* | Everyone |
+
+#### Setting Up RBAC
+
+1. Get Discord role IDs: Settings → Advanced → Developer Mode, then right-click role → Copy Role ID
+2. Get user IDs: Right-click member → Copy User ID  
+3. Edit `config/permission-config.js` with your IDs and test with `DEBUG_PERMS="true"` in `.env`
+
+**Config template example (Already supplied, no need to copy this):**
+```javascript
+module.exports = {
+  owner: ["YOUR_USER_ID"],
+  roles: { ADMIN: "YOUR_ADMIN_ROLE_ID", MOD: "YOUR_MOD_ROLE_ID" },
+  commands: {
+    "server.start": ["ADMIN", "MOD"],
+    "server.stop": ["ADMIN", "MOD"],
+    "server.restart": ["ADMIN"]
+  },
+  users: {}
+};
+```
 
 **A note on auto-shutdown variables:** `WARNING_MINUTES` should always be set lower than `AUTO_STOP_MINUTES` — if it's equal or higher, no warning will be sent before the server stops. Setting `AUTO_STOP_MINUTES=0` disables auto-shutdown entirely.
 
@@ -381,13 +445,17 @@ Both services are now managed by systemd and will survive reboots.
 
 ```
 CraftDaemon/
+├── config/
+│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)
+│   └── .env.example           # Environment variable template
 ├── src/
 │   ├── index.js               # Bot entry point
 │   ├── register-commands.js   # Slash command registration (run once)
+│   │── events/                # Event Handler logic
+│   │── permissions/           # Permission Logic
 │   └── services/
 │       ├── rconmanager.js     # Persistent RCON connection lifecycle + command pipeline
 │       └── logger.js          # Structured logging utility used across bot modules
-├── .env.example               # Environment variable template
 ├── package.json
 └── README.md
 ```
@@ -633,6 +701,51 @@ Setting `AUTO_STOP_MINUTES=0` in your `.env` disables auto-shutdown entirely. `W
 
 ---
 
+## RBAC (Role-Based Access Control) Detailed Explanation
+
+<details>
+<summary><b>Click to expand — RBAC Docs</b></summary>
+
+CraftDaemon uses a **config-driven RBAC** layer for slash commands.
+
+- Commands declare a **permission string** (example: `server.restart`)
+- The bot checks a **single config file**: `config/permission-config.js`
+- The middleware decides **allow/deny** (no hardcoded role checks inside commands)
+- Discord's native permission system is **not** used for authorization decisions
+
+### How RBAC Works
+
+**1) Permission Strings**
+Each slash command requires a specific permission string, which is defined in the command handler and checked against the RBAC config.
+
+**2) Config-Driven Rules**
+The entire ruleset lives in `config/permission-config.js` — no permission logic is hardcoded in the bot itself. This makes it easy to audit and customize without touching code.
+
+**3) Hierarchy**
+- **Owners** always pass (checked first)
+- **User overrides** next (direct permission string grants)
+- **Role-based** last (checked if user has a specific Discord role)
+
+**4) Strict Fail**
+If a permission string isn't registered in the `commands` object, it is **denied** — not granted by default.
+
+### Requirements
+
+For role checks to work reliably, the bot must have:
+- **Gateway Intent**: `GuildMembers` enabled
+- **Discord Developer Portal**: "Server Members Intent" checkbox enabled
+
+CraftDaemon enables `GatewayIntentBits.GuildMembers` in `src/index.js` by default.
+
+### DM Restrictions
+
+- Permissions only work inside guilds (`interaction.inGuild()` must be true)
+- Direct messages (DMs) are denied regardless of permission config
+
+</details>
+
+---
+
 ## Customization
 
 CraftDaemon's codebase is intentionally small and readable, and most behavior is configurable via `.env`; code edits should be the exception. But if the default behavior doesn't quite fit your setup, you're 
@@ -642,6 +755,7 @@ through code and making small targeted changes.
 Some common customization points:
 
 - **Log verbosity** — set `LOG_LEVEL` in `.env` (`DEBUG`, `INFO`, `WARN`, `ERROR`).
+- **Role-Based Access Control (RBAC)** — configure owners/roles/command permissions in `config/permission-config.js` (see below).
 - **RCON retry/refusal logs** — tune `RCON_REFUSED_LOG_INTERVAL_MS` (`0` = first refusal only).
 - **RCON command timeout** — tune `RCON_COMMAND_TIMEOUT_MS` in `.env`.
 - **RCON reconnect/keepalive cadence** — tune `RCON_RECONNECT_INTERVAL_MS` and `RCON_KEEPALIVE_INTERVAL_MS`.
@@ -658,7 +772,7 @@ If something's broken and you suspect it might be a simple fix, take a look at t
 Run `node src/register-commands.js` and wait a few minutes. Make sure your bot invite URL includes the `applications.commands` scope, and that `CLIENT_ID` and `GUILD_ID` in your `.env` are correct.
 
 **`sudo: a terminal is required` or permission denied on systemctl**
-The sudoers rule isn't set up correctly, is configured for the wrong user, or the service name in the sudoers file doesn't match `MC_SERVICE`. Re-check step 7.
+The sudoers rule isn't set up correctly, is configured for the wrong user, or the service name in the sudoers file doesn't match `MC_SERVICE`. Re-check step 8.
 
 **`/status` shows RCON not responding right after `/start`**
 This is expected — Paper takes time to boot and open RCON. During this window, bot presence should show `Server Starting...` and RCON logs may show refused retries.

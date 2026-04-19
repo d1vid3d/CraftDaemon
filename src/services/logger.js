@@ -35,6 +35,7 @@ class Logger {
             RCON: LogColors.MAGENTA,
             AutoStop: LogColors.YELLOW,
             SystemD: LogColors.WHITE,
+            Permissions: LogColors.GREEN,
         };
     }
 
