@@ -235,7 +235,7 @@ Your `config/.env` file is how you configure CraftDaemon. It's a plain text file
 Copy the example file and fill it in:
 
 ```bash
-cp .env.example .env
+cp config/.env.example config/.env
 nano .env
 ```
 
@@ -318,18 +318,31 @@ RBAC (Role-Based Access Control) determines who can run which commands via `conf
 **Config template example (Already supplied, no need to copy this):**
 ```javascript
 module.exports = {
-  owner: ["YOUR_USER_ID"],
-  roles: { ADMIN: "YOUR_ADMIN_ROLE_ID", MOD: "YOUR_MOD_ROLE_ID" },
+  owner: ["123456789012345678"], // Replace with your Discord user ID(s) who should have owner-level access to all commands
+
+  // List your role IDs here with descriptive keys for easier reference in command permissions
+  roles: {
+    ADMIN: "111111111111111111",
+    MOD: "222222222222222222",
+  },
+  // Define command permissions by referencing the role keys above
   commands: {
+    
+    // Default CraftDaemon commands (adjust as desired)
     "server.start": ["ADMIN", "MOD"],
     "server.stop": ["ADMIN", "MOD"],
+    "server.status": ["ADMIN", "MOD"],
+    "server.address": ["ADMIN", "MOD"],
     "server.restart": ["ADMIN"]
   },
-  users: {}
+
+  // User-specific overrides (takes precedence over role-based permissions)
+  // Use case: If you want to add yourself or another user as an exception to the role-based permissions without giving them a specific role
+  users: {
+    "444444444444444444": ["logs.delete"] // user-specific override
+  }
 };
 ```
-
-**A note on auto-shutdown variables:** `WARNING_MINUTES` should always be set lower than `AUTO_STOP_MINUTES` — if it's equal or higher, no warning will be sent before the server stops. Setting `AUTO_STOP_MINUTES=0` disables auto-shutdown entirely.
 
 </details>
 
@@ -445,17 +458,34 @@ Both services are now managed by systemd and will survive reboots.
 
 ```
 CraftDaemon/
+├── assets/                    # Logo and static assets
 ├── config/
 │   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)
 │   └── .env.example           # Environment variable template
+├── patchnotes/                # Release notes (e.g. v1.2.0.md)
 ├── src/
-│   ├── index.js               # Bot entry point
-│   ├── register-commands.js   # Slash command registration (run once)
-│   │── events/                # Event Handler logic
-│   │── permissions/           # Permission Logic
+│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader
+│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)
+│   ├── commands/              # One file per slash command (data + permission + execute)
+│   │   ├── ping.js
+│   │   ├── start.js
+│   │   ├── stop.js
+│   │   ├── restart.js
+│   │   ├── address.js
+│   │   └── status.js
+│   ├── events/
+│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()
+│   ├── permissions/
+│   │   ├── index.js
+│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)
+│   │   └── resolver.js        # hasPermission() against permission-config.js
 │   └── services/
 │       ├── rconmanager.js     # Persistent RCON connection lifecycle + command pipeline
+│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)
+│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart
+│       ├── commandLock.js     # Cooldown lock for start/stop/restart
 │       └── logger.js          # Structured logging utility used across bot modules
+├── util/                      # Optional helpers (e.g. patchnotes broadcast)
 ├── package.json
 └── README.md
 ```

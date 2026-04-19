@@ -16,11 +16,10 @@ const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
 
 const { Client, Collection, GatewayIntentBits, ActivityType, PermissionFlagsBits } = require("discord.js");
-const { exec } = require("child_process");
-const { promisify } = require("util");
-const { permissionMiddleware } = require("./permissions/middleware");
 // RconManager replaces the old stateless rcon helper.
 // The raw `rcon` package is now an internal detail of RconManager only.
+const { setRconManager } = require("./services/rconQuery");
+const { getServiceState, stopServer } = require("./services/minecraftSystemd");
 const {
     RconManager,
     DEFAULT_KEEPALIVE_INTERVAL_MS,
@@ -34,13 +33,9 @@ const {
 // Import custom logger
 const { createLogger, mainLogger, LogLevel } = require("./services/logger");
 
-// Promisified exec for easier async/await usage
-const execAsync = promisify(exec);
-
 // Create category-specific loggers (Create your own categories as needed by calling createLogger with a custom name in your modules)
 const botLogger = createLogger('Bot');
 const discordLogger = createLogger('Discord');
-const minecraftLogger = createLogger('Minecraft');
 const autoStopLogger = createLogger('AutoStop');
 const systemdLogger = createLogger('SystemD');
 
@@ -187,10 +182,6 @@ const CHECK_INTERVAL_MS = getEnvInt(
     { min: 5_000, max: 300_000 }
 );
 const PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS = getEnvInt("PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS", 15_000, { min: 5_000, max: 120_000 });
-const SAVEALL_DELAY_MS = getEnvInt("SAVEALL_DELAY_MS", 1_000, { min: 0, max: 30_000 });
-
-const COMMAND_COOLDOWN_MS = getEnvInt("COMMAND_COOLDOWN_MS", 10_000, { min: 2_000, max: 60_000 });
-
 const RCON_KEEPALIVE_INTERVAL_MS = getEnvInt("RCON_KEEPALIVE_INTERVAL_MS", DEFAULT_KEEPALIVE_INTERVAL_MS, { min: 10_000, max: 300_000 });
 const RCON_RECONNECT_INTERVAL_MS = getEnvInt("RCON_RECONNECT_INTERVAL_MS", DEFAULT_RECONNECT_INTERVAL_MS, { min: 1_000, max: 60_000 });
 const RCON_STARTING_GRACE_PERIOD_MS = getEnvInt("RCON_STARTING_GRACE_PERIOD_MS", DEFAULT_STARTING_GRACE_PERIOD_MS, { min: 0, max: 120_000 });
@@ -201,11 +192,6 @@ const RCON_REFUSED_LOG_INTERVAL_MS = getEnvInt("RCON_REFUSED_LOG_INTERVAL_MS", D
 // ---- Runtime state ---------------------------------------------
 let emptySince   = null;
 let warningSent  = false;
-
-// Command lock state for state-changing commands
-let commandLock = false;
-let commandLockTimeout = null;
-let lastCommand = '';
 
 // rconManager is declared here so every part of this file can reference it,
 // but it is only *initialised* inside client.once("clientReady") - after the
@@ -225,154 +211,8 @@ botLogger.info(`Main address: ${MAIN_ADDRESS || "NOT SET"}`);
 botLogger.info(`RCON keepalive/reconnect/timeout: ${RCON_KEEPALIVE_INTERVAL_MS}ms / ${RCON_RECONNECT_INTERVAL_MS}ms / ${RCON_COMMAND_TIMEOUT_MS}ms`);
 botLogger.info("=============================================");
 
-// ================================================================
-//  systemd helpers
-// ================================================================
-
-// Returns the raw systemd active state:
-//"active" | "inactive" | "activating" | "deactivating" | "failed" | "unknown"
-
-async function getServiceState() {
-    try {
-        const { stdout } = await execAsync(
-            `systemctl is-active ${MC_SERVICE}`
-        );
-        return stdout.trim();
-    } catch (err) {
-        // is-active exits non-zero when not active; stdout still contains the state
-        return (err.stdout || "unknown").trim();
-    }
-}
-
-// Returns true only when the service is fully active
-async function isServerRunning() {
-    return (await getServiceState()) === "active";
-}
-
-// Runs systemctl start and resolves when the command returns
-async function startServer() {
-    await execAsync(`sudo systemctl start ${MC_SERVICE}`);
-}
-
-// Send /save-all command via RCON to save world data (to prevent unexpected
-// data loss on shutdown/restart). Called before stopServer() and restartServer().
-// Uses rconSend() (backed by the persistent manager) rather than the old
-// stateless rconCommand() helper that was removed in v1.2.0.
-async function saveAll() {
-    try {
-        minecraftLogger.info("Sending /save-all command via RCON...");
-        const res = await rconSend("save-all");
-        if (res !== null) {
-            minecraftLogger.info(`Save-all response: ${res}`);
-        } else {
-            minecraftLogger.warn("Save-all returned no response (RCON may not be connected). Continuing with shutdown.");
-        }
-    } catch (err) {
-        minecraftLogger.error(`Failed to send save-all: ${err.message}`);
-        // Don't throw — continue with shutdown even if save fails.
-    }
-}
-
-// Runs systemctl stop and resolves when the command returns
-async function stopServer() {
-    await saveAll();
-    // Give the server a moment to process the save command.
-    await new Promise(resolve => setTimeout(resolve, SAVEALL_DELAY_MS));
-    await execAsync(`sudo systemctl stop ${MC_SERVICE}`);
-}
-
-// Runs systemctl restart and resolves when the command returns
-async function restartServer() {
-    await saveAll();
-    // Give the server a moment to process the save command.
-    await new Promise(resolve => setTimeout(resolve, SAVEALL_DELAY_MS));
-    await execAsync(`sudo systemctl restart ${MC_SERVICE}`);
-}
-
-// Parses the ActiveEnterTimestamp from systemctl and returns uptime
-// as a formatted string like "2h 15m 30s", or "N/A" if unavailable.
-async function getServiceUptime() {
-    try {
-        const { stdout } = await execAsync(
-            `sudo systemctl show ${MC_SERVICE} --property=ActiveEnterTimestamp`
-        );
-        // stdout: "ActiveEnterTimestamp=Wed 2025-01-01 12:00:00 UTC"
-        const value = stdout.replace("ActiveEnterTimestamp=", "").trim();
-        if (!value) return "N/A";
-
-        const startDate = new Date(value);
-        if (isNaN(startDate.getTime())) return "N/A";
-
-        const totalSeconds = Math.floor((Date.now() - startDate.getTime()) / 1000);
-        if (totalSeconds < 0) return "N/A";
-
-        const hours   = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-
-        return `${hours}h ${minutes}m ${seconds}s`;
-    } catch {
-        return "N/A";
-    }
-}
-
-// ================================================================
-//  RCON helpers
-//  NOTE: Low-level rcon helpers (rconCommand, cleanMinecraftFormatting,
-//  getOnlinePlayerCount, etc.) have been removed in v1.2.0.
-//  All RCON I/O now goes through the persistent `rconManager` instance
-//  defined in the clientReady handler below.
-//
-//  Thin wrappers are kept here so the /status command can issue ad-hoc
-//  commands via the manager without duplicating the send/await pattern.
-// ================================================================
-
-/**
- * Sends an RCON command through the persistent manager and returns the
- * cleaned response string.  Returns null (never throws) so callers can
- * safely use it inside Promise.allSettled() chains.
- *
- * @param {string} cmd
- * @returns {Promise<string|null>}
- */
-async function rconSend(cmd) {
-    try {
-        return await rconManager.sendCommand(cmd);
-    } catch (err) {
-        minecraftLogger.warn(`rconSend("${cmd}") failed: ${err.message}`);
-        return null;
-    }
-}
-
-/**
- * Fetches the current TPS via RCON and strips any residual formatting codes.
- * @returns {Promise<string|null>}
- */
-async function getTps() {
-    const res = await rconSend("tps");
-    return res ? res.replace(/§./g, "").trim() : null;
-}
-
-/**
- * Fetches the full "list" response (player names + count) via RCON.
- * @returns {Promise<string|null>}
- */
-async function getPlayerList() {
-    return rconSend("list");
-}
-
-/**
- * Fetches the full "list" response and the measured command round-trip time.
- * @returns {Promise<{ players: string|null, ping: number|null }>}
- */
-async function getPlayerListWithPing() {
-    const start = Date.now();
-    const players = await getPlayerList();
-    return {
-        players,
-        ping: players !== null ? Date.now() - start : null,
-    };
-}
+// systemd + RCON query helpers live in `./services/minecraftSystemd` and
+// `./services/rconQuery` (wired to `rconManager` after login).
 
 // ================================================================
 //  Discord client
@@ -390,6 +230,8 @@ const client = new Client({
 // ================================================================
 //  Commands (config-driven RBAC expects command objects)
 // ================================================================
+
+// Load commands from the commands directory
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
@@ -587,6 +429,7 @@ client.once("clientReady", async () => {
         maxKeepaliveFailures: RCON_MAX_KEEPALIVE_FAILURES,
         refusedLogIntervalMs: RCON_REFUSED_LOG_INTERVAL_MS,
     });
+    setRconManager(rconManager);
 
     // ── Presence event wiring ────────────────────────────────
     //  Each handler is a single setPresence call, keeping presence
@@ -679,370 +522,7 @@ client.once("clientReady", async () => {
     void setDisconnectedPresenceFromSystemd();
 });
 
-// ================================================================
-//  Slash command handler
-// ================================================================
-
-/**
- * Acquires a command execution lock to prevent spam and ensure sequential processing.
- * Implements a cooldown timeout mechanism that prevents multiple state-changing commands
- * (start, stop, restart) from executing simultaneously, which could cause conflicts or
- * race conditions.
- *
- * @param {Object} interaction - The Discord interaction object from the command
- * @param {string} commandName - The name of the command being executed (for logging)
- * @returns {Promise<boolean>} - true if lock is already held (command rejected), false if lock acquired (command may proceed)
- */
-async function acquireLock(interaction, commandName) {
-    // If another command is still processing, reject this one and inform the user
-    if (commandLock) {
-        await interaction.reply({
-            embeds: [{
-                title: "⏳ Command Busy",
-                description: `Previous \`${lastCommand}\` command is still processing. Please wait...`,
-                color: 0xffcc00,
-            }],
-            ephemeral: true,
-        });
-        return true;  // locked — command rejected
-    }
-
-    // Lock acquired: prevent other commands from executing
-    commandLock = true;
-    lastCommand = commandName;
-
-    // Set a timeout to automatically release the lock after COMMAND_COOLDOWN_MS.
-    // This prevents the bot from being permanently locked if a command fails or hangs.
-    commandLockTimeout = setTimeout(() => {
-        commandLock = false;
-        commandLockTimeout = null;
-    }, COMMAND_COOLDOWN_MS);
-
-    return false;  // acquired — command may proceed
-}
-
-function releaseLock() {
-    if (commandLockTimeout) {
-        clearTimeout(commandLockTimeout);
-        commandLockTimeout = null;
-    }
-    commandLock = false;
-    lastCommand = '';
-}
-
-client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
-
-    // If this command is handled by the new RBAC-backed command system,
-    // let `src/events/interactionCreate.js` run it (with middleware).
-    if (client.commands?.has(interaction.commandName)) return;
-
-    // RBAC for legacy inline commands in this file.
-    const legacyPermissionByCommand = {
-        ping: null, // no permission required
-        start: "server.start",
-        stop: "server.stop",
-        restart: "server.restart",
-        status: "server.status",
-        address: "server.address",
-    };
-    const legacyPermission = legacyPermissionByCommand[interaction.commandName];
-    if (legacyPermission !== undefined) {
-        const allowed = await permissionMiddleware(interaction, { permission: legacyPermission });
-        if (!allowed) return;
-    }
-
-    // ── PING ───────────────────────────────────────────────────
-    if (interaction.commandName === "ping") {
-        discordLogger.info(`Ping command from ${interaction.user.tag}`);
-        const sent = await interaction.reply({ 
-            embeds: [{
-                title: "🏓 Pinging...",
-                description: "Measuring latency...",
-                color: 0x5865f2,
-            }],
-            fetchReply: true 
-        });
-        const latency = sent.createdTimestamp - interaction.createdTimestamp;
-        return interaction.editReply({
-            embeds: [{
-                title: "🏓 Pong!",
-                description: `Bot latency: **${latency}ms**`,
-                color: 0x5865f2,
-            }],
-        });
-    }
-
-    // ── START ──────────────────────────────────────────────────
-    if (interaction.commandName === "start") {
-        systemdLogger.info(`Start command from ${interaction.user.tag}`);
-        if (await acquireLock(interaction, 'start')) return;
-        const state = await getServiceState();
-
-        if (state === "active") {
-            return interaction.reply({
-                embeds: [{
-                    title: "🖥️ Server Status",
-                    description: "🟢 Server is already running.",
-                    color: 0x00ff66,
-                }],
-            });
-        }
-        if (state === "activating") {
-            return interaction.reply({
-                embeds: [{
-                    title: "🖥️ Server Status",
-                    description: "🟡 Server is already starting up, give it a moment.",
-                    color: 0xffcc00,
-                }],
-            });
-        }
-
-        await interaction.reply({
-            embeds: [{
-                title: "▶️ Starting Server",
-                description: "Starting server… (ETA ~30 seconds)",
-                color: 0x5865f2,
-            }],
-        });
-        try {
-            await startServer();
-            releaseLock();
-            return interaction.followUp({
-                embeds: [{
-                    title: "✅ Start Command Sent",
-                    description: "Use `/status` to monitor startup.",
-                    color: 0x00ff66,
-                }],
-            });
-        } catch (err) {
-            systemdLogger.error(`Start command failed: ${err.message}`);
-            releaseLock();
-            return interaction.followUp({
-                embeds: [{
-                    title: "❌ Start Failed",
-                    description: "Failed to start the server. Check bot sudo permissions.",
-                    color: 0xff0000,
-                }],
-            });
-        }
-    }
-
-    // ── STOP ───────────────────────────────────────────────────
-    if (interaction.commandName === "stop") {
-        systemdLogger.info(`Stop command from ${interaction.user.tag}`);
-        if (await acquireLock(interaction, 'stop')) return;
-        const running = await isServerRunning();
-
-        if (!running) {
-            return interaction.reply({
-                embeds: [{
-                    title: "🖥️ Server Status",
-                    description: "🔴 Server is not running.",
-                    color: 0xff0000,
-                }],
-            });
-        }
-        
-        await interaction.reply({
-            embeds: [{
-                title: "🛑 Stopping Server",
-                description: "Stopping server…",
-                color: 0xff4d00,
-            }],
-        });
-        try {
-            await stopServer();
-            return interaction.followUp({
-                embeds: [{
-                    title: "✅ Server Stopped",
-                    description: "Server has been stopped successfully.",
-                    color: 0xff0000,
-                }],
-            });
-        } catch (err) {
-            systemdLogger.error(`Stop command failed: ${err.message}`);
-            return interaction.followUp({
-                embeds: [{
-                    title: "❌ Stop Failed",
-                    description: "Failed to stop the server. Check bot sudo permissions.",
-                    color: 0xff0000,
-                }],
-            });
-        }
-    }
-
-    // ── RESTART ────────────────────────────────────────────────
-    if (interaction.commandName === "restart") {
-        systemdLogger.info(`Restart command from ${interaction.user.tag}`);
-        if (await acquireLock(interaction, 'restart')) return;
-        const running = await isServerRunning();
-
-        if (!running) {
-            return interaction.reply({
-                embeds: [{
-                    title: "🖥️ Server Status",
-                    description: "🔴 Server is not running, use `/start` instead.",
-                    color: 0xff0000,
-                }],
-            });
-        }
-
-        await interaction.reply({
-            embeds: [{
-                title: "🔄 Restarting Server",
-                description: "Restarting server… (this takes ~30 seconds)",
-                color: 0x5865f2,
-            }],
-        });
-        try {
-            await restartServer();
-            return interaction.followUp({
-                embeds: [{
-                    title: "✅ Restart Command Sent",
-                    description: "Use `/status` to monitor the restart.",
-                    color: 0x00ff66,
-                }],
-            });
-        } catch (err) {
-            systemdLogger.error(`Restart command failed: ${err.message}`);
-            return interaction.followUp({
-                embeds: [{
-                    title: "❌ Restart Failed",
-                    description: "Failed to restart the server. Check bot sudo permissions.",
-                    color: 0xff0000,
-                }],
-            });
-        }
-    }
-
-    // ── ADDRESS ────────────────────────────────────────────────
-    if (interaction.commandName === "address") {
-        discordLogger.info(`Address command from ${interaction.user.tag}`);
-        if (!MAIN_ADDRESS) {
-            return interaction.reply({
-                embeds: [{
-                    title: "⚠️ Server Address Not Configured",
-                    description: "Set `MAIN_ADDRESS` in the bot's `.env` file.",
-                    color: 0xffcc00,
-                }],
-            });
-        }
-        return interaction.reply({
-            embeds: [{
-                title: "🌐 Server Address",
-                description: "Share these addresses with your friends to let them join!",
-                color: 0x5865f2,
-                fields: [
-                    { name: "Main Address", value: `\`${MAIN_ADDRESS}\``, inline: false },
-                    { name: "Java Edition", value: `\`${process.env.JAVA_EDITION_VERSION || "Not configured"}\``, inline: true },
-                    { name: "LAN Address", value: `\`${process.env.LOCAL_ADDRESS || "Not configured"}\``, inline: true },
-                ],
-            }],
-        });
-    }
-
-    // ── STATUS ─────────────────────────────────────────────────
-    if (interaction.commandName === "status") {
-        systemdLogger.info(`Status command from ${interaction.user.tag}`);
-        await interaction.deferReply();
-
-        const state = await getServiceState();
-
-        // Offline / failed
-        if (state !== "active" && state !== "activating") {
-            systemdLogger.warn(`Server offline, state: ${state}`);            
-            return interaction.editReply({
-                embeds: [{
-                    title: "🖥️ Server Status",
-                    description: `🔴 **Server is OFFLINE**\n\`systemd state: ${state}\``,
-                    color: 0xff0000,
-                }],
-            });
-        }
-
-        // Still starting up
-        if (state === "activating") {
-            systemdLogger.info("Server is activating, RCON not ready yet");           
-            return interaction.editReply({
-                embeds: [{
-                    title: "🖥️ Server Status",
-                    description: "🟡 **Server is STARTING UP…**\nRCON will be available shortly.",
-                    color: 0xffcc00,
-                }],
-            });
-        }
-
-        // Active — gather stats
-        // [STATUS QUERY] Starting stat collection
-        const statsStartTime = Date.now();
-        const uptimeText = await getServiceUptime();
-
-        let tps = null, players = null, ping = null, rconOk = false;
-
-        const [tpsRes, playersWithPingRes] = await Promise.allSettled([
-            getTps(),
-            getPlayerListWithPing(),
-        ]);
-
-        if (tpsRes.status     === "fulfilled") tps     = tpsRes.value;
-        if (playersWithPingRes.status === "fulfilled") {
-            players = playersWithPingRes.value.players;
-            ping = playersWithPingRes.value.ping;
-        }
-
-        if (tpsRes.status === "rejected") minecraftLogger.warn(`TPS query failed: ${tpsRes.reason.message}`);
-        if (playersWithPingRes.status === "rejected") minecraftLogger.warn(`Player list query failed: ${playersWithPingRes.reason.message}`);
-        rconOk = !!(tps || players);
-        
-        // [STATUS QUERY] Log completed stats with query time
-        const statsEndTime = Date.now();
-        const queryTime = statsEndTime - statsStartTime;
-        systemdLogger.debug(`Status query completed in ${queryTime}ms | TPS: ${tps || "N/A"} | Players Online: ${players ? players.split(":").pop().trim().substring(0, 40) : "N/A"} | RCON RTT: ${ping || "N/A"}ms`);
-
-        // Parse player line
-        let playersLine = "N/A";
-        if (players) {
-            const match = players.match(/There are (\d+) of a max of (\d+)/i);
-            if (match) {
-                const names = players.replace(/^There are .*?:\s*/i, "").trim();
-                playersLine = `${match[1]} / ${match[2]}`;
-                if (names) playersLine += `\n${names}`;
-            } else {
-                playersLine = players;
-            }
-        }
-
-        const embed = {
-            title: "🖥️ Server Status",
-            color: rconOk ? 0x00ff66 : 0xffa500,
-            description: rconOk
-                ? "🟢 **Server is RUNNING**"
-                : "🟠 **Server is running, but RCON is not responding yet.**",
-            fields: [
-                { name: "Uptime", value: `⏱️ ${uptimeText}`, inline: false },
-            ],
-        };
-
-        if (rconOk) {
-            embed.fields.push({ name: "TPS",             value: `📉 ${tps}`,                                    inline: false });
-            embed.fields.push({ name: "Players",         value: `👥 ${playersLine}`,                            inline: false });
-            embed.fields.push({ name: "Ping (RCON RTT)", value: ping !== null ? `📡 ${ping} ms` : "N/A",        inline: false });
-            if (MAIN_ADDRESS) {
-                embed.fields.push({ name: "Address", value: `🌐 \`${MAIN_ADDRESS}\``, inline: false });
-            }
-        } else {
-            embed.fields.push({
-                name: "RCON",
-                value: "⚠️ RCON did not respond. The server may still be booting — try again in a moment.",
-                inline: false,
-            });
-        }
-
-        return interaction.editReply({ embeds: [embed] });
-    }
-});
-
-// ================================================================
+// Slash commands live in `./commands` and are dispatched from
+// `./events/interactionCreate.js` (RBAC via `permissionMiddleware`).
 
 client.login(process.env.TOKEN);
