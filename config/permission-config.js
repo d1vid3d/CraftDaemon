@@ -21,7 +21,8 @@ module.exports = {
     "server.stop": ["ADMIN", "MOD"],
     "server.status": ["ADMIN", "MOD"],
     "server.address": ["ADMIN", "MOD"],
-    "server.restart": ["ADMIN"]
+    "server.restart": ["ADMIN"],
+    "bot.checkUpdate": ["ADMIN", "MOD"],
   },
 
   // User-specific overrides (takes precedence over role-based permissions)

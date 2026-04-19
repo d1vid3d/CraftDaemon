@@ -69,6 +69,7 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 | `/status` | Shows a full status embed: systemd state, uptime, TPS, player list, and RCON ping |
 | `/address` | Shows the server's connection addresses (main address, LAN, Java version) |
 | `/ping` | Checks the bot's Discord API latency |
+| `/checkupdate` | Checks GitHub for a newer release vs `package.json` and posts an announcement embed when appropriate (see `UPDATE_*` env vars) |
 
 ### Bot Responses (Brief showcase)
 
@@ -236,12 +237,12 @@ Copy the example file and fill it in:
 
 ```bash
 cp config/.env.example config/.env
-nano .env
+nano config/.env
 ```
 
 ## Environment Variables Reference
 
-Your `.env` file contains all configuration for CraftDaemon. It's placed in the project root and loaded automatically on startup via `dotenv`. Never commit it to version control — it contains credentials.
+Your environment file is **`config/.env`** (same path the bot and `register-commands.js` load via `dotenv`). Never commit it to version control — it contains credentials.
 
 | Variable | Required | Description | Suggested Range |
 |---|---|---|---|
@@ -278,10 +279,14 @@ Your `.env` file contains all configuration for CraftDaemon. It's placed in the 
 | `JAVA_EDITION_VERSION` | ☑️ | Java edition version string shown in `/address` (e.g. `1.21.4`) | — |
 | `MAIN_ADDRESS` | ☑️ | Your public server address shown in `/address` and `/status` (e.g. a playit.gg tunnel or port-forwarded address) | — |
 | `LOCAL_ADDRESS` | ☑️ | Your LAN/local network address shown in `/address` (e.g. `192.168.1.100:25565`) | — |
+| **GitHub release update notifications** | | | |
+| `UPDATE_NOTIFY_CHANNEL_ID` | ☑️ | Text or announcement channel ID for new-release embeds. If unset, invalid for a guild, or missing permissions, the bot falls back to the server system channel, then the first suitable text channel | — |
+| `UPDATE_SERVICE_DEBUG` | ☑️ | Set to `"true"` to enable mock testing with `UPDATE_SERVICE_FORCE_LATEST` | — |
+| `UPDATE_SERVICE_FORCE_LATEST` | ☑️ | Semver string (e.g. `9.9.0`) treated as GitHub “latest” when `UPDATE_SERVICE_DEBUG` is true; skips the GitHub request for version comparison | — |
 
 **Legend:** ✅ = Required • ☑️ = Optional (shows "Not configured" if blank)
 
-**Key notes:** `WARNING_MINUTES` must be lower than `AUTO_STOP_MINUTES`. All `_MS` suffix values are in milliseconds. `AUTO_STOP_MINUTES=0` disables auto-stop entirely.
+**Key notes:** `WARNING_MINUTES` must be lower than `AUTO_STOP_MINUTES`. All `_MS` suffix values are in milliseconds. `AUTO_STOP_MINUTES=0` disables auto-stop entirely. The bot targets **Node.js 18+** (`package.json` `engines`) for built-in `fetch` (GitHub update checks) and current `discord.js` releases.
 
 <br>
 
@@ -307,6 +312,7 @@ RBAC (Role-Based Access Control) determines who can run which commands via `conf
 | `/restart` | `server.restart` | `ADMIN` |
 | `/status` | `server.status` | `ADMIN`, `MOD` |
 | `/address` | `server.address` | `ADMIN`, `MOD` |
+| `/checkupdate` | `bot.checkUpdate` | `ADMIN`, `MOD` |
 | `/ping` | *(none)* | Everyone |
 
 #### Setting Up RBAC
@@ -472,14 +478,18 @@ CraftDaemon/
 │   │   ├── stop.js
 │   │   ├── restart.js
 │   │   ├── address.js
-│   │   └── status.js
+│   │   ├── status.js
+│   │   └── checkUpdate.js
 │   ├── events/
 │   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()
 │   ├── permissions/
 │   │   ├── index.js
 │   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)
 │   │   └── resolver.js        # hasPermission() against permission-config.js
+│   ├── utils/
+│   │   └── storage.js         # JSON persistence for per-guild update-notification state
 │   └── services/
+│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery
 │       ├── rconmanager.js     # Persistent RCON connection lifecycle + command pipeline
 │       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)
 │       ├── minecraftSystemd.js # systemctl + save-all before stop/restart
@@ -799,7 +809,7 @@ If something's broken and you suspect it might be a simple fix, take a look at t
 ## Troubleshooting
 
 **Slash commands don't appear in Discord**
-Run `node src/register-commands.js` and wait a few minutes. Make sure your bot invite URL includes the `applications.commands` scope, and that `CLIENT_ID` and `GUILD_ID` in your `.env` are correct.
+Run `node src/register-commands.js` and wait a few minutes. Make sure your bot invite URL includes the `applications.commands` scope, and that `CLIENT_ID` and `GUILD_ID` in `config/.env` are correct.
 
 **`sudo: a terminal is required` or permission denied on systemctl**
 The sudoers rule isn't set up correctly, is configured for the wrong user, or the service name in the sudoers file doesn't match `MC_SERVICE`. Re-check step 8.
@@ -811,7 +821,7 @@ This is expected — Paper takes time to boot and open RCON. During this window,
 TPS is read via the `tps` command which only exists on Paper. Vanilla servers will show N/A here.
 
 **`RCON_PASSWORD is not set` error**
-Your `.env` file is missing or not being loaded. Make sure it exists in the project root and that `dotenv` is installed (`npm install`).
+Your `config/.env` file is missing or not being loaded. Make sure it exists next to `config/.env.example` and that `dotenv` is installed (`npm install`).
 
 **Auto-shutdown isn't triggering**
 Check that `AUTO_STOP_MINUTES` is not set to `0` in your `.env`, and that `WARNING_MINUTES` is set lower than `AUTO_STOP_MINUTES`.

@@ -32,6 +32,7 @@ const {
 
 // Import custom logger
 const { createLogger, mainLogger, LogLevel } = require("./services/logger");
+const { init: initUpdateService } = require("./services/updateService");
 
 // Create category-specific loggers (Create your own categories as needed by calling createLogger with a custom name in your modules)
 const botLogger = createLogger('Bot');
@@ -520,6 +521,8 @@ client.once("clientReady", async () => {
 
     // Prime presence immediately on startup before the first manager events.
     void setDisconnectedPresenceFromSystemd();
+
+    initUpdateService(client);
 });
 
 // Slash commands live in `./commands` and are dispatched from

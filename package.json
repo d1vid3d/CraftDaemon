@@ -10,9 +10,13 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "discord.js": "^14.26.2",
     "dotenv": "^16.6.1",
-    "rcon": "^1.1.0"
+    "rcon": "^1.1.0",
+    "semver": "^7.7.2"
   }
 }
