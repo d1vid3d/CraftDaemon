@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CraftDaemon - Discord Bot for Minecraft Servers</title>
+  <link rel="icon" type="image/png" href="../assets/logo/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles/index-styles.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#">
+      <img class="nav-logo-img" src="../assets/logo/logo-dark.svg" alt="CraftDaemon" />
+    </a>
+    <button class="hamburger-btn" id="hamburger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#showcase">Showcase</a></li>
+      <li><a href="#commands">Commands</a></li>
+      <li><a href="#setup">Setup</a></li>
+      <li><a href="./documentation.html">Docs</a></li>
+      <li><a id="release-badge" class="nav-release-badge" href="https://github.com/d1vid3d/CraftDaemon/releases" target="_blank">
+        <span class="release-dot"></span>
+        <span id="release-badge-text" class="loading-text">Current Release: v.X.Y.Z</span>
+      </a></li>
+      <li><a href="https://github.com/d1vid3d/CraftDaemon" class="nav-cta">GitHub →</a></li>
+    </ul>
+  </nav>
+  
+  <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+    <a href="#features">Features</a>
+    <a href="#showcase">Showcase</a>
+    <a href="#commands">Commands</a>
+    <a href="#setup">Setup</a>
+    <a href="./documentation.html">Docs</a>
+    <a id="release-badge-mobile" class="nav-release-badge" href="https://github.com/d1vid3d/CraftDaemon/releases" target="_blank">
+      <span class="release-dot"></span>
+      <span class="loading-text">Current Release: v.X.Y.Z</span>
+    </a>
+    <a href="https://github.com/d1vid3d/CraftDaemon" class="nav-cta">GitHub →</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-blob2"></div>
+
+    <div class="hero-logo">
+      <img src="../assets/logo/logo-dark.svg" alt="CraftDaemon" />
+    </div>
+
+    <p class="hero-eyebrow">Self-Hosted · Open Source · systemd + RCON</p>
+
+    <p class="hero-desc">
+      Heya! CraftDaemon is a Discord bot you run yourself, made for folks who like to get their hands dirty with Linux servers. It hooks into <strong>systemd</strong> and <strong>RCON</strong> so you can manage your Minecraft server straight from Discord, no more SSHing in just to restart or check status.
+    </p>
+
+    <div class="hero-badges">
+      <span class="badge badge-green">Node.js 22</span>
+      <span class="badge badge-blurple">Discord.js v14</span>
+      <span class="badge badge-yellow">Linux / systemd</span>
+      <span class="badge badge-red">Paper Recommended</span>
+      <span class="badge badge-green">MIT License</span>
+    </div>
+
+    <div class="hero-actions">
+      <a href="https://github.com/d1vid3d/CraftDaemon" class="btn-primary">★ View on GitHub</a>
+      <a href="#setup" class="btn-secondary">Setup Guide ↓</a>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE DIAGRAM -->
+  <section class="diagram-section">
+    <p class="section-label">How it works</p>
+    <div class="diagram-box reveal">
+      <div class="diagram-titlebar">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <span>architecture.txt</span>
+      </div>
+      <div class="diagram-body">
+        <div><span class="d-user">Discord User</span></div>
+        <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;&nbsp;│</span></div>
+        <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;&nbsp;│ &nbsp;</span><span class="d-cmd">slash command</span><span class="d-comment"> &nbsp;(/start, /stop, /status…)</span></div>
+        <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;&nbsp;▼</span></div>
+        <div><span class="d-bot">CraftDaemon Bot</span><span class="d-arrow"> ──── </span><span class="d-sys">systemctl start/stop/restart</span><span class="d-arrow"> ────▶ &nbsp;</span><span class="d-mc">Minecraft (systemd)</span></div>
+        <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;(systemd) &nbsp; &nbsp;◀─── </span><span class="d-rcon">RCON 127.0.0.1:25575</span><span class="d-arrow"> ──────────</span></div>
+        <br>
+        <div><span class="d-comment"># Two systemd services on your Linux host</span></div>
+        <div><span class="d-sys">craftdaemon.service</span><span class="d-comment"> &nbsp;&nbsp;&nbsp;→ The Discord bot</span></div>
+        <div><span class="d-mc">minecraft.service &nbsp; &nbsp;</span><span class="d-comment"> &nbsp;&nbsp;&nbsp;→ Your Paper server</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- FEATURES -->
+  <section class="features-section" id="features">
+    <div class="section-header reveal">
+      <p class="section-label">What you get</p>
+      <h2>All the essentials.<br>No bloat.</h2>
+      <p>CraftDaemon is small, readable, and ready to do whatever on. It’s just code you can grok.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <span class="feature-icon">⚙️</span>
+        <h3>systemd-Native Control</h3>
+        <p>Let systemd do what it does best. The bot just tells systemd to start/stop/restart, so you get clean logs, proper restarts, and no weird background scripts.</p>
+        <span class="feature-tag tag-yellow">systemctl</span>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">🔌</span>
+        <h3>Persistent RCON Manager</h3>
+        <p>One RCON connection, kept alive and healthy. Handles reconnects and queues commands for you. Live TPS, player count, and latency.</p>
+        <span class="feature-tag tag-blurple">RCON</span>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">🟢</span>
+        <h3>Smart Bot Presence</h3>
+        <p>Bot status updates in real time, so your Discord always shows if the server is offline, starting, or online (with player count). All event-driven.</p>
+        <span class="feature-tag tag-blurple">Discord</span>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">💤</span>
+        <h3>Auto-Shutdown</h3>
+        <p>Empty server? The bot can shut it down after a timeout (with a warning in Discord first). Don’t want it? Flip one env var and it’s off.</p>
+        <span class="feature-tag tag-green">configurable</span>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">🔐</span>
+        <h3>Config-Driven RBAC</h3>
+        <p>Permissions are just code. Map Discord roles or user IDs to commands in <span class="ic ic-g">permission-config.js</span>. Defaults to strict, but you’re in control.</p>
+        <span class="feature-tag tag-green">security</span>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">📡</span>
+        <h3>Update Notifications</h3>
+        <p>Run <span class="ic ic-b">/checkupdate</span> to see if there’s a new release. If there is, you’ll get a Discord embed with the changelog.</p>
+        <span class="feature-tag tag-blurple">GitHub</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- SHOWCASE -->
+  <section class="showcase-section" id="showcase">
+    <div class="section-header reveal">
+      <p class="section-label">In action</p>
+      <h2>See it for yourself.</h2>
+      <p>A look at CraftDaemon's Discord embeds and bot presence in a real server.</p>
+      <p style="margin-top: 1.5rem; color: var(--green-bright); font-weight: 600; font-size: 0.9rem;">And more planned to come! 🚀</p>
+    </div>
+    <div class="showcase-grid">
+
+      <div class="showcase-card reveal">
+        <div class="showcase-img-wrap">
+          <img src="../assets/pages-assets/status-example.png" alt="/status embed"
+            onerror="this.parentElement.innerHTML='<div class=\'showcase-placeholder\'><span class=\'showcase-placeholder-icon\'>📊</span><span class=\'showcase-placeholder-text\'>STATUS EMBED</span></div>'" />
+        </div>
+        <div class="showcase-caption">
+          <span class="showcase-label">⚡ /status</span>
+          <h4>Full Status Embed</h4>
+          <p>Shows systemd state, uptime, live TPS, current player count and names, and RCON round-trip latency, all in one embed.</p>
+        </div>
+      </div>
+
+      <div class="showcase-card reveal">
+        <div class="showcase-img-wrap">
+          <img src="../assets/pages-assets/address-example.png" alt="/address embed"
+            onerror="this.parentElement.innerHTML='<div class=\'showcase-placeholder\'><span class=\'showcase-placeholder-icon\'>🌐</span><span class=\'showcase-placeholder-text\'>ADDRESS EMBED</span></div>'" />
+        </div>
+        <div class="showcase-caption">
+          <span class="showcase-label">🌐 /address</span>
+          <h4>Server Address Info</h4>
+          <p>Displays your public tunnel address, LAN address, and Java Edition version, all configured via your <span class="ic ic-g">.env</span>.</p>
+        </div>
+      </div>
+
+      <div class="showcase-card reveal">
+        <div class="showcase-img-wrap">
+          <img src="../assets/pages-assets/warning-example.png" alt="Auto-shutdown warning"
+            onerror="this.parentElement.innerHTML='<div class=\'showcase-placeholder\'><span class=\'showcase-placeholder-icon\'>⚠️</span><span class=\'showcase-placeholder-text\'>AUTO-SHUTDOWN WARNING</span></div>'" />
+        </div>
+        <div class="showcase-caption">
+          <span class="showcase-label">💤 Auto-Shutdown</span>
+          <h4>Inactivity Warning</h4>
+          <p>Posted to your status channel when the server has been empty past the warning threshold, giving players a heads-up before the automatic stop.</p>
+        </div>
+      </div>
+
+      <div class="showcase-card reveal">
+        <div class="showcase-img-wrap">
+          <img src="../assets/pages-assets/bot-presence-example.png" alt="Bot presence"
+            onerror="this.parentElement.innerHTML='<div class=\'showcase-placeholder\'><span class=\'showcase-placeholder-icon\'>🤖</span><span class=\'showcase-placeholder-text\'>BOT PRESENCE</span></div>'" />
+        </div>
+        <div class="showcase-caption">
+          <span class="showcase-label">🤖 Presence</span>
+          <h4>Live Bot Status</h4>
+          <p>The bot's Discord status and activity reflect the server state in real time, visible from the member list or bot profile without running any command.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- RELEASE / CHANGELOG -->
+  <section class="release-section" id="release">
+    <div class="section-header reveal">
+      <p class="section-label">Latest release</p>
+      <h2>What's new</h2>
+      <p>Pulled live from GitHub Releases.</p>
+    </div>
+    <div class="release-card reveal">
+      <div class="release-card-header" id="release-card-toggle">
+        <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+          <div class="release-card-header-left">
+            <span id="cl-version" class="release-version-tag">—</span>
+            <span id="cl-date" class="release-date"></span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <a id="cl-link" class="release-gh-link" href="https://github.com/d1vid3d/CraftDaemon/releases" target="_blank" onclick="event.stopPropagation();">View on GitHub ↗</a>
+            <div class="release-toggle-arrow"></div>
+          </div>
+        </div>
+      </div>
+      <div class="release-card-body" id="release-card-body">
+        <div id="cl-body">
+          <div class="release-loading"><div class="spinner"></div>Fetching changelog…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="previous-releases-section reveal">
+      <div class="section-header" style="margin-bottom:2rem;">
+        <p class="section-label">Previous releases</p>
+      </div>
+      <div class="previous-releases-grid" id="prev-releases-grid">
+        <div style="grid-column:1/-1; text-align:center; color:var(--text-dimmer); font-family:var(--mono); font-size:0.75rem;">Loading previous releases…</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- PRESENCE STATES -->
+  <section style="padding:4rem 2rem 3rem; max-width:860px; margin:0 auto;" id="commands">
+    <div class="section-header reveal">
+      <p class="section-label">Live state</p>
+      <h2>Bot Presence States</h2>
+      <p>Event-driven from the RCON manager. Your Discord member list tells the story at a glance.</p>
+    </div>
+    <div class="presence-grid reveal">
+      <div class="presence-card">
+        <span class="presence-dot p-offline"></span>
+        <span class="state">🔴 Do Not Disturb</span>
+        <span class="activity">🟥 Server Offline</span>
+      </div>
+      <div class="presence-card">
+        <span class="presence-dot p-starting"></span>
+        <span class="state">🟡 Idle</span>
+        <span class="activity">🟡 Server Starting...</span>
+      </div>
+      <div class="presence-card">
+        <span class="presence-dot p-online"></span>
+        <span class="state">🟢 Online</span>
+        <span class="activity">🟩 N player(s) online</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMANDS TABLE -->
+  <section class="commands-section">
+    <div class="section-header reveal">
+      <p class="section-label">Slash commands</p>
+      <h2>Your Discord Control Panel</h2>
+      <p>Every interaction with the server happens through clean slash commands, no need to SSH.</p>
+    </div>
+    <table class="cmd-table reveal">
+      <thead>
+        <tr><th>Command</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="cmd-name">/start</td><td>Starts the Minecraft server via <span class="ic ic-g">systemctl start</span></td></tr>
+        <tr><td class="cmd-name">/stop</td><td>Gracefully stops the server, running <span class="ic ic-g">save-all</span> first</td></tr>
+        <tr><td class="cmd-name">/restart</td><td>Saves world data then restarts via <span class="ic ic-g">systemctl restart</span></td></tr>
+        <tr><td class="cmd-name">/status</td><td>Full status embed: systemd state, uptime, live TPS, player list, RCON ping</td></tr>
+        <tr><td class="cmd-name">/address</td><td>Shows server connection addresses, public, LAN, and Java edition version</td></tr>
+        <tr><td class="cmd-name">/ping</td><td>Checks the bot's Discord API latency</td></tr>
+        <tr><td class="cmd-name">/checkupdate</td><td>Compares current version against latest GitHub release and posts an embed if newer</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top: 2rem; text-align: center; color: var(--green-bright); font-weight: 600; font-size: 0.9rem;" class="reveal">And more planned to come! 🚀</div>
+  </section>
+   
+  <div class="section-divider"></div>
+
+  <!-- REQUIREMENTS -->
+  <section class="setup-section">
+    <div class="section-header reveal">
+      <p class="section-label">Before you dive in</p>
+      <h2>Requirements</h2>
+      <p>You’ll need to be comfy with Linux basics. If you know your way around systemd and Discord bots, you’re good.</p>
+    </div>
+    <div class="req-grid reveal">
+      <div class="req-item"><span class="req-icon">🐧</span><div><h4>Linux + systemd</h4><p>Ubuntu, Debian, Arch, or any distro with systemd. The bot runs as its own service.</p></div></div>
+      <div class="req-item"><span class="req-icon">⬡</span><div><h4>Node.js 22</h4><p>Tested on v22. Older versions may work but are not officially supported.</p></div></div>
+      <div class="req-item"><span class="req-icon">🪵</span><div><h4>Paper Server</h4><p>Required for TPS data. Vanilla servers work for start/stop/restart but not <span class="ic ic-g">/status</span> TPS.</p></div></div>
+      <div class="req-item"><span class="req-icon">🤖</span><div><h4>Discord Bot Token</h4><p>Create an application in the Discord Developer Portal and enable Guild Members Intent.</p></div></div>
+      <div class="req-item"><span class="req-icon">🔑</span><div><h4>sudo Access</h4><p>A passwordless sudoers rule for the bot's user to run specific <span class="ic ic-g">systemctl</span> commands.</p></div></div>
+      <div class="req-item"><span class="req-icon">🌐</span><div><h4>RCON Enabled</h4><p>Enable RCON in your <span class="ic ic-g">server.properties</span>. Used for live stats and graceful save-before-stop.</p></div></div>
+    </div>
+  </section>
+
+
+
+  <div class="section-divider"></div>
+
+  <!-- SETUP -->
+  <section class="setup-section" id="setup">
+    <div class="section-header reveal">
+      <p class="section-label">Get started</p>
+      <h2>Setup in 9 Steps</h2>
+      <p>Follow along below, or hit the README for all the nitty-gritty details.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="step-num">01</div><div class="step-content"><h4>Clone the repo</h4><p>Grab the code on your Linux box.</p><div class="code-block">git clone https://github.com/d1vid3d/CraftDaemon<br>cd CraftDaemon</div></div></div>
+      <div class="step reveal"><div class="step-num">02</div><div class="step-content"><h4>Install dependencies</h4><p>Let npm do its thing.</p><div class="code-block">npm install</div></div></div>
+      <div class="step reveal"><div class="step-num">03</div><div class="step-content"><h4>Create a Discord bot application</h4><p>Head to the <strong>Discord Developer Portal</strong>, make a new app, grab your bot token, and enable the <code>Server Members Intent</code> and <code>Message Content Intent</code>. Invite it with <code>bot</code> + <code>applications.commands</code> scopes.</p></div></div>
+      <div class="step reveal"><div class="step-num">04</div><div class="step-content"><h4>Configure your environment</h4><p>Copy the example env, fill in your bot token, IDs, RCON info, and whatever auto-shutdown settings you want.</p><div class="code-block">cp config/.env.example config/.env<br>nano config/.env</div></div></div>
+      <div class="step reveal"><div class="step-num">05</div><div class="step-content"><h4>Set up Minecraft as a systemd service</h4><p>Write a <code>.service</code> unit for your Paper server. Make sure the service name matches <code>MC_SERVICE</code> in your <code>.env</code>.</p></div></div>
+      <div class="step reveal"><div class="step-num">06</div><div class="step-content"><h4>Enable RCON on the Minecraft server</h4><p>In <code>server.properties</code>, set <code>enable-rcon=true</code>, <code>rcon.port=25575</code>, and an <code>rcon.password</code> that matches your <code>.env</code>.</p></div></div>
+      <div class="step reveal"><div class="step-num">07</div><div class="step-content"><h4>Grant sudoers permissions</h4><p>Add a passwordless sudoers rule so the bot user can run <code>systemctl start/stop/restart</code> for your Minecraft service. (Don’t give it more than it needs!)</p></div></div>
+      <div class="step reveal"><div class="step-num">08</div><div class="step-content"><h4>Configure RBAC</h4><p>Edit <code>config/permission-config.js</code> to map your Discord role IDs and user IDs to command permissions like <code>server.start</code> and <code>server.restart</code>.</p></div></div>
+      <div class="step reveal"><div class="step-num">09</div><div class="step-content"><h4>Register commands &amp; start the bot</h4><p>Register the slash commands, then install and enable the bot as a systemd service.</p><div class="code-block">node src/register-commands.js<br>sudo systemctl enable --now craftdaemon</div></div></div>
+    </div>
+    <div style="margin-top:3rem;text-align:center; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;" class="reveal">
+      <a href="https://github.com/d1vid3d/CraftDaemon#readme" class="btn-secondary" target="_blank">View GitHub Docs ↗</a>
+      <a href="./documentation.html" class="btn-primary">Full Docs →</a>
+    </div>
+  </section>
+
+  <!-- DISCLAIMER -->
+  <div class="disclaimer-banner reveal">
+    <div class="disclaimer-inner">
+      <span class="disclaimer-icon">🛠️</span>
+      <div>
+        <h4>Early Project — Just One Dev</h4>
+        <p>Heads up: CraftDaemon is still pretty new and changes fast. Stuff might break or change between releases, so always check the release notes before you upgrade.</p>
+        <p>This is a solo side project, so things might move slow and I might miss issues or PRs for a bit. Found a bug or want to pitch in? <a href="https://github.com/d1vid3d/CraftDaemon/issues" target="_blank">Open an issue on GitHub</a>, contributions are very much welcome!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROADMAP DISCLAIMER -->
+  <div class="disclaimer-banner reveal" style="margin-bottom: 3rem; margin-top: -1.5rem;">
+    <div class="disclaimer-inner" style="background: rgba(88,101,242,0.05); border-color: rgba(88,101,242,0.2);">
+      <span class="disclaimer-icon">🎯</span>
+      <div>
+        <h4 style="color: var(--blurple-bright);">Barebones Today, Powerful Tomorrow</h4>
+        <p>Right now, CraftDaemon does the essentials: start, stop, restart, and check status. It's intentionally minimal and lean. But that's just the foundation. Future releases will bring full admin controls straight from Discord, player moderation, and a whole lot more.</p>
+        <p>Getting there takes time and testing, so stick with us as we build it out. Your feedback and patience are super appreciated!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <img class="footer-logo-img" src="../assets/logo/logo-dark.svg" alt="CraftDaemon" />
+    <p>A self-hosted Discord bot for Minecraft server control &nbsp;·&nbsp; MIT License</p>
+    <div class="footer-links">
+      <a href="https://github.com/d1vid3d/CraftDaemon">GitHub</a>
+      <a href="https://github.com/d1vid3d/CraftDaemon/releases">Releases</a>
+      <a href="https://github.com/d1vid3d/CraftDaemon/issues">Issues</a>
+      <a href="https://github.com/d1vid3d/CraftDaemon/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+    <script src="./script/index-script.js"></script>
+</body>
+</html>
