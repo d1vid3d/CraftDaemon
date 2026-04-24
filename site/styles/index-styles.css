@@ -19,13 +19,18 @@
       --sans: 'Syne', sans-serif;
     }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+      max-width: 100%;
+    }
 
     body {
       background: var(--bg);
       color: var(--text);
       font-family: var(--sans);
       overflow-x: hidden;
+      max-width: 100%;
       line-height: 1.6;
     }
 
@@ -43,6 +48,8 @@
     nav {
       position: fixed;
       top: 0; left: 0; right: 0;
+      width: 100%;
+      max-width: 100vw;
       z-index: 100;
       display: flex;
       align-items: center;
@@ -132,6 +139,8 @@
       left: 0;
       right: 0;
       bottom: 0;
+      width: 100%;
+      max-width: 100vw;
       background: rgba(10,12,15,0.95);
       backdrop-filter: blur(16px);
       z-index: 99;
@@ -381,6 +390,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+    }
+    .diagram-heading {
+      font-size: clamp(1.65rem, 4vw, 2.35rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 0.4rem;
+      text-align: center;
     }
     .section-label {
       font-family: var(--mono);
@@ -709,13 +726,13 @@
 
     /* PRESENCE */
     .presence-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 2rem; }
-    .presence-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; text-align: center; }
-    .presence-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-bottom: 0.75rem; }
+    .presence-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+    .presence-dot { width: 12px; height: 12px; border-radius: 50%; display: block; margin: 0 auto 0.75rem; }
     .p-offline  { background: #ed4245; box-shadow: 0 0 8px rgba(237,66,69,0.5); }
     .p-starting { background: #faa61a; box-shadow: 0 0 8px rgba(250,166,26,0.5); }
     .p-online   { background: #3ba55c; box-shadow: 0 0 8px rgba(59,165,92,0.5); }
-    .presence-card .state    { font-family:var(--mono); font-size:0.7rem; color:var(--text-dim); display:block; }
-    .presence-card .activity { font-family:var(--mono); font-size:0.68rem; color:var(--text-dimmer); margin-top:0.4rem; display:block; }
+    .presence-card .state    { font-family:var(--mono); font-size:0.7rem; color:var(--text-dim); display:block; text-align: left; }
+    .presence-card .activity { font-family:var(--mono); font-size:0.68rem; color:var(--text-dimmer); margin-top:0.4rem; display:block; text-align: left; }
 
     /* COMMANDS TABLE */
     .commands-section { padding: 2rem 2rem 6rem; max-width: 860px; margin: 0 auto; }
@@ -792,9 +809,15 @@
       .nav-logo-img { height: 40px; }
       .hamburger-btn { display: flex; }
       .nav-links { display: none; }
-      .hero { padding: 6rem 1.5rem 3rem; }
+      .hero {
+        min-height: calc(100svh - 60px);
+        padding: 5rem 1.5rem 2.5rem;
+      }
       .hero-logo { margin-bottom: 0.55rem; }
-      .hero-logo img { width: min(84vw, 440px); }
+      .hero-logo img {
+        width: min(84vw, 440px);
+        height: auto;
+      }
       .hero-eyebrow { font-size: 0.65rem; }
       .hero-desc {
         font-size: 0.95rem;
@@ -808,18 +831,30 @@
       .btn-primary, .btn-secondary { font-size: 0.75rem; padding: 0.7rem 1.5rem; }
       .diagram-body { font-size: 0.72rem; line-height: 1.75; }
       .section-header h2 { font-size: clamp(1.5rem, 4vw, 2rem); }
-      .features-grid { grid-template-columns: 1fr; padding-inline: 0.35rem; }
-      .showcase-grid { grid-template-columns: 1fr; padding-inline: 0.35rem; }
-      .presence-grid { grid-template-columns: 1fr; padding-inline: 0.35rem; }
+      .features-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); padding-inline: 0.35rem; }
+      .showcase-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); padding-inline: 0.35rem; }
+      .presence-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; padding-inline: 0.35rem; }
     }
 
     @media (max-width: 640px) {
       nav { padding: 0.5rem 0.75rem; }
       .nav-logo-img { height: 36px; }
-      .hero { padding: 5rem 1rem 2rem; }
-      .hero-logo { margin-bottom: 0.2rem; }
-      .hero-logo img { width: min(88vw, 420px); margin-bottom: 0; }
-      .hero-eyebrow { margin-bottom: 1rem; }
+      .hero {
+        min-height: calc(100svh - 56px);
+        padding: 3.75rem 1rem 1.5rem;
+      }
+      .hero-logo { margin-bottom:1.5em }
+      .hero-logo img {
+        width: min(88vw, 420px);
+        height: auto;
+        margin-bottom: 0;
+      }
+      .hero-eyebrow {
+        margin-bottom: 1rem;
+        font-size: 0.56rem;
+        letter-spacing: 0.12em;
+        white-space: nowrap;
+      }
       .release-badge-wrap { margin-bottom: 1.25rem; }
       .hero-desc {
         font-size: 0.9rem;
@@ -835,27 +870,31 @@
       .badge { font-size: 0.65rem; padding: 0.25rem 0.5rem; }
       .hero-actions { gap: 0.5rem; }
       .btn-primary, .btn-secondary { font-size: 0.7rem; padding: 0.65rem 1.25rem; }
-      .diagram-section { padding: 2.5rem 1rem 3rem; }
+      .diagram-section { padding: 3.5rem 1rem 3rem; }
       .diagram-box { max-width: 100%; }
       .diagram-titlebar { padding: 0.5rem 0.75rem; }
       .diagram-body { font-size: 0.64rem; padding: 1rem; line-height: 1.72; }
+      .diagram-heading { font-size: 1.4rem; margin-bottom: 0.5rem; }
       .section-label { font-size: 0.6rem; }
       .section-header { margin-bottom: 2rem; }
       .section-header h2 { font-size: 1.35rem; line-height: 1.1; }
       .section-header p { font-size: 0.85rem; }
       .features-section { padding: 2rem 1rem 3rem; }
-      .features-grid { grid-template-columns: 1fr; gap: 1px; padding-inline: 0.5rem; }
+      .features-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; padding-inline: 0.5rem; }
       .feature-card { padding: 1.25rem; }
       .feature-card h3 { font-size: 0.95rem; }
       .feature-card p { font-size: 0.8rem; }
       .feature-tag { font-size: 0.6rem; }
       .showcase-section { padding: 2rem 1rem 3rem; }
-      .showcase-grid { grid-template-columns: 1fr; gap: 1rem; padding-inline: 0.5rem; }
+      .showcase-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; padding-inline: 0.5rem; }
       .showcase-card { border-radius: 8px; }
       .showcase-img-wrap { aspect-ratio: 1/1; }
       .showcase-caption { padding: 0.75rem 1rem; }
       .showcase-caption h4 { font-size: 0.85rem; }
       .showcase-caption p { font-size: 0.75rem; }
       .diagram-box { margin: 0; }
-      .presence-grid { grid-template-columns: 1fr; gap: 1rem; padding-inline: 0.5rem; }
+      .presence-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; padding-inline: 0.5rem; }
+      .release-card-header { flex-direction: column; align-items: flex-start; }
+      .release-card-header-left { flex-direction: column; align-items: flex-start; }
+      .code-block { word-break: break-all; }
     }
