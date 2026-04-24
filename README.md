@@ -1,8 +1,8 @@
 <div align="center">
 
   <picture>
-    <source srcset="assets/logo-dark.svg" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/logo-light.svg" media="(prefers-color-scheme: light)">
+    <source srcset="assets/logo/logo-dark.svg" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/logo/logo-light.svg" media="(prefers-color-scheme: light)">
     <img src="assets/logo-dark.svg" width="70%">
   </picture>
 
@@ -76,8 +76,8 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 📸 **Screenshot:** `/status` embed — online state with RCON stats
 <p align="left">
   <picture>
-    <source srcset="assets/status-example-dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/status-example-light.png" media="(prefers-color-scheme: light)">
+    <source srcset="assets/readme-assets/status-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/readme-assets/status-example-light.png" media="(prefers-color-scheme: light)">
     <img src="assets/status-example-dark.png" width="60%"/>
   </picture>
 </p>
@@ -85,8 +85,8 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 📸 **Screenshot:** `/address` embed — assigned address informations
 <p align="left">
   <picture>
-    <source srcset="assets/address-example-dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/address-example-light.png" media="(prefers-color-scheme: light)">
+    <source srcset="assets/readme-assets/address-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/readme-assets/address-example-light.png" media="(prefers-color-scheme: light)">
     <img src="assets/address-example-dark.png" width="60%"/>
   </picture>
 </p>
@@ -94,8 +94,8 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 📸 **Screenshot:** `Auto-Shutdown Warning` embed — notification posted after the set amount of time
 <p align="left">
   <picture>
-    <source srcset="assets/warning-example-dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/warning-example-light.png" media="(prefers-color-scheme: light)">
+    <source srcset="assets/readme-assets/warning-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/readme-assets/warning-example-light.png" media="(prefers-color-scheme: light)">
     <img src="assets/warning-example-dark.png" width="60%"/>
   </picture>
 </p>
@@ -103,8 +103,8 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 📸 **Screenshot:** `Bot Presence Status` you can see the current server status from the server member list or the bot profile's
 <p align="left">
   <picture>
-    <source srcset="assets/bot-presence-example-dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/bot-presence-example-light.png" media="(prefers-color-scheme: light)">
+    <source srcset="assets/readme-assets/bot-presence-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/readme-assets/bot-presence-example-light.png" media="(prefers-color-scheme: light)">
     <img src="assets/bot-presence-example-dark.png" width="30%"/>
   </picture>
 </p>
@@ -382,7 +382,7 @@ sudo systemctl enable minecraft
 
 The service name you use here (e.g. `minecraft`) must match `MC_SERVICE` in your `.env`.
 
-> **⚠️ Heads up — console access:** Running the server as a systemd service means you lose direct console input from your terminal. You can still read logs with `journalctl -u minecraft -f`, but you won't be able to type commands directly into the server console over SSH. The practical workaround is to use an RCON terminal client like [mcrcon](https://github.com/Tiiffi/mcrcon) — it opens an interactive RCON session from your shell where you can run any server command without a leading `/`. CraftDaemon does not currently have a send-console-command feature, so mcrcon (or equivalent) is the recommended solution for direct server administration.
+> **⚠️ Heads up - console access:** Running the server as a systemd service means you lose direct console input from your terminal. You can still read logs with `journalctl -u minecraft -f`, but you won't be able to type commands directly into the server console over SSH. The practical workaround is to use an RCON terminal client like [mcrcon](https://github.com/Tiiffi/mcrcon), it opens an interactive RCON session from your shell where you can run any server command without a leading `/`. CraftDaemon does not currently have a send-console-command feature, so mcrcon (or equivalent) is the recommended solution for direct server administration (For now).
 
 ### 6. Enable RCON on your Minecraft server
 

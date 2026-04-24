@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CraftDaemon - Full Documentation</title>
+  <link rel="icon" type="image/png" href="../assets/logo/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles/documentation-styles.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="./index.html">
+      <img class="nav-logo-img" src="../assets/logo/logo-dark.svg" alt="CraftDaemon" />
+    </a>
+    <button class="hamburger-btn" id="hamburger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="./index.html#features">Features</a></li>
+      <li><a href="./index.html#showcase">Showcase</a></li>
+      <li><a href="./index.html#commands">Commands</a></li>
+      <li><a href="./index.html#setup">Setup</a></li>
+      <li><a href="./documentation.html" class="active">Docs</a></li>
+      <li><a id="release-badge" class="nav-release-badge" href="https://github.com/d1vid3d/CraftDaemon/releases" target="_blank">
+        <span class="release-dot"></span>
+        <span id="release-badge-text" class="loading-text">Current Release: v.X.Y.Z</span>
+      </a></li>
+      <li><a href="https://github.com/d1vid3d/CraftDaemon" class="nav-cta">GitHub →</a></li>
+    </ul>
+  </nav>
+  
+  <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+    <a href="./index.html#features">Features</a>
+    <a href="./index.html#showcase">Showcase</a>
+    <a href="./index.html#commands">Commands</a>
+    <a href="./index.html#setup">Setup</a>
+    <a href="./documentation.html" class="active">Docs</a>
+    <a id="release-badge-mobile" class="nav-release-badge" href="https://github.com/d1vid3d/CraftDaemon/releases" target="_blank">
+      <span class="release-dot"></span>
+      <span class="loading-text">Current Release: v.X.Y.Z</span>
+    </a>
+    <a href="https://github.com/d1vid3d/CraftDaemon" class="nav-cta">GitHub →</a>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="doc-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <button class="sidebar-toggle-btn" id="sidebar-toggle">📑 Documentation</button>
+      <div class="sidebar-title">Documentation</div>
+      <ul class="sidebar-list">
+        <li><a href="#getting-started" class="sidebar-link">Getting Started</a></li>
+        <li><a href="#installation" class="sidebar-link">Installation</a></li>
+        <li><a href="#configuration" class="sidebar-link">Configuration</a></li>
+        <li><a href="#commands" class="sidebar-link">Commands Reference</a></li>
+        <li><a href="#permissions" class="sidebar-link">Permissions & RBAC</a></li>
+        <li><a href="#features" class="sidebar-link">Features Guide</a></li>
+        <li><a href="#troubleshooting" class="sidebar-link">Troubleshooting</a></li>
+        <li><a href="#architecture" class="sidebar-link">Architecture</a></li>
+        <li><a href="#managing-services" class="sidebar-link">Managing Services</a></li>
+        <li><a href="#logging" class="sidebar-link">Logging</a></li>
+        <li><a href="#contributing" class="sidebar-link">Contributing</a></li>
+      </ul>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+      <a href="./index.html" class="btn-back">← Back to Home</a>
+
+      <!-- GETTING STARTED -->
+      <section id="getting-started" class="doc-section">
+        <h1 class="section-title">Getting Started</h1>
+        <p class="section-desc">
+          Welcome to CraftDaemon! This documentation covers everything you need to know to install, configure, and run CraftDaemon on your Linux server. If this is your first time, read through each section in order, skipping steps is the most common cause of setup issues.
+        </p>
+
+        <h2 class="section-subtitle">What is CraftDaemon?</h2>
+        <p class="section-desc">
+          CraftDaemon is a Discord bot that lets you manage your Minecraft server directly from Discord using slash commands. It integrates with <span class="code-inline">systemd</span> (Linux's service manager) to start, stop, and restart your server process, and uses <span class="code-inline">RCON</span> (a remote console protocol built into Minecraft) to query live server data like player count and TPS. You don't need to SSH into your server just to restart it, CraftDaemon handles it all from a Discord channel.
+        </p>
+
+        <h2 class="section-subtitle">System Requirements</h2>
+        <ul>
+          <li><strong>Operating System:</strong> Linux with systemd (Ubuntu, Debian, Arch, etc.) - this bot does <em>not</em> run on Windows or macOS</li>
+          <li><strong>Node.js:</strong> Version 18 or later (tested on 22.x). To check what you have, run: <span class="code-inline">node --version</span></li>
+          <li><strong>Minecraft Server:</strong> Paper (recommended) or any server with RCON support enabled</li>
+          <li><strong>Memory:</strong> Minimal - the bot itself uses very little RAM and runs comfortably alongside your Minecraft server</li>
+          <li><strong>Network:</strong> Outbound HTTPS access for the Discord API, and a local connection to RCON (127.0.0.1 by default)</li>
+        </ul>
+
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Paper vs Vanilla</div>
+          <p>CraftDaemon works with any Minecraft server that supports RCON for start/stop/restart commands. However, the full <span class="code-inline">/status</span> command (TPS, live player count, uptime) requires a <strong>Paper</strong> server. Vanilla servers will show limited status information.</p>
+        </div>
+      </section>
+
+      <!-- INSTALLATION -->
+      <section id="installation" class="doc-section">
+        <h1 class="section-title">Installation</h1>
+
+        <h2 class="section-subtitle">Step 1: Clone the Repository</h2>
+        <p class="section-desc">SSH into your Linux server and run the following to download CraftDaemon into the current directory, then navigate into it:</p>
+        <div class="code-block">git clone https://github.com/d1vid3d/CraftDaemon<br>cd CraftDaemon</div>
+
+        <h2 class="section-subtitle">Step 2: Install Node.js Dependencies</h2>
+        <p class="section-desc">This installs all required packages listed in <span class="code-inline">package.json</span>. Run this from inside the <span class="code-inline">CraftDaemon</span> directory:</p>
+        <div class="code-block">npm install</div>
+        <p class="section-desc">If you get a "command not found" error, Node.js is not installed or not in your PATH. Verify with <span class="code-inline">node --version</span> and <span class="code-inline">which node</span>.</p>
+
+        <h2 class="section-subtitle">Step 3: Create Discord Bot Application</h2>
+        <p class="section-desc">You'll need to create a bot account in Discord's developer portal. This gives you a token (like a password) that CraftDaemon uses to log in as your bot.</p>
+        <ol>
+          <li>Go to <strong>Discord Developer Portal</strong> at <span class="code-inline" href="https://discord.com/developers/applications">discord.com/developers/applications</span></li>
+          <li>Click <strong>"New Application"</strong> and give it a name (e.g., "CraftDaemon")</li>
+          <li>Navigate to the <strong>"Bot"</strong> section in the left sidebar and click <strong>"Add Bot"</strong></li>
+          <li>Click <strong>"Reset Token"</strong> to reveal your bot token, then copy it — you'll paste this into your <span class="code-inline">.env</span> file later. <em>You only see it once, so save it now.</em></li>
+          <li>Scroll down to <strong>"Privileged Gateway Intents"</strong> and enable both:
+            <ul style="margin-top: 0.5rem;">
+              <li>Server Members Intent</li>
+              <li>Message Content Intent</li>
+            </ul>
+          </li>
+          <li>Go to <strong>"OAuth2"</strong> → <strong>"URL Generator"</strong> in the left sidebar. Under "Scopes", check <span class="code-inline">bot</span> and <span class="code-inline">applications.commands</span></li>
+          <li>Under "Bot Permissions", check: <span class="code-inline">Send Messages</span>, <span class="code-inline">Embed Links</span>, <span class="code-inline">Read Message History</span></li>
+          <li>Copy the generated URL at the bottom of the page and open it in your browser to invite the bot to your Discord server</li>
+        </ol>
+
+        <div class="callout warning">
+          <div class="callout-title">⚠️ Token Security</div>
+          <p>Your bot token is like a password — never share it, never commit it to Git. Keep it only in your <span class="code-inline">config/.env</span> file, and make sure <span class="code-inline">.env</span> is listed in your <span class="code-inline">.gitignore</span>. If it gets leaked, immediately regenerate it in the Developer Portal.</p>
+        </div>
+
+        <h2 class="section-subtitle">Step 4: Set Up Minecraft as a systemd Service (If you haven't already)</h2>
+        <p class="section-desc">CraftDaemon controls your Minecraft server through <span class="code-inline">systemd</span>, Linux's service manager. If your server isn't already running as a systemd service, you'll need to set this up. Create the service file using a text editor with root privileges:</p>
+        <div class="code-block">sudo nano /etc/systemd/system/minecraft.service</div>
+        <p class="section-desc">Paste the following content into the file, then save and exit (<span class="code-inline">Ctrl+O</span>, Enter, <span class="code-inline">Ctrl+X</span> in nano):</p>
+        <div class="code-block">[Unit]<br>Description=Minecraft Server<br>After=network.target<br><br>[Service]<br>Type=simple<br>User=minecraft<br>WorkingDirectory=/home/minecraft/server<br>ExecStart=/usr/bin/java -Xmx8G -Xms8G -jar paper-latest.jar nogui<br>Restart=on-failure<br>RestartSec=5s<br><br>[Install]<br>WantedBy=multi-user.target</div>
+
+        <p class="section-desc">Adjust the following to match your setup before saving:</p>
+        <ul>
+          <li><strong>User:</strong> the Linux user that owns the Minecraft server files</li>
+          <li><strong>WorkingDirectory:</strong> the full path to your server folder</li>
+          <li><strong>ExecStart:</strong> make sure the <span class="code-inline">java</span> path is correct (<span class="code-inline">which java</span> will tell you) and the <span class="code-inline">.jar</span> filename matches your actual server jar</li>
+          <li><strong>-Xmx8G / -Xms8G:</strong> the maximum and starting RAM for your server — adjust to suit your machine</li>
+        </ul>
+        <p class="section-desc">Then reload systemd and enable the service to start on boot:</p>
+        <div class="code-block">sudo systemctl daemon-reload<br>sudo systemctl enable minecraft<br>sudo systemctl start minecraft</div>
+
+        <h2 class="section-subtitle">Step 5: Enable RCON on Your Server</h2>
+        <p class="section-desc">RCON (Remote Console) is a protocol built into Minecraft that allows CraftDaemon to query live server data and send commands. You need to enable it in your server's <span class="code-inline">server.properties</span> file, which is located in your Minecraft server directory. Open it with:</p>
+        <div class="code-block">sudo nano /home/minecraft/server/server.properties</div>
+        <p class="section-desc">Find and update (or add) these three lines:</p>
+        <div class="code-block">enable-rcon=true<br>rcon.port=25575<br>rcon.password=your_secure_password_here</div>
+        <p class="section-desc">Use a strong, unique password — this password must exactly match the <span class="code-inline">RCON_PASSWORD</span> value in your <span class="code-inline">.env</span> later. After saving, restart your Minecraft server:</p>
+        <div class="code-block">sudo systemctl restart minecraft</div>
+
+        <h2 class="section-subtitle">Step 6: Configure Environment Variables</h2>
+        <p class="section-desc">CraftDaemon uses a <span class="code-inline">.env</span> file to store all sensitive configuration like your bot token and RCON password. Start by copying the provided example file:</p>
+        <div class="code-block">cp config/.env.example config/.env</div>
+        <p class="section-desc">Then open it for editing:</p>
+        <div class="code-block">nano config/.env</div>
+        <p class="section-desc">Fill in your values. At minimum, set these required fields:</p>
+        <div class="code-block">TOKEN=your_bot_token_here<br>GUILD_ID=your_server_id<br>CLIENT_ID=your_client_id<br>STATUS_CHANNEL_ID=your_channel_id<br>MC_SERVICE=minecraft<br>RCON_HOST=127.0.0.1<br>RCON_PORT=25575<br>RCON_PASSWORD=your_rcon_password<br>AUTO_STOP_MINUTES=10<br>WARNING_MINUTES=8</div>
+        <p class="section-desc">See the <a href="#configuration" style="color: var(--blurple-bright);">Configuration section</a> for a full breakdown of every available variable.</p>
+
+        <h2 class="section-subtitle">Step 7: Register Slash Commands</h2>
+        <p class="section-desc">Before users can see or use slash commands in Discord, they need to be registered with Discord's API. Run this once from the CraftDaemon directory:</p>
+        <div class="code-block">node src/register-commands.js</div>
+
+        <div class="callout info">
+          <div class="callout-title">ℹ️ When to re-run command registration</div>
+          <p>You only need to run this once after initial setup, or again if you add or modify commands. Slash commands may take up to a minute to appear in Discord after registration.</p>
+        </div>
+
+        <h2 class="section-subtitle">Step 8: Set Up Sudoers Permissions</h2>
+        <p class="section-desc">CraftDaemon needs to run <span class="code-inline">systemctl</span> commands (to start/stop/restart your Minecraft server) without being prompted for a password. This is done by adding a rule to the sudoers file. <strong>Always edit sudoers with <span class="code-inline">visudo</span></strong> — it validates the file before saving and prevents you from locking yourself out:</p>
+        <div class="code-block">sudo visudo</div>
+
+        <p class="section-desc">Scroll to the bottom of the file and add this line, replacing <span class="code-inline">botuser</span> with the Linux username the bot runs as:</p>
+        <div class="code-block">botuser ALL=(ALL) NOPASSWD: /bin/systemctl start minecraft, /bin/systemctl stop minecraft, /bin/systemctl restart minecraft, /bin/systemctl show minecraft</div>
+        <p class="section-desc">Save and exit (<span class="code-inline">Ctrl+O</span>, Enter, <span class="code-inline">Ctrl+X</span>). To verify which user the bot will run as, check your <span class="code-inline">craftdaemon.service</span> file's <span class="code-inline">User=</span> field.</p>
+
+        <div class="callout danger">
+          <div class="callout-title">🔒 Least Privilege</div>
+          <p>Only grant the bot the specific <span class="code-inline">systemctl</span> permissions it needs (as shown above). Never add the bot user to <span class="code-inline">ALL=(ALL) NOPASSWD: ALL</span> — that would give it unrestricted root access to your entire system.</p>
+        </div>
+
+        <h2 class="section-subtitle">Step 9: Install as systemd Service (Optional but Recommended)</h2>
+        <p class="section-desc">Running CraftDaemon as a systemd service means it automatically starts on boot and restarts itself if it crashes. Create the service file:</p>
+        <div class="code-block">sudo nano /etc/systemd/system/craftdaemon.service</div>
+        <p class="section-desc">Paste the following, then update <span class="code-inline">User</span> and <span class="code-inline">WorkingDirectory</span> to match your setup:</p>
+        <div class="code-block">[Unit]<br>Description=CraftDaemon Bot<br>After=network.target<br><br>[Service]<br>Type=simple<br>User=botuser<br>WorkingDirectory=/path/to/CraftDaemon<br>ExecStart=/usr/bin/node src/index.js<br>Restart=on-failure<br>RestartSec=10s<br>StandardOutput=journal<br>StandardError=journal<br>Environment="NODE_ENV=production"<br><br>[Install]<br>WantedBy=multi-user.target</div>
+
+        <p class="section-desc">Make sure the <span class="code-inline">node</span> path in <span class="code-inline">ExecStart</span> is correct — run <span class="code-inline">which node</span> to find yours. Then enable and start:</p>
+        <div class="code-block">sudo systemctl daemon-reload<br>sudo systemctl enable craftdaemon<br>sudo systemctl start craftdaemon</div>
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Node version note</div>
+          <p>CraftDaemon requires Node.js <span class="code-inline">18+</span> and is tested on Node.js 22. Check your version with <span class="code-inline">node --version</span>. If you need to install or update Node.js, use <a href="https://github.com/nvm-sh/nvm" style="color: var(--blurple-bright);">nvm</a> or your distro's package manager.</p>
+        </div>
+      </section>
+
+      <!-- CONFIGURATION -->
+      <section id="configuration" class="doc-section">
+        <h1 class="section-title">Configuration</h1>
+
+        <h2 class="section-subtitle">Environment Variables (.env)</h2>
+        <p class="section-desc">All configuration is managed through <span class="code-inline">config/.env</span>. This file is never committed to Git — it lives only on your server. If the file doesn't exist yet, create it by copying the example: <span class="code-inline">cp config/.env.example config/.env</span>, then edit it with <span class="code-inline">nano config/.env</span>. Here's a complete reference of every available variable:</p>
+
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Required</th>
+              <th>Description</th>
+              <th>Options (Suggested Range)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-inline">TOKEN</span></td>
+              <td>✅</td>
+              <td>Your Discord bot token</td>
+              <td>Discord bot token string</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">GUILD_ID</span></td>
+              <td>✅</td>
+              <td>Your Discord server ID (for registration)</td>
+              <td>Discord guild/server ID</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">CLIENT_ID</span></td>
+              <td>✅</td>
+              <td>Your Discord application client ID</td>
+              <td>Discord application client ID</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">STATUS_CHANNEL_ID</span></td>
+              <td>✅</td>
+              <td>Channel for status/warning messages</td>
+              <td>Discord channel ID</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">MC_SERVICE</span></td>
+              <td>✅</td>
+              <td>Minecraft systemd service name</td>
+              <td>Systemd unit name (default: <span class="code-inline">minecraft</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">RCON_HOST</span></td>
+              <td>✅</td>
+              <td>RCON server address</td>
+              <td>Default: <span class="code-inline">127.0.0.1</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">RCON_PORT</span></td>
+              <td>✅</td>
+              <td>RCON port (from server.properties)</td>
+              <td>Valid: <span class="code-inline">1-65535</span> (default: <span class="code-inline">25575</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">RCON_PASSWORD</span></td>
+              <td>✅</td>
+              <td>RCON password (from server.properties)</td>
+              <td>Must exactly match <span class="code-inline">server.properties</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">AUTO_STOP_MINUTES</span></td>
+              <td>☑️</td>
+              <td>Minutes before auto-stop (set 0 to disable)</td>
+              <td><span class="code-inline">0</span> or <span class="code-inline">5-60</span> (default: <span class="code-inline">10</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">WARNING_MINUTES</span></td>
+              <td>☑️</td>
+              <td>Minutes before warning is posted</td>
+              <td><span class="code-inline">0</span> to disable warning, otherwise below <span class="code-inline">AUTO_STOP_MINUTES</span> (default: <span class="code-inline">8</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">CHECK_INTERVAL_MS</span></td>
+              <td>☑️</td>
+              <td>Auto-stop check interval in milliseconds</td>
+              <td><span class="code-inline">10000-60000</span> (default: <span class="code-inline">30000</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">SAVEALL_DELAY_MS</span></td>
+              <td>☑️</td>
+              <td>Delay between save-all and stop/restart</td>
+              <td><span class="code-inline">500-3000</span> (default: <span class="code-inline">1000</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">COMMAND_COOLDOWN_MS</span></td>
+              <td>☑️</td>
+              <td>Cooldown between start/stop/restart commands</td>
+              <td><span class="code-inline">0</span> or <span class="code-inline">2000-60000</span> (default: <span class="code-inline">10000</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS</span></td>
+              <td>☑️</td>
+              <td>Presence fallback interval while RCON is disconnected</td>
+              <td><span class="code-inline">10000-30000</span> (default: <span class="code-inline">15000</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">RCON_KEEPALIVE_INTERVAL_MS</span></td>
+              <td>☑️</td>
+              <td>Persistent RCON keepalive interval</td>
+              <td><span class="code-inline">30000-60000</span> (default: <span class="code-inline">45000</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">RCON_RECONNECT_INTERVAL_MS</span></td>
+              <td>☑️</td>
+              <td>Delay between RCON reconnect attempts</td>
+              <td><span class="code-inline">3000-10000</span> (default: <span class="code-inline">5000</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">RCON_STARTING_GRACE_PERIOD_MS</span></td>
+              <td>☑️</td>
+              <td>How long to keep "Server Starting..." state after reconnect</td>
+              <td><span class="code-inline">5000-20000</span> (default: <span class="code-inline">10000</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">RCON_COMMAND_TIMEOUT_MS</span></td>
+              <td>☑️</td>
+              <td>Timeout for individual RCON commands</td>
+              <td><span class="code-inline">5000-15000</span> (default: <span class="code-inline">8000</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">RCON_MAX_KEEPALIVE_FAILURES</span></td>
+              <td>☑️</td>
+              <td>Keepalive failures before forced reconnect</td>
+              <td><span class="code-inline">1-3</span> (default: <span class="code-inline">2</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">RCON_REFUSED_LOG_INTERVAL_MS</span></td>
+              <td>☑️</td>
+              <td>Throttle interval for repeated ECONNREFUSED logs</td>
+              <td><span class="code-inline">0</span> or <span class="code-inline">30000-120000</span> (default: <span class="code-inline">60000</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">LOG_LEVEL</span></td>
+              <td>☑️</td>
+              <td>Global log level</td>
+              <td><span class="code-inline">DEBUG</span>, <span class="code-inline">INFO</span>, <span class="code-inline">WARN</span>, <span class="code-inline">ERROR</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">DEBUG_PERMS</span></td>
+              <td>☑️</td>
+              <td>Enable detailed permission check logs</td>
+              <td><span class="code-inline">true</span> or <span class="code-inline">false</span> (default: <span class="code-inline">false</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">MAIN_ADDRESS</span></td>
+              <td>☑️</td>
+              <td>Public server address for /address command</td>
+              <td>Any reachable public address (optional)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">LOCAL_ADDRESS</span></td>
+              <td>☑️</td>
+              <td>LAN address for /address command</td>
+              <td>LAN address + port (optional)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">JAVA_EDITION_VERSION</span></td>
+              <td>☑️</td>
+              <td>Java version text shown in /address</td>
+              <td>Any Java version label text (optional)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">UPDATE_NOTIFY_CHANNEL_ID</span></td>
+              <td>☑️</td>
+              <td>Preferred channel for update announcement embeds</td>
+              <td>Discord channel ID (optional; has fallback behavior)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">UPDATE_SERVICE_DEBUG</span></td>
+              <td>☑️</td>
+              <td>Enable mock latest-version override for testing</td>
+              <td><span class="code-inline">true</span> or <span class="code-inline">false</span> (default: <span class="code-inline">false</span>)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">UPDATE_SERVICE_FORCE_LATEST</span></td>
+              <td>☑️</td>
+              <td>Forced semver used as latest when update debug is enabled</td>
+              <td>Semver string, used when <span class="code-inline">UPDATE_SERVICE_DEBUG=true</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="section-desc"><strong>Legend:</strong> ✅ = Required, ☑️ = Optional (defaults are used when omitted).</p>
+
+        <h2 class="section-subtitle">Permission Configuration</h2>
+        <p class="section-desc">Edit <span class="code-inline">config/permission-config.js</span> to control which Discord roles and users can run which commands. Open it with <span class="code-inline">nano config/permission-config.js</span>. The file exports a single object with four keys:</p>
+        <ul>
+          <li><strong>owner:</strong> an array of Discord user IDs that bypass all permission checks — typically just you</li>
+          <li><strong>roles:</strong> a map of short label names (e.g. <span class="code-inline">ADMIN</span>) to Discord role IDs</li>
+          <li><strong>commands:</strong> maps each permission key to an array of role labels that can use it</li>
+          <li><strong>users:</strong> optional per-user overrides that grant specific permission keys to individual users regardless of their roles</li>
+        </ul>
+        <div class="code-block">module.exports = {<br>&nbsp;&nbsp;owner: ["123456789012345678"],<br>&nbsp;&nbsp;roles: {<br>&nbsp;&nbsp;&nbsp;&nbsp;ADMIN: "111111111111111111",<br>&nbsp;&nbsp;&nbsp;&nbsp;MOD: "222222222222222222"<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;commands: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.start":   ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.stop":    ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.restart": ["ADMIN"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.status":  ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.address": ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"bot.checkUpdate":["ADMIN", "MOD"]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;users: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"444444444444444444": ["logs.delete"]<br>&nbsp;&nbsp;}<br>};</div>
+
+        <p class="section-desc">Replace the placeholder IDs with your actual Discord role and user IDs. Owners bypass all command checks entirely. Entries in <span class="code-inline">users</span> take precedence over role-based permissions — useful for granting or restricting access to specific individuals.</p>
+      </section>
+
+      <!-- COMMANDS -->
+      <section id="commands" class="doc-section">
+        <h1 class="section-title">Commands Reference</h1>
+
+        <h2 class="section-subtitle">/start</h2>
+        <p class="section-desc">Starts the Minecraft server by running <span class="code-inline">systemctl start</span> on your configured service. The bot replies with a status embed confirming the start was triggered.</p>
+        <ul>
+          <li><strong>Permission:</strong> <span class="code-inline">server.start</span></li>
+          <li><strong>Response:</strong> Confirmation embed with server startup status</li>
+          <li><strong>Notes:</strong> The server itself may take 10–30 seconds to fully boot depending on world size — this is normal. The command only triggers the start; it does not wait for the server to be ready.</li>
+        </ul>
+
+        <h2 class="section-subtitle">/stop</h2>
+        <p class="section-desc">Gracefully stops the server. Before stopping, CraftDaemon sends a <span class="code-inline">save-all</span> command via RCON to ensure no world data is lost, then calls <span class="code-inline">systemctl stop</span>.</p>
+        <ul>
+          <li><strong>Permission:</strong> <span class="code-inline">server.stop</span></li>
+          <li><strong>Response:</strong> Confirmation embed with stop status</li>
+          <li><strong>Notes:</strong> This is safe to use at any time — the save-all happens automatically before shutdown</li>
+        </ul>
+
+        <h2 class="section-subtitle">/restart</h2>
+        <p class="section-desc">Restarts the server by saving world data first, then calling <span class="code-inline">systemctl restart</span>. Useful after config changes or to apply updates without manually stopping and starting.</p>
+        <ul>
+          <li><strong>Permission:</strong> <span class="code-inline">server.restart</span></li>
+          <li><strong>Response:</strong> Confirmation embed with restart status</li>
+          <li><strong>Notes:</strong> Like <span class="code-inline">/stop</span>, this always performs a save-all before restarting</li>
+        </ul>
+
+        <h2 class="section-subtitle">/status</h2>
+        <p class="section-desc">Shows a full live snapshot of your server: systemd service state, uptime, TPS (ticks per second), online player count, and current RCON round-trip latency.</p>
+        <ul>
+          <li><strong>Permission:</strong> <span class="code-inline">server.status</span></li>
+          <li><strong>Response:</strong> Rich embed with all server metrics</li>
+          <li><strong>Requires:</strong> A Paper server for full metrics — vanilla servers will show limited information</li>
+          <li><strong>Latency:</strong> Shows RCON round-trip time, which reflects the connection health between the bot and your server</li>
+        </ul>
+
+        <h2 class="section-subtitle">/address</h2>
+        <p class="section-desc">Displays your server's connection details: public IP/domain, LAN address, and the Java edition version label. Useful for sharing with players.</p>
+        <ul>
+          <li><strong>Permission:</strong> <span class="code-inline">server.address</span></li>
+          <li><strong>Response:</strong> Embed with connection details</li>
+          <li><strong>Requires:</strong> <span class="code-inline">MAIN_ADDRESS</span> and <span class="code-inline">LOCAL_ADDRESS</span> set in <span class="code-inline">config/.env</span> — the command still works without them but will show empty fields</li>
+        </ul>
+
+        <h2 class="section-subtitle">/ping</h2>
+        <p class="section-desc">Checks the bot's connection health by measuring Discord API round-trip latency. Does not interact with the Minecraft server.</p>
+        <ul>
+          <li><strong>Permission:</strong> No restriction — all Discord members can use this</li>
+          <li><strong>Response:</strong> Simple message showing API latency in milliseconds</li>
+          <li><strong>Notes:</strong> Useful for confirming the bot is alive and responsive if other commands seem slow</li>
+        </ul>
+
+        <h2 class="section-subtitle">/checkupdate</h2>
+        <p class="section-desc">Fetches the latest release from GitHub and compares it to the version currently running. If a newer version is available, the full changelog is displayed in the embed.</p>
+        <ul>
+          <li><strong>Permission:</strong> <span class="code-inline">bot.checkUpdate</span></li>
+          <li><strong>Response:</strong> Embed showing current version vs latest GitHub release</li>
+          <li><strong>If newer:</strong> Displays the full changelog from the release notes</li>
+        </ul>
+      </section>
+
+      <!-- PERMISSIONS -->
+      <section id="permissions" class="doc-section">
+        <h1 class="section-title">Permissions & RBAC</h1>
+
+        <h2 class="section-subtitle">How Permissions Work</h2>
+        <p class="section-desc">CraftDaemon uses a role-based access control (RBAC) system defined in <span class="code-inline">config/permission-config.js</span>. The idea is simple: each bot command has a <strong>permission key</strong> (e.g. <span class="code-inline">server.start</span>), and you decide which Discord roles can use it. You never configure permissions inside Discord itself — everything is in that one JS file on your server.</p>
+
+        <h2 class="section-subtitle">Available Permission Keys</h2>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Permission Key</th>
+              <th>Controls</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-inline">server.start</span></td>
+              <td>/start command</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">server.stop</span></td>
+              <td>/stop command</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">server.restart</span></td>
+              <td>/restart command</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">server.status</span></td>
+              <td>/status command</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">server.address</span></td>
+              <td>/address command</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">bot.checkUpdate</span></td>
+              <td>/checkupdate command</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 class="section-subtitle">Example Configuration</h2>
+        <p class="section-desc">Here's a typical setup with Owner, Admin, and Moderator roles. Replace the placeholder IDs with your real ones (see "Finding Discord IDs" below):</p>
+        <div class="code-block">module.exports = {<br>&nbsp;&nbsp;owner: ["OWNER_USER_ID"],<br>&nbsp;&nbsp;roles: {<br>&nbsp;&nbsp;&nbsp;&nbsp;ADMIN: "ADMIN_ROLE_ID",<br>&nbsp;&nbsp;&nbsp;&nbsp;MOD: "MODERATOR_ROLE_ID"<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;commands: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.start":   ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.stop":    ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.restart": ["ADMIN"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.status":  ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.address": ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"bot.checkUpdate":["ADMIN"]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;users: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"YOUR_USER_ID": ["server.start"]<br>&nbsp;&nbsp;}<br>};</div>
+
+        <h2 class="section-subtitle">Finding Discord IDs</h2>
+        <p class="section-desc">Discord IDs are long numeric strings that identify users, roles, and servers. To copy them, you first need to enable Developer Mode in Discord:</p>
+        <ul>
+          <li>Open Discord → <strong>User Settings</strong> (gear icon) → <strong>Advanced</strong> → enable <strong>Developer Mode</strong></li>
+          <li>To get a <strong>Role ID</strong>: go to Server Settings → Roles, then right-click the role and select <strong>"Copy Role ID"</strong></li>
+          <li>To get a <strong>User ID</strong>: right-click any user in the server member list and select <strong>"Copy User ID"</strong></li>
+          <li>To get your <strong>Guild (Server) ID</strong>: right-click the server name/icon and select <strong>"Copy Server ID"</strong></li>
+        </ul>
+
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Owner Override</div>
+          <p>Users listed in the <span class="code-inline">owner</span> array can run <em>any</em> command regardless of what's in <span class="code-inline">commands</span>. This is intended for the server admin — typically just your own Discord user ID.</p>
+        </div>
+      </section>
+
+      <!-- FEATURES GUIDE -->
+      <section id="features" class="doc-section">
+        <h1 class="section-title">Features Guide</h1>
+
+        <h2 class="section-subtitle">Auto-Shutdown</h2>
+        <p class="section-desc">
+          CraftDaemon can automatically shut down your Minecraft server when no players have been online for a specified duration. This is especially useful if you're paying for a VPS or cloud server — no one online means no point running it.
+        </p>
+        <p class="section-desc"><strong>Configuration (in <span class="code-inline">config/.env</span>):</strong></p>
+        <ul>
+          <li><span class="code-inline">AUTO_STOP_MINUTES</span> — how many idle minutes before the server stops. Set to <span class="code-inline">0</span> to disable auto-shutdown entirely</li>
+          <li><span class="code-inline">WARNING_MINUTES</span> — how many minutes before shutdown to post a warning message in your status channel. Must be less than <span class="code-inline">AUTO_STOP_MINUTES</span></li>
+          <li><span class="code-inline">CHECK_INTERVAL_MS</span> — how often (in milliseconds) the bot checks if the server is idle (default: 30000 = every 30 seconds)</li>
+        </ul>
+        <p class="section-desc"><strong>How it works, step by step:</strong></p>
+        <ol>
+          <li>The last player leaves the server — player count hits 0</li>
+          <li>The idle countdown timer starts</li>
+          <li>When <span class="code-inline">WARNING_MINUTES</span> remain, the bot posts a warning in the status channel</li>
+          <li>When the full <span class="code-inline">AUTO_STOP_MINUTES</span> expires, CraftDaemon automatically runs <span class="code-inline">/stop</span> (saves world first)</li>
+        </ol>
+
+        <h2 class="section-subtitle">Live Bot Presence</h2>
+        <p class="section-desc">
+          CraftDaemon updates your bot's Discord status in real time to reflect your server state. Anyone in your Discord server can glance at the bot in the member list and immediately know if the server is up without running a command.
+        </p>
+        <p class="section-desc"><strong>Presence states:</strong></p>
+        <ul>
+          <li>🔴 <strong>Do Not Disturb</strong> — Server is offline</li>
+          <li>🟡 <strong>Idle</strong> — Server is starting up</li>
+          <li>🟢 <strong>Online</strong> — Shows live player count (e.g. "3 player(s) online")</li>
+        </ul>
+
+        <h2 class="section-subtitle">RCON Manager</h2>
+        <p class="section-desc">
+          CraftDaemon maintains a persistent RCON connection to your Minecraft server rather than opening a new one for every command. This makes queries faster and allows the bot to detect connection drops and recover automatically.
+        </p>
+        <p class="section-desc"><strong>What this handles for you:</strong></p>
+        <ul>
+          <li>Automatic reconnection if the RCON connection drops (e.g. after a server restart)</li>
+          <li>Command queueing so requests don't fail if sent during a brief reconnect window</li>
+          <li>Live TPS and player count polling for presence updates</li>
+          <li>RCON round-trip latency monitoring shown in <span class="code-inline">/status</span></li>
+        </ul>
+
+        <h2 class="section-subtitle">Update Notifications</h2>
+        <p class="section-desc">
+          Run <span class="code-inline">/checkupdate</span> at any time to see if a newer version of CraftDaemon is available. The bot fetches the latest release tag from GitHub and compares it to the version currently running. If an update is available, the full changelog from the release notes is shown in the response embed so you know exactly what changed before updating.
+        </p>
+      </section>
+
+      <!-- TROUBLESHOOTING -->
+      <section id="troubleshooting" class="doc-section">
+        <h1 class="section-title">Troubleshooting</h1>
+
+        <h2 class="section-subtitle">Bot Won't Start</h2>
+        <div class="callout">
+          <div class="callout-title">Problem: "TOKEN not found in config/.env"</div>
+          <p>The bot can't find your Discord token. Make sure <span class="code-inline">config/.env</span> exists (not just <span class="code-inline">config/.env.example</span>) and that <span class="code-inline">TOKEN=</span> is set. Create it with <span class="code-inline">cp config/.env.example config/.env</span>, then edit it with <span class="code-inline">nano config/.env</span>.</p>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">Problem: "Failed to connect to RCON"</div>
+          <p>Check three things: (1) <span class="code-inline">enable-rcon=true</span> is set in <span class="code-inline">server.properties</span>, (2) the <span class="code-inline">RCON_PASSWORD</span> in your <span class="code-inline">.env</span> exactly matches <span class="code-inline">rcon.password</span> in <span class="code-inline">server.properties</span>, and (3) the Minecraft server is actually running (<span class="code-inline">sudo systemctl status minecraft</span>).</p>
+        </div>
+
+        <h2 class="section-subtitle">Commands Not Working</h2>
+        <div class="callout">
+          <div class="callout-title">Problem: Slash commands don't appear in Discord</div>
+          <p>Run <span class="code-inline">node src/register-commands.js</span> again. Make sure <span class="code-inline">GUILD_ID</span> and <span class="code-inline">CLIENT_ID</span> in your <span class="code-inline">.env</span> are correct. Commands can take up to a minute to appear in Discord after registration.</p>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">Problem: "You do not have permission to run this command"</div>
+          <p>Check <span class="code-inline">config/permission-config.js</span>. Verify that your Discord role ID or user ID is correctly entered — IDs are 18–19 digit numbers. Open it with <span class="code-inline">nano config/permission-config.js</span> and double-check the values. You can also set <span class="code-inline">DEBUG_PERMS=true</span> in your <span class="code-inline">.env</span> to see detailed permission check logs.</p>
+        </div>
+
+        <h2 class="section-subtitle">Server Control Issues</h2>
+        <div class="callout">
+          <div class="callout-title">Problem: "/start doesn't work"</div>
+          <p>This is almost always a sudoers issue. Run <span class="code-inline">sudo visudo</span> and verify the bot user has the correct <span class="code-inline">NOPASSWD</span> rule for <span class="code-inline">systemctl</span> commands. Also confirm the service name in the sudoers rule matches <span class="code-inline">MC_SERVICE</span> in your <span class="code-inline">.env</span> (default is <span class="code-inline">minecraft</span>).</p>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">Problem: "/status shows no data"</div>
+          <p>Full status data (TPS, player count) requires a <strong>Paper</strong> server — vanilla Minecraft servers do not expose this via RCON. Also verify RCON is connected by checking the bot logs.</p>
+        </div>
+
+        <h2 class="section-subtitle">Checking Logs</h2>
+        <p class="section-desc">If CraftDaemon is running as a systemd service, view its live logs with:</p>
+        <div class="code-block">journalctl -u craftdaemon -f</div>
+
+        <p class="section-desc">The <span class="code-inline">-f</span> flag follows the log in real time (like <span class="code-inline">tail -f</span>). Press <span class="code-inline">Ctrl+C</span> to exit. If you want to run the bot directly to see output in your terminal instead (useful for debugging), stop the service first and run:</p>
+        <div class="code-block">sudo systemctl stop craftdaemon<br>node src/index.js</div>
+
+        <p class="section-desc">For Minecraft server logs:</p>
+        <div class="code-block">journalctl -u minecraft -f</div>
+      </section>
+
+      <!-- ARCHITECTURE -->
+      <section id="architecture" class="doc-section">
+        <h1 class="section-title">Architecture</h1>
+
+        <h2 class="section-subtitle">System Overview</h2>
+        <p class="section-desc">CraftDaemon sits between Discord and your Minecraft server, translating slash commands into systemd and RCON calls:</p>
+        <div class="code-block">Discord User<br>    ↓<br>    ↓ /slash command<br>    ↓<br>CraftDaemon Bot ←→ systemctl start/stop/restart ←→ Minecraft (systemd)<br>    ↑                                                     ↓<br>    ←→ RCON 127.0.0.1:25575 ←→ RCON Server</div>
+
+        <h2 class="section-subtitle">Directory Structure</h2>
+        <p class="section-desc">Here's the full layout of the repository and what each file/folder does:</p>
+        <div class="code-block">CraftDaemon/<br>├── assets/                    # Logo and static assets<br>├── config/<br>│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)<br>│   └── .env.example           # Environment variable template<br>├── patchnotes/                # Release notes (e.g. v1.2.0.md)<br>├── src/<br>│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader<br>│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)<br>│   ├── commands/              # One file per slash command (data + permission + execute)<br>│   │   ├── ping.js<br>│   │   ├── start.js<br>│   │   ├── stop.js<br>│   │   ├── restart.js<br>│   │   ├── address.js<br>│   │   ├── status.js<br>│   │   └── checkUpdate.js<br>│   ├── events/<br>│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()<br>│   ├── permissions/<br>│   │   ├── index.js<br>│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)<br>│   │   └── resolver.js        # hasPermission() against permission-config.js<br>│   ├── utils/<br>│   │   └── storage.js         # JSON persistence for per-guild update-notification state<br>│   └── services/<br>│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery<br>│       ├── rconmanager.js     # Persistent RCON connection lifecycle + command pipeline<br>│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)<br>│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart<br>│       ├── commandLock.js     # Cooldown lock for start/stop/restart<br>│       └── logger.js          # Structured logging utility used across bot modules<br>├── util/                      # Optional helpers (e.g. patchnotes broadcast)<br>├── package.json<br>└── README.md</div>
+
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Layout flexibility</div>
+          <p>The <span class="code-inline">src/</span> layout is the intended structure, but the bot isn't rigid about it. If you prefer running <span class="code-inline">index.js</span> from the project root, that works too — as long as the paths in your systemd <span class="code-inline">ExecStart</span> point to the right place.</p>
+        </div>
+
+        <h2 class="section-subtitle">Key Services</h2>
+        <ul>
+          <li><strong>logger.js:</strong> Structured logging with category prefixes, timestamps, and color-coded log levels. Used across all modules — see the <a href="#logging" style="color: var(--blurple-bright);">Logging section</a> for full details</li>
+          <li><strong>rconmanager.js:</strong> Persistent RCON connection lifecycle — handles connect, keepalive pinging, automatic reconnect on failure, and the command pipeline</li>
+          <li><strong>rconQuery.js:</strong> Command-facing RCON helpers (e.g. player list, TPS queries) that are wired up after the client is ready</li>
+          <li><strong>minecraftSystemd.js:</strong> Wraps <span class="code-inline">systemctl</span> calls with a save-all flow before stop/restart operations to prevent data loss</li>
+          <li><strong>updateService.js:</strong> Polls the GitHub Releases API with ETag caching to compare the running version against the latest tag; delivers update embeds to a configured channel</li>
+          <li><strong>commandLock.js:</strong> Cooldown guard that prevents rapid repeated start/stop/restart calls within the configured <span class="code-inline">COMMAND_COOLDOWN_MS</span> window</li>
+          <li><strong>middleware.js / resolver.js:</strong> RBAC enforcement layer — every slash command interaction passes through <span class="code-inline">permissionMiddleware</span> before <span class="code-inline">command.execute()</span> is called</li>
+          <li><strong>storage.js:</strong> Lightweight JSON persistence for per-guild state (e.g. update notification tracking)</li>
+        </ul>
+      </section>
+
+      <!-- MANAGING SERVICES -->
+      <section id="managing-services" class="doc-section">
+        <h1 class="section-title">Managing Services</h1>
+        <p class="section-desc">Once both CraftDaemon and your Minecraft server are running, you'll mostly interact with them through Discord slash commands. But you'll occasionally need to manage things directly from the server — here's a reference for every useful command.</p>
+
+        <h2 class="section-subtitle">systemctl — Controlling Services</h2>
+        <p class="section-desc">These commands let you start, stop, and inspect both the bot and the Minecraft server as systemd services. Replace <span class="code-inline">craftdaemon</span> with <span class="code-inline">minecraft</span> (or whatever you named your service) where applicable.</p>
+
+        <div class="code-block"># Check the current status of a service (active state, recent logs, PID)<br>sudo systemctl status craftdaemon<br>sudo systemctl status minecraft<br><br># Start a service<br>sudo systemctl start craftdaemon<br><br># Stop a service<br>sudo systemctl stop craftdaemon<br><br># Restart a service (stop then start)<br>sudo systemctl restart craftdaemon<br><br># Enable a service to start automatically on boot<br>sudo systemctl enable craftdaemon<br><br># Disable autostart on boot<br>sudo systemctl disable craftdaemon<br><br># Reload systemd after creating or editing a .service file<br>sudo systemctl daemon-reload</div>
+
+        <h2 class="section-subtitle">journalctl — Reading Logs</h2>
+        <p class="section-desc">journalctl reads logs written by systemd services. These are your main tool for debugging when something isn't working as expected.</p>
+
+        <div class="code-block"># View the last 50 lines of logs for the bot<br>journalctl -u craftdaemon -n 50 --no-pager<br><br># Follow live logs in real time (like tail -f) — press Ctrl+C to exit<br>journalctl -u craftdaemon -f<br><br># Follow live logs for the Minecraft server<br>journalctl -u minecraft -f<br><br># View logs since the last boot only<br>journalctl -u craftdaemon -b<br><br># View logs from a specific time window<br>journalctl -u craftdaemon --since "1 hour ago"</div>
+
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Best debugging workflow</div>
+          <p>Open two terminals: run <span class="code-inline">journalctl -u craftdaemon -f</span> in one, and reproduce the issue in the other. You'll see exactly what the bot is doing in real time as it happens.</p>
+        </div>
+      </section>
+
+      <!-- LOGGING -->
+      <section id="logging" class="doc-section">
+        <h1 class="section-title">Logging</h1>
+        <p class="section-desc">CraftDaemon uses a structured logging system with category-based prefixes, timestamps, and color-coded log levels. Every log line tells you <em>when</em> something happened, <em>which component</em> produced it, and <em>how severe</em> it is — making it much easier to trace issues across the bot.</p>
+
+        <h2 class="section-subtitle">Log Format</h2>
+        <p class="section-desc">Every log entry follows this structure:</p>
+        <div class="code-block">HH:MM:SS [Category] [Level] Message</div>
+        <p class="section-desc">For example:</p>
+        <div class="code-block">12:35:47 [RCON] [DEBUG] Sending command: list<br>12:35:47 [RCON] [DEBUG] RCON response received: There are 0 of a max of 20 players online<br>12:36:02 [AutoStop] [WARN] Server has been empty for 8 minutes<br>12:36:12 [SystemD] [ERROR] Failed to start server: Permission denied</div>
+
+        <h2 class="section-subtitle">Log Categories</h2>
+        <p class="section-desc">Each category corresponds to a specific part of the bot. You'll see these as the bracketed label after the timestamp:</p>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Color</th>
+              <th>What it covers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-inline">[Bot]</span></td>
+              <td>Cyan</td>
+              <td>General bot lifecycle and startup configuration</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">[Discord]</span></td>
+              <td>Blue</td>
+              <td>Discord.js client events and API interactions</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">[Minecraft]</span></td>
+              <td>Red</td>
+              <td>Minecraft server-specific events</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">[RCON]</span></td>
+              <td>Magenta</td>
+              <td>RCON connection lifecycle, commands sent, responses received</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">[AutoStop]</span></td>
+              <td>Yellow</td>
+              <td>Auto-shutdown timer events and idle detection</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">[SystemD]</span></td>
+              <td>White</td>
+              <td>systemctl calls — start, stop, restart, status</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 class="section-subtitle">Log Levels</h2>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>Color</th>
+              <th>When you'll see it</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-inline">[DEBUG]</span></td>
+              <td>Gray</td>
+              <td>Detailed internal info (RCON commands, reconnect attempts). Hidden by default — enable with <span class="code-inline">LOG_LEVEL=DEBUG</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">[INFO]</span></td>
+              <td>Green</td>
+              <td>Normal operation — bot started, server started/stopped, commands executed</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">[WARN]</span></td>
+              <td>Yellow</td>
+              <td>Something worth noticing but not broken — RCON refused while server starts, idle warning sent</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">[ERROR]</span></td>
+              <td>Red</td>
+              <td>Something failed and needs attention — permission denied, unhandled exception</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 class="section-subtitle">Changing the Log Level</h2>
+        <p class="section-desc">By default the log level is <span class="code-inline">INFO</span>, which hides DEBUG output. To change it, set <span class="code-inline">LOG_LEVEL</span> in your <span class="code-inline">config/.env</span>:</p>
+        <div class="code-block">LOG_LEVEL=DEBUG</div>
+        <p class="section-desc">Valid values: <span class="code-inline">DEBUG</span>, <span class="code-inline">INFO</span>, <span class="code-inline">WARN</span>, <span class="code-inline">ERROR</span>. No code changes or restarts of systemd are needed beyond restarting the bot itself (<span class="code-inline">sudo systemctl restart craftdaemon</span>).</p>
+
+        <h2 class="section-subtitle">Real Log Examples</h2>
+        <p class="section-desc"><strong>Startup configuration summary</strong> — printed every time the bot comes online:</p>
+        <div class="code-block">03:15:30 [Bot] [INFO] ========== BOT STARTUP CONFIGURATION ==========<br>03:15:30 [Bot] [INFO] RCON Host: 127.0.0.1<br>03:15:30 [Bot] [INFO] RCON Port: 25575<br>03:15:30 [Bot] [INFO] Minecraft Service: minecraft-service.service<br>03:15:30 [Bot] [INFO] Auto-stop enabled: Yes (10 min idle, warning at 8 min)<br>03:15:30 [Bot] [INFO] Status channel ID: 1404683867265489235<br>03:15:30 [Bot] [INFO] Main address: my-minecraft-server.joinmc.link<br>03:15:30 [Bot] [INFO] =============================================<br>03:15:31 [Discord] [INFO] ✅ CraftDaemon is online.<br>03:15:31 [Discord] [INFO] Logged in as CraftDaemon#2232<br>03:15:31 [SystemD] [INFO] Managing systemd service: minecraft-server.service</div>
+
+        <p class="section-desc"><strong>A slash command received from Discord</strong>:</p>
+        <div class="code-block">03:16:29 [SystemD] [INFO] Start command from steve</div>
+
+        <p class="section-desc"><strong>RCON refused while the server is starting up</strong> — the bot throttles repeated refusal logs so they don't flood your output:</p>
+        <div class="code-block">12:32:41 [RCON] [WARN] RCON connection refused (server may be offline/starting). Retrying every 5s. [connect ECONNREFUSED 127.0.0.1:25575]<br>12:33:41 [RCON] [WARN] RCON connection refused (server may be offline/starting). Retrying every 5s. (+11 similar refusals suppressed) [connect ECONNREFUSED 127.0.0.1:25575]</div>
+
+        <p class="section-desc"><strong>Auto-stop engaging</strong> — the full idle → warning → shutdown sequence:</p>
+        <div class="code-block">03:17:00 [AutoStop] [INFO] Server is now empty. Auto-stop timer started (10 minutes until shutdown).<br>03:25:00 [AutoStop] [WARN] Server empty for 8.0 minutes. Warning sent (2 min until shutdown).<br>03:27:00 [AutoStop] [INFO] Server empty for 10.0 minutes (threshold: 10). Initiating shutdown.</div>
+
+        <h2 class="section-subtitle">Adding Logging to Custom Code</h2>
+        <p class="section-desc">If you're extending CraftDaemon with your own modules, you can use the same logger. Import <span class="code-inline">createLogger</span> and give your component a category name:</p>
+        <div class="code-block">const { createLogger } = require("./services/logger");<br>const myLogger = createLogger('MyComponent');<br><br>myLogger.info("Something happened");<br>myLogger.warn("This might be a problem");<br>myLogger.error("An error occurred: " + err.message);<br>myLogger.debug("Detailed debug info — only visible with LOG_LEVEL=DEBUG");</div>
+
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Performance note</div>
+          <p>Logging is lightweight and designed for production use. DEBUG-level calls are completely skipped (not just filtered) when the log level is set to <span class="code-inline">INFO</span> or higher, so there's no performance penalty for leaving debug calls in your code.</p>
+        </div>
+      </section>
+
+      <!-- CONTRIBUTING -->
+      <section id="contributing" class="doc-section">
+        <h1 class="section-title">Contributing</h1>
+
+        <h2 class="section-subtitle">Want to Help?</h2>
+        <p class="section-desc">
+          CraftDaemon is a solo project and contributions are very welcome! Whether it's bug fixes, new features, documentation improvements, or just suggestions — any input is appreciated.
+        </p>
+
+        <h2 class="section-subtitle">How to Contribute</h2>
+        <ol>
+          <li>Fork the repository on GitHub (click "Fork" on the repo page)</li>
+          <li>Clone your fork locally: <span class="code-inline">git clone https://github.com/YOUR_USERNAME/CraftDaemon</span></li>
+          <li>Create a feature branch: <span class="code-inline">git checkout -b feature/my-feature</span></li>
+          <li>Make your changes</li>
+          <li>Test thoroughly — make sure existing functionality still works</li>
+          <li>Commit with a clear message: <span class="code-inline">git commit -m "Add my feature"</span></li>
+          <li>Push to your fork: <span class="code-inline">git push origin feature/my-feature</span></li>
+          <li>Open a Pull Request on GitHub against the main repo</li>
+        </ol>
+
+        <h2 class="section-subtitle">Reporting Bugs</h2>
+        <p class="section-desc">
+          Found a bug? Open an issue on <a href="https://github.com/d1vid3d/CraftDaemon/issues" style="color: var(--blurple-bright);">GitHub Issues</a>. A good bug report includes:
+        </p>
+        <ul>
+          <li>A clear description of what went wrong</li>
+          <li>Steps to reproduce the issue</li>
+          <li>What you expected to happen vs what actually happened</li>
+          <li>Your environment details: Linux distro, Node.js version (<span class="code-inline">node --version</span>), Minecraft server type</li>
+          <li>Relevant log output from <span class="code-inline">journalctl -u craftdaemon</span> if applicable</li>
+        </ul>
+
+        <h2 class="section-subtitle">Code Standards</h2>
+        <ul>
+          <li>Use consistent indentation (2 spaces)</li>
+          <li>Write descriptive variable and function names</li>
+          <li>Add comments for any complex or non-obvious logic</li>
+          <li>Test your changes before submitting</li>
+          <li>Follow the existing code style throughout the project</li>
+        </ul>
+
+        <h2 class="section-subtitle">License</h2>
+        <p class="section-desc">
+          CraftDaemon is licensed under the MIT License. By contributing, you agree that your contributions will be licensed under the same license.
+        </p>
+
+        <div class="callout info">
+          <div class="callout-title">💬 Questions?</div>
+          <p>Feel free to open a GitHub Discussion or Issue if you have questions about contributing. There's no such thing as a dumb question here, so don't hesitate to reach out.</p>
+        </div>
+
+        <div class="callout warning" style="border-color: #f5c842;">
+          <div class="callout-title">🌟 Like this project?</div>
+          <p>If CraftDaemon has been useful to you, consider giving it a ⭐ on GitHub! It helps others discover the project and means a lot to the development. Thanks for using it.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <img class="footer-logo-img" src="../assets/logo/logo-dark.svg" alt="CraftDaemon" />
+    <p>A self-hosted Discord bot for Minecraft server control · MIT License</p>
+    <div class="footer-links">
+      <a href="https://github.com/d1vid3d/CraftDaemon">GitHub</a>
+      <a href="https://github.com/d1vid3d/CraftDaemon/releases">Releases</a>
+      <a href="https://github.com/d1vid3d/CraftDaemon/issues">Issues</a>
+      <a href="https://github.com/d1vid3d/CraftDaemon/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+    <script src="./script/documentation-script.js"></script>
+</body>
+</html>
