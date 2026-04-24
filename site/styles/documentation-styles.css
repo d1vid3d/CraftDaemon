@@ -577,6 +577,7 @@
         max-height: none;
         margin-bottom: 2rem;
       }
+      .sidebar-title { display: none; }
       .sidebar-toggle-btn { display: block; }
       .sidebar-list {
         max-height: 500px;
@@ -600,6 +601,7 @@
       .doc-container { padding-top: 5.5rem; padding-left: 0.75rem; padding-right: 0.75rem; gap: 1rem; }
       .section-title { font-size: 1.5rem; padding-bottom: 0.75rem; }
       .section-subtitle { font-size: 1.1rem; }
+      .sidebar-toggle-btn { margin-bottom: 1rem; }
       
       .doc-table { font-size: 0.7rem; }
       .doc-table th, .doc-table td { padding: 0.5rem 0.5rem; }
