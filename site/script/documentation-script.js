@@ -79,7 +79,7 @@
           if (activeLink) activeLink.classList.add('active');
         }
       });
-    }, { threshold: 0.5 });
+    }, { threshold: 0.1, rootMargin: '-50px 0px -50px 0px' });
 
     document.querySelectorAll('.doc-section').forEach(section => {
       observer.observe(section);

@@ -550,37 +550,44 @@
     .release-section { padding: 4rem 2rem 6rem; max-width: 860px; margin: 0 auto; }
     .release-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
     .release-card-header {
-      padding: 1.25rem 1.5rem;
+      padding: 1.25rem;
       border-bottom: 1px solid var(--border);
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
+      align-items: center;
+      cursor: pointer;
+      gap: 1rem;
+    }
+    .release-card-header-left { 
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .release-card-header-right {
+      display: flex;
+      align-items: center;
       gap: 0.75rem;
     }
-    .release-card-header-left { display: flex; align-items: center; gap: 0.75rem; }
     .release-version-tag { font-family: var(--mono); font-size: 0.85rem; font-weight: 700; color: var(--green-bright); }
-    .release-date { font-family: var(--mono); font-size: 0.7rem; color: var(--text-dimmer); }
+    .release-date { font-family: var(--mono); font-size: 0.7rem; color: var(--text-dimmer); margin-top: 0.25rem; margin-bottom: 0.75rem; }
     .release-gh-link {
+      display: inline-block;
       font-family: var(--mono);
       font-size: 0.7rem;
       color: var(--blurple-bright);
       text-decoration: none;
       border: 1px solid rgba(88,101,242,0.35);
-      padding: 0.3rem 0.75rem;
+      padding: 0.25rem 0.6rem;
       border-radius: 4px;
       transition: background 0.2s;
       white-space: nowrap;
     }
     .release-gh-link:hover { background: rgba(88,101,242,0.12); }
-    .release-card-header { cursor: pointer; }
     .release-toggle-arrow {
       width: 24px; height: 24px;
       display: flex; align-items: center; justify-content: center;
-      margin-left: 0.5rem;
       transition: transform 0.3s ease;
       flex-shrink: 0;
-      position: relative;
     }
     .release-toggle-arrow::before {
       content: '';
@@ -894,7 +901,21 @@
       .showcase-caption p { font-size: 0.75rem; }
       .diagram-box { margin: 0; }
       .presence-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; padding-inline: 0.5rem; }
-      .release-card-header { flex-direction: column; align-items: flex-start; }
-      .release-card-header-left { flex-direction: column; align-items: flex-start; }
+      .release-card-header { 
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 1.25rem;
+      }
+      .release-card-header-left { 
+        gap: 0.15rem;
+        flex: 1;
+      }
+      .release-card-header-right {
+        flex-direction: column-reverse;
+        align-items: flex-end;
+        gap: 0.5rem;
+      }
+      .release-date { margin-bottom: 0.5rem; }
+      .release-gh-link { font-size: 0.68rem; padding: 0.2rem 0.5rem; }
       .code-block { word-break: break-all; }
     }
