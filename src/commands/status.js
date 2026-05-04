@@ -7,6 +7,7 @@ const systemdLogger = createLogger("SystemD");
 const minecraftLogger = createLogger("Minecraft");
 
 const MAIN_ADDRESS = process.env.MAIN_ADDRESS || null;
+const SERVER_TYPE = process.env.SERVER_TYPE || null;
 
 module.exports = {
     permission: "server.status",
@@ -50,7 +51,7 @@ module.exports = {
         let rconOk = false;
 
         const [tpsRes, playersWithPingRes] = await Promise.allSettled([
-            getTps(),
+            getTps(SERVER_TYPE),
             getPlayerListWithPing(),
         ]);
 
@@ -92,7 +93,21 @@ module.exports = {
         };
 
         if (rconOk) {
-            embed.fields.push({ name: "TPS", value: `📉 ${tps}`, inline: false });
+            // Determine TPS display value based on SERVER_TYPE
+            let tpsDisplay = tps || "N/A";
+            
+            if (!SERVER_TYPE || SERVER_TYPE.trim() === "") {
+                // SERVER_TYPE is not set
+                tpsDisplay = "(Not Set)";
+            } else if (SERVER_TYPE.toUpperCase().trim() === "PAPER") {
+                // SERVER_TYPE is PAPER
+                tpsDisplay = tps || "N/A";
+            } else if (SERVER_TYPE.toUpperCase().trim() !== "PAPER") {
+                // Any other invalid value
+                tpsDisplay = "(Not Supported)";
+            }
+            
+            embed.fields.push({ name: "TPS", value: `📉 ${tpsDisplay}`, inline: false });
             embed.fields.push({ name: "Players", value: `👥 ${playersLine}`, inline: false });
             embed.fields.push({ name: "Ping (RCON RTT)", value: ping !== null ? `📡 ${ping} ms` : "N/A", inline: false });
             if (MAIN_ADDRESS) {

@@ -253,6 +253,7 @@ Your environment file is **`config/.env`** (same path the bot and `register-comm
 | `STATUS_CHANNEL_ID` | ✅ | Channel ID where auto-shutdown warnings are posted (from step 3f) | — |
 | **Minecraft & systemd Configuration** | | | |
 | `MC_SERVICE` | ✅ | Your Minecraft server's systemd service name (e.g. `minecraft`) | — |
+| `SERVER_TYPE` | ☑️ | Server Type (for TPS reporting in /status) (e.g. `PAPER`) | `PAPER` (uses /tps), or leave blank for (Not Set) |
 | **RCON Connection** | | | |
 | `RCON_HOST` | ✅ | RCON host IP address (default: `127.0.0.1` if bot and server are on the same machine) | — |
 | `RCON_PORT` | ✅ | RCON port (default: `25575`) | `1–65535` |
@@ -352,7 +353,7 @@ module.exports = {
 
 </details>
 
-### 5. Set up the Minecraft server as a systemd service
+### 5. Set up the Minecraft server as a systemd service (If you haven't yet)
 
 If you haven't already, create a systemd unit for your Minecraft server. Here's a minimal example using Paper:
 
@@ -462,6 +463,9 @@ Both services are now managed by systemd and will survive reboots.
 
 ## Project Structure
 
+<details>
+<summary><b>Click to expand - Project Filestructure</b></summary>
+
 ```
 CraftDaemon/
 ├── assets/                    # Logo and static assets
@@ -502,12 +506,14 @@ CraftDaemon/
 
 > The `src/` layout is the intended structure, but the bot isn't rigid about it — if you prefer running `index.js` from the project root that works too, as long as paths and your systemd `ExecStart` point to the right place.
 
+</details>
+
 ---
 
 ## Managing Your Services
 
 <details>
-<summary><b>Click to expand — useful systemd & journalctl commands</b></summary>
+<summary><b>Click to expand - Useful systemd & journalctl commands</b></summary>
 
 Once both services are running, you'll mostly interact with them through Discord. But here are the essential commands to know for when you need to manage things directly from your server.
 
@@ -565,7 +571,7 @@ journalctl -u craftdaemon --since "1 hour ago"
 ## Advanced Logging Capabilities and Customization
 
 <details>
-<summary><b>Click to expand</b></summary>
+<summary><b>Click to expand - Logging</b></summary>
 
 ### The bot uses a structured logging system with category-based prefixes, timestamps, and color-coded log levels. This makes it easier to track what's happening across different components.
 
@@ -726,7 +732,7 @@ Apr 16 03:27:00 node-0 node[3040518]: 03:27:00 [AutoStop] [INFO] Server empty fo
 ## Auto-Shutdown Details
 
 <details>
-<summary><b>Click to expand</b></summary>
+<summary><b>Click to expand - Auto-Stop </b></summary>
 
 The bot uses persistent RCON player count state and checks it on the interval defined by `CHECK_INTERVAL_MS` (or legacy `CHECK_INTERVAL`) in your `.env`. The shutdown sequence works like this:
 
@@ -744,7 +750,7 @@ Setting `AUTO_STOP_MINUTES=0` in your `.env` disables auto-shutdown entirely. `W
 ## RBAC (Role-Based Access Control) Detailed Explanation
 
 <details>
-<summary><b>Click to expand — RBAC Docs</b></summary>
+<summary><b>Click to expand - RBAC Docs</b></summary>
 
 CraftDaemon uses a **config-driven RBAC** layer for slash commands.
 

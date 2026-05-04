@@ -1,6 +1,6 @@
 // ============================================================
-//  RconManager.js  |  Persistent RCON Connection Manager
-//  Part of CraftDaemon v1.2.0
+//  rconManager.js  |  Persistent RCON Connection Manager
+//  Part of CraftDaemon v1.2.0 Reformat
 //
 //  Replaces the old stateless "connect → run → disconnect" pattern
 //  with a long-lived socket connection that:
@@ -17,6 +17,9 @@
 //    and recreate the manager in tests, or to have future per-server
 //    instances without any global-variable collisions.
 // ============================================================
+
+// Inline documentation is provided throughout this file, as it is one of the more complex and critical modules.
+// Please read through it carefully before making edits, and make sure to maintain the clarity of the explanations when modifying code for contributions.
 
 "use strict";
 
@@ -84,9 +87,8 @@ const State = Object.freeze({
  * Manages a persistent, auto-reconnecting RCON connection to a
  * Minecraft server.
  *
- * Usage
- * -----
- * ```js
+ * Usage (JavaScript):
+ * 
  * const manager = new RconManager({ host, port, password });
  * manager.on("playerCount", (count) => updatePresence(count));
  * manager.on("offline",     ()      => setPresenceOffline());

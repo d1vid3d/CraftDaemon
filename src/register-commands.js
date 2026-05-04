@@ -1,6 +1,4 @@
 // This script registers the slash commands for the Discord bot. It should be run once to set up the commands in the specified guild.
-// Make sure to fill in config/.env with the appropriate values before running this script.
-// Example Usage: node src/register-commands.js
 
 const fs = require("fs");
 const path = require("path");

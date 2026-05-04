@@ -3,11 +3,11 @@
 const { createLogger } = require("./logger");
 const minecraftLogger = createLogger("Minecraft");
 
-/** @type {import("./rconmanager").RconManager|null} */
+/** @type {import("./rconManager").RconManager|null} */
 let rconManager = null;
 
 /**
- * @param {import("./rconmanager").RconManager|null} manager
+ * @param {import("./rconManager").RconManager|null} manager
  */
 function setRconManager(manager) {
     rconManager = manager;
@@ -27,11 +27,21 @@ async function rconSend(cmd) {
 }
 
 /**
+ * @param {string|undefined} serverType - Server type from SERVER_TYPE env var
  * @returns {Promise<string|null>}
  */
-async function getTps() {
-    const res = await rconSend("tps");
-    return res ? res.replace(/§./g, "").trim() : null;
+async function getTps(serverType) {
+    // Normalize server type to uppercase and trim whitespace
+    const normalizedType = (serverType || "").toUpperCase().trim();
+
+    // Only query /tps command for PAPER servers
+    if (normalizedType === "PAPER") {
+        const res = await rconSend("tps");
+        return res ? res.replace(/§./g, "").trim() : null;
+    }
+
+    // For any other value, return null (RCON not queried)
+    return null;
 }
 
 /**

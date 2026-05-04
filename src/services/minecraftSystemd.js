@@ -1,4 +1,5 @@
 // systemd + save-all orchestration for the Minecraft service.
+// This module provides functions to check the Minecraft service status, start, stop, and restart the server connected to systemd.
 
 const { exec } = require("child_process");
 const { promisify } = require("util");

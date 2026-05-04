@@ -1,22 +1,10 @@
-// Linux Warning: This bot uses sudo to manage the Minecraft server via systemd, so it must be run in an environment where it has passwordless sudo permissions for the specified systemctl commands.
-// Make sure to configure your sudoers file accordingly and understand the security implications.
-
-// ============================================================
-//  CraftDaemon  |  A Discord bot for managing your Minecraft server on Linux
-//  Server management via systemd  |  Stats via RCON
-//  Required external files: config/.env (configuration), logger.js (custom logging utility), rconmanager.js (RCON manager)
-// ============================================================
-
-// Make sure to fill in config/.env file with the appropriate values before running the bot.
-// and run `node src/register-commands.js` once to set up the slash commands in your Discord server.
-
 const fs = require("fs");
 const path = require("path");
 
 require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
 
 const { Client, Collection, GatewayIntentBits, ActivityType, PermissionFlagsBits } = require("discord.js");
-// RconManager replaces the old stateless rcon helper.
+// Per release version 1.2.0 RconManager replaces the old stateless rcon helper.
 // The raw `rcon` package is now an internal detail of RconManager only.
 const { setRconManager } = require("./services/rconQuery");
 const { getServiceState, stopServer } = require("./services/minecraftSystemd");
@@ -28,13 +16,13 @@ const {
     DEFAULT_COMMAND_TIMEOUT_MS,
     DEFAULT_MAX_KEEPALIVE_FAILURES,
     DEFAULT_REFUSED_LOG_INTERVAL_MS,
-} = require("./services/rconmanager");
+} = require("./services/rconManager");
 
 // Import custom logger
 const { createLogger, mainLogger, LogLevel } = require("./services/logger");
 const { init: initUpdateService } = require("./services/updateService");
 
-// Create category-specific loggers (Create your own categories as needed by calling createLogger with a custom name in your modules)
+// Create category-specific loggers here (Create your own categories as needed by calling createLogger with a custom name in your modules , check docs for details)
 const botLogger = createLogger('Bot');
 const discordLogger = createLogger('Discord');
 const autoStopLogger = createLogger('AutoStop');
@@ -139,20 +127,7 @@ function warnStartupOperatorChecklist() {
 
 let startupOperatorChecklistWarned = false;
 
-// ---- Example Config [CHANGE IN .ENV] (check config/.env.example for details) ----------------------------------------
-//
-//  TOKEN=
-//  GUILD_ID=
-//  STATUS_CHANNEL_ID=
-//
-//  MC_SERVICE=minecraft        [your systemd service name]
-//
-//  RCON_HOST=127.0.0.1
-//  RCON_PORT=25575
-//  RCON_PASSWORD=
-//
-// ----------------------------------------------------------------
-
+// Config parsing and validation (with defaults and sanity checks)
 // Hardcoding is not reccomended for these values since they may differ between environments, but you can change the defaults here if you want:
 
 function getEnvInt(name, fallback, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) {
@@ -197,7 +172,7 @@ let warningSent  = false;
 // rconManager is declared here so every part of this file can reference it,
 // but it is only *initialised* inside client.once("clientReady") - after the
 // Discord client is fully logged in - because the manager drives bot presence.
-/** @type {import("./services/rconmanager").RconManager|null} */
+/** @type {import("./services/rconManager").RconManager|null} */
 let rconManager  = null;
 
 // ========== STARTUP CONFIG LOGGING (Default Console Broadcast when bot starts) ==========
@@ -212,8 +187,8 @@ botLogger.info(`Main address: ${MAIN_ADDRESS || "NOT SET"}`);
 botLogger.info(`RCON keepalive/reconnect/timeout: ${RCON_KEEPALIVE_INTERVAL_MS}ms / ${RCON_RECONNECT_INTERVAL_MS}ms / ${RCON_COMMAND_TIMEOUT_MS}ms`);
 botLogger.info("=============================================");
 
-// systemd + RCON query helpers live in `./services/minecraftSystemd` and
-// `./services/rconQuery` (wired to `rconManager` after login).
+// systemd + RCON query helpers live in ./services/minecraftSystemd and
+// ./services/rconQuery (wired to `rconManager` after login).
 
 // ================================================================
 //  Discord client
@@ -235,7 +210,9 @@ const client = new Client({
 // Load commands from the commands directory
 
 client.commands = new Collection();
+
 const commandsPath = path.join(__dirname, "commands");
+
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith(".js"));
     for (const file of commandFiles) {
@@ -256,8 +233,8 @@ const registerInteractionCreate = require("./events/interactionCreate");
 registerInteractionCreate(client);
 
 // ================================================================
-//  Bot presence  (driven by RconManager events, not polling)
-//  ── See client.once("clientReady") for the event wiring ──────
+//  Bot presence  (driven by RconManager events, not polling, as per v1.2.0 refactor)
+//  See client.once("clientReady") for the event wiring
 // ================================================================
 
 // ================================================================
@@ -323,7 +300,7 @@ async function sendAutoStopShutdown() {
 }
 
 // ================================================================
-//  Auto-stop interval
+//  Auto-stop and its interval.
 //  Player count is sourced from rconManager.playerCount (kept fresh
 //  by the manager's keepalive loop) rather than making separate RCON
 //  calls, which eliminates double-polling and log spam.
@@ -525,7 +502,7 @@ client.once("clientReady", async () => {
     initUpdateService(client);
 });
 
-// Slash commands live in `./commands` and are dispatched from
-// `./events/interactionCreate.js` (RBAC via `permissionMiddleware`).
+// Slash commands live in ./commands and are dispatched from
+// ./events/interactionCreate.js (RBAC via `permissionMiddleware`).
 
 client.login(process.env.TOKEN);
