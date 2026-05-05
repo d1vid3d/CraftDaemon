@@ -17,7 +17,7 @@
   <a href="https://systemd.io" target="_blank"><img src="https://img.shields.io/badge/Linux-systemd-FCC624?style=for-the-badge&logo=linux&logoColor=white" /></a>&nbsp;
   <a href="https://papermc.io" target="_blank"><img src="https://img.shields.io/badge/Paper-Recommended-F96854?style=for-the-badge" /></a>&nbsp;
   <a href="https://github.com/d1vid3d/CraftDaemon" target="_blank"><img src="https://img.shields.io/badge/Self--Hosted-Required-red?style=for-the-badge" /></a>&nbsp;
-  <a href="https://github.com/d1vid3d/CraftDaemon/releases" target="_blank"><img src="https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=for-the-badge" /></a>
+  <a href="https://github.com/d1vid3d/CraftDaemon/releases" target="_blank"><img src="https://img.shields.io/github/v/release/d1vid3d/CraftDaemon?style=for-the-badge&logo=github" /></a>
 
 </div>
 
@@ -51,7 +51,7 @@ The bot does **not** spawn the Minecraft process itself — it delegates entirel
 
 CraftDaemon uses the `tps` RCON command to read server performance. This command is provided by **Paper** — it does not exist on vanilla Minecraft servers. Paper is also the standard choice for most server setups, so it's the recommended and tested platform for this bot.
 
-> Vanilla servers will work for basic start/stop/restart/status, but TPS will not be available in `/status`.
+> TPS will not be available in `/status` if you use other non-Paper server that doesn't support `tps`.
 
 ### Full Documentation
 
