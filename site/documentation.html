@@ -88,16 +88,25 @@
 
         <h2 class="section-subtitle">System Requirements</h2>
         <ul>
-          <li><strong>Operating System:</strong> Linux with systemd (Ubuntu, Debian, Arch, etc.) - this bot does <em>not</em> run on Windows or macOS</li>
-          <li><strong>Node.js:</strong> Version 18 or later (tested on 22.x). To check what you have, run: <span class="code-inline">node --version</span></li>
-          <li><strong>Minecraft Server:</strong> Paper (recommended) or any server with RCON support enabled</li>
-          <li><strong>Memory:</strong> Minimal - the bot itself uses very little RAM and runs comfortably alongside your Minecraft server</li>
+          <li><strong>Operating System:</strong> Linux with systemd (Ubuntu, Debian, Arch, etc.) - Check Operating System Compatibility</li>
+          <li><strong>Node.js:</strong> v18+ (v22 recommended; used for development and testing). To check what you have, run: <span class="code-inline">node --version</span></li>
+          <li><strong>Minecraft Server:</strong>: Any server with RCON support enabled (Although Paper is recommended)</li>
           <li><strong>Network:</strong> Outbound HTTPS access for the Discord API, and a local connection to RCON (127.0.0.1 by default)</li>
         </ul>
 
         <div class="callout info">
-          <div class="callout-title">ℹ️ Paper vs Vanilla</div>
-          <p>CraftDaemon works with any Minecraft server that supports RCON for start/stop/restart commands. However, the full <span class="code-inline">/status</span> command (TPS, live player count, uptime) requires a <strong>Paper</strong> server. Vanilla servers will show limited status information.</p>
+          <div class="callout-title">ℹ️ Paper vs Other servers</div>
+          <p>CraftDaemon works with any Minecraft server that supports RCON for start/stop/restart commands. However, the full <span class="code-inline">/status</span> command (Specifically for TPS) requires a <strong>Paper</strong> server. This is the sole reason Paper is recommended, apart from it being extremely light. Compatiblity is being worked on for future updates.
+        </div>
+
+        <div class="callout info">
+          <div class="callout-title">ℹ️ Operating System Compatibility</div>
+          <p>This bot does not run natively on Windows or macOS. Advanced users may still run it using environments like <a href="https://docs.microsoft.com/en-us/windows/wsl/" style="color: var(--blurple-bright); text-decoration: none;">Windows Subsystem for Linux (WSL)</a> on Windows, or other Unix-like setups on macOS, but this is not officially supported.</p>
+        </div>
+
+        <div class="callout warning">
+          <div class="callout-title">⚠️ Node Version Note</div>
+          <p>A future migration to <strong>TypeScript</strong> is planned, which will likely require Node.js v22+.</p>
         </div>
       </section>
 
@@ -134,14 +143,14 @@
 
         <div class="callout warning">
           <div class="callout-title">⚠️ Token Security</div>
-          <p>Your bot token is like a password — never share it, never commit it to Git. Keep it only in your <span class="code-inline">config/.env</span> file, and make sure <span class="code-inline">.env</span> is listed in your <span class="code-inline">.gitignore</span>. If it gets leaked, immediately regenerate it in the Developer Portal.</p>
+          <p>Your bot token is like a password, never share it. If you are contributing or modifying the for code yourself, never commit it to Git. Keep it only in your <span class="code-inline">config/.env</span> file, and make sure <span class="code-inline">.env</span> is listed in your <span class="code-inline">.gitignore</span>. If it gets leaked, immediately regenerate it in the Developer Portal.</p>
         </div>
 
         <h2 class="section-subtitle">Step 4: Set Up Minecraft as a systemd Service (If you haven't already)</h2>
         <p class="section-desc">CraftDaemon controls your Minecraft server through <span class="code-inline">systemd</span>, Linux's service manager. If your server isn't already running as a systemd service, you'll need to set this up. Create the service file using a text editor with root privileges:</p>
         <div class="code-block">sudo nano /etc/systemd/system/minecraft.service</div>
         <p class="section-desc">Paste the following content into the file, then save and exit (<span class="code-inline">Ctrl+O</span>, Enter, <span class="code-inline">Ctrl+X</span> in nano):</p>
-        <div class="code-block">[Unit]<br>Description=Minecraft Server<br>After=network.target<br><br>[Service]<br>Type=simple<br>User=minecraft<br>WorkingDirectory=/home/minecraft/server<br>ExecStart=/usr/bin/java -Xmx8G -Xms8G -jar paper-latest.jar nogui<br>Restart=on-failure<br>RestartSec=5s<br><br>[Install]<br>WantedBy=multi-user.target</div>
+        <div class="code-block">[Unit]<br>Description=Minecraft Server<br>After=network.target<br><br>[Service]<br>Type=simple<br>User=minecraft<br>WorkingDirectory=/home/minecraft/server<br>ExecStart=/usr/bin/java -Xmx8G -Xms8G -jar server.jar nogui<br>Restart=on-failure<br>RestartSec=5s<br><br>[Install]<br>WantedBy=multi-user.target</div>
 
         <p class="section-desc">Adjust the following to match your setup before saving:</p>
         <ul>
@@ -168,7 +177,7 @@
         <div class="code-block">nano config/.env</div>
         <p class="section-desc">Fill in your values. At minimum, set these required fields:</p>
         <div class="code-block">TOKEN=your_bot_token_here<br>GUILD_ID=your_server_id<br>CLIENT_ID=your_client_id<br>STATUS_CHANNEL_ID=your_channel_id<br>MC_SERVICE=minecraft<br>RCON_HOST=127.0.0.1<br>RCON_PORT=25575<br>RCON_PASSWORD=your_rcon_password<br>AUTO_STOP_MINUTES=10<br>WARNING_MINUTES=8</div>
-        <p class="section-desc">See the <a href="#configuration" style="color: var(--blurple-bright);">Configuration section</a> for a full breakdown of every available variable.</p>
+        <p class="section-desc">See the <a href="#configuration" style="color: var(--blurple-bright); text-decoration: none;">Configuration section</a> for a full breakdown of every available variable.</p>
 
         <h2 class="section-subtitle">Step 7: Register Slash Commands</h2>
         <p class="section-desc">Before users can see or use slash commands in Discord, they need to be registered with Discord's API. Run this once from the CraftDaemon directory:</p>
@@ -202,7 +211,7 @@
         <div class="code-block">sudo systemctl daemon-reload<br>sudo systemctl enable craftdaemon<br>sudo systemctl start craftdaemon</div>
         <div class="callout info">
           <div class="callout-title">ℹ️ Node version note</div>
-          <p>CraftDaemon requires Node.js <span class="code-inline">18+</span> and is tested on Node.js 22. Check your version with <span class="code-inline">node --version</span>. If you need to install or update Node.js, use <a href="https://github.com/nvm-sh/nvm" style="color: var(--blurple-bright);">nvm</a> or your distro's package manager.</p>
+          <p>CraftDaemon requires Node.js <span class="code-inline">18+</span> and is tested on Node.js 22. Check your version with <span class="code-inline">node --version</span>. If you need to install or update Node.js, use <a href="https://github.com/nvm-sh/nvm" style="color: var(--blurple-bright); text-decoration: none;">nvm</a> or your distro's package manager.</p>
         </div>
       </section>
 
@@ -211,7 +220,7 @@
         <h1 class="section-title">Configuration</h1>
 
         <h2 class="section-subtitle">Environment Variables (.env)</h2>
-        <p class="section-desc">All configuration is managed through <span class="code-inline">config/.env</span>. This file is never committed to Git — it lives only on your server. If the file doesn't exist yet, create it by copying the example: <span class="code-inline">cp config/.env.example config/.env</span>, then edit it with <span class="code-inline">nano config/.env</span>. Here's a complete reference of every available variable:</p>
+        <p class="section-desc">All configuration is managed through <span class="code-inline">config/.env</span>. This file should never be shared or committed to Version Control, it lives only on your server (If you're using GitHub). If the file doesn't exist yet, create it by copying the example: <span class="code-inline">cp config/.env.example config/.env</span>, then edit it with <span class="code-inline">nano config/.env</span>. Here's a complete reference of every available variable:</p>
 
         <table class="doc-table">
           <thead>
@@ -257,7 +266,7 @@
               <td><span class="code-inline">SERVER_TYPE</span></td>
               <td>☑️</td>
               <td>Server type for TPS reporting in /status</td>
-              <td><span class="code-inline">PAPER</span> (default, uses /tps), or leave blank for (Not Set)</td>
+              <td><span class="code-inline">PAPER</span> (default left blank), change to PAPER for Paper tps parsing</td>
             </tr>
             <tr>
               <td><span class="code-inline">RCON_HOST</span></td>
@@ -409,7 +418,7 @@
           <li><strong>commands:</strong> maps each permission key to an array of role labels that can use it</li>
           <li><strong>users:</strong> optional per-user overrides that grant specific permission keys to individual users regardless of their roles</li>
         </ul>
-        <div class="code-block">module.exports = {<br>&nbsp;&nbsp;owner: ["123456789012345678"],<br>&nbsp;&nbsp;roles: {<br>&nbsp;&nbsp;&nbsp;&nbsp;ADMIN: "111111111111111111",<br>&nbsp;&nbsp;&nbsp;&nbsp;MOD: "222222222222222222"<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;commands: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.start":   ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.stop":    ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.restart": ["ADMIN"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.status":  ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.address": ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"bot.checkUpdate":["ADMIN", "MOD"]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;users: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"444444444444444444": ["logs.delete"]<br>&nbsp;&nbsp;}<br>};</div>
+        <div class="code-block">module.exports = {<br>&nbsp;&nbsp;owner: ["123456789012345678"],<br>&nbsp;&nbsp;roles: {<br>&nbsp;&nbsp;&nbsp;&nbsp;ADMIN: "111111111111111111",<br>&nbsp;&nbsp;&nbsp;&nbsp;MOD: "222222222222222222",<br>&nbsp;&nbsp;&nbsp;&nbsp;Add more...: "333333333333333333"<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;commands: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.start":   ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.stop":    ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.restart": ["ADMIN"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.status":  ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.address": ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"bot.checkUpdate":["ADMIN", "MOD"]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;users: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"444444444444444444": ["logs.delete"]<br>&nbsp;&nbsp;}<br>};</div>
 
         <p class="section-desc">Replace the placeholder IDs with your actual Discord role and user IDs. Owners bypass all command checks entirely. Entries in <span class="code-inline">users</span> take precedence over role-based permissions — useful for granting or restricting access to specific individuals.</p>
       </section>
@@ -447,7 +456,7 @@
         <ul>
           <li><strong>Permission:</strong> <span class="code-inline">server.status</span></li>
           <li><strong>Response:</strong> Rich embed with all server metrics</li>
-          <li><strong>Requires:</strong> A Paper server for full metrics — vanilla servers will show limited information</li>
+          <li><strong>Requires:</strong> A Paper server for full metrics (TPS, vanilla and other servers will not show TPS)</li>
           <li><strong>Latency:</strong> Shows RCON round-trip time, which reflects the connection health between the bot and your server</li>
         </ul>
 
@@ -623,7 +632,7 @@
 
         <div class="callout">
           <div class="callout-title">Problem: "/status shows no data"</div>
-          <p>Full status data (TPS, player count) requires a <strong>Paper</strong> server — vanilla Minecraft servers do not expose this via RCON. Also verify RCON is connected by checking the bot logs.</p>
+          <p>Full status data (TPS) requires a <strong>Paper</strong> server. Also verify RCON is connected by checking the bot logs.</p>
         </div>
 
         <h2 class="section-subtitle">Checking Logs</h2>
@@ -646,12 +655,12 @@
         <div class="code-block">Discord User<br>    ↓<br>    ↓ /slash command<br>    ↓<br>CraftDaemon Bot ←→ systemctl start/stop/restart ←→ Minecraft (systemd)<br>    ↑                                                     ↓<br>    ←→ RCON 127.0.0.1:25575 ←→ RCON Server</div>
 
         <h2 class="section-subtitle">Directory Structure</h2>
-        <p class="section-desc">Here's the full layout of the repository and what each file/folder does:</p>
-        <div class="code-block">CraftDaemon/<br>├── assets/                    # Logo and static assets<br>├── config/<br>│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)<br>│   └── .env.example           # Environment variable template<br>├── patchnotes/                # Release notes (e.g. v1.2.0.md)<br>├── src/<br>│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader<br>│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)<br>│   ├── commands/              # One file per slash command (data + permission + execute)<br>│   │   ├── ping.js<br>│   │   ├── start.js<br>│   │   ├── stop.js<br>│   │   ├── restart.js<br>│   │   ├── address.js<br>│   │   ├── status.js<br>│   │   └── checkUpdate.js<br>│   ├── events/<br>│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()<br>│   ├── permissions/<br>│   │   ├── index.js<br>│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)<br>│   │   └── resolver.js        # hasPermission() against permission-config.js<br>│   ├── utils/<br>│   │   └── storage.js         # JSON persistence for per-guild update-notification state<br>│   └── services/<br>│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery<br>│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline<br>│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)<br>│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart<br>│       ├── commandLock.js     # Cooldown lock for start/stop/restart<br>│       └── logger.js          # Structured logging utility used across bot modules<br>├── util/                      # Optional helpers (e.g. patchnotes broadcast)<br>├── package.json<br>└── README.md</div>
+        <p class="section-desc">Here's the full layout of the repository and what each file/folder of the bot does:</p>
+        <div class="code-block">CraftDaemon/<br>├── config/<br>│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)<br>│   └── .env.example           # Environment variable template<br>├── src/<br>│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader<br>│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)<br>│   ├── commands/              # One file per slash command (data + permission + execute)<br>│   │   ├── ping.js<br>│   │   ├── start.js<br>│   │   ├── stop.js<br>│   │   ├── restart.js<br>│   │   ├── address.js<br>│   │   ├── status.js<br>│   │   └── checkUpdate.js<br>│   ├── events/<br>│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()<br>│   ├── permissions/<br>│   │   ├── index.js<br>│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)<br>│   │   └── resolver.js        # hasPermission() against permission-config.js<br>│   ├── utils/<br>│   │   └── storage.js         # JSON persistence for per-guild update-notification state<br>│   └── services/<br>│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery<br>│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline<br>│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)<br>│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart<br>│       ├── commandLock.js     # Cooldown lock for start/stop/restart<br>│       └── logger.js          # Structured logging utility used across bot modules<br>├── package.json<br>└── README.md</div>
 
         <div class="callout info">
-          <div class="callout-title">ℹ️ Layout flexibility</div>
-          <p>The <span class="code-inline">src/</span> layout is the intended structure, but the bot isn't rigid about it. If you prefer running <span class="code-inline">index.js</span> from the project root, that works too — as long as the paths in your systemd <span class="code-inline">ExecStart</span> point to the right place.</p>
+          <div class="callout-title">ℹ️ Layout flexibility (Advanced)</div>
+          <p>The <span class="code-inline">src/</span> layout is the intended structure, but the bot isn't rigid about it. If you prefer running <span class="code-inline">index.js</span> from the project root, that works too, as long as the paths in your systemd <span class="code-inline">ExecStart</span> point to the right place AND your file imports are correct.</p>
         </div>
 
         <h2 class="section-subtitle">Key Services</h2>

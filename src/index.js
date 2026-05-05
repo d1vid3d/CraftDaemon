@@ -177,6 +177,7 @@ let rconManager  = null;
 
 // ========== STARTUP CONFIG LOGGING (Default Console Broadcast when bot starts) ==========
 botLogger.info("========== BOT STARTUP CONFIGURATION ==========");
+botLogger.info(`CraftDaemon v${require("../package.json").version}`);
 botLogger.info(`Active log level: ${LOG_LEVEL_NAME_BY_VALUE[mainLogger.minLevel] || "INFO"}`);
 botLogger.info(`RCON Host: ${RCON_HOST}`);
 botLogger.info(`RCON Port: ${RCON_PORT}`);

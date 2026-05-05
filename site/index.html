@@ -61,7 +61,7 @@
     <p class="hero-eyebrow">Self-Hosted · Open Source · systemd + RCON</p>
 
     <p class="hero-desc">
-      Heya! CraftDaemon is a Discord bot you run yourself, made for folks who like to get their hands dirty with Linux servers. It hooks into <strong>systemd</strong> and <strong>RCON</strong> so you can manage your Minecraft server straight from Discord, no more SSHing in just to restart or check status.
+      Heya! CraftDaemon is a Discord bot you run yourself, made for folks who like to get their hands dirty with Linux servers. It hooks into <strong>systemd</strong> and <strong>RCON</strong> so you can manage your Minecraft server straight from Discord, no more SSH-ing in just to restart or check status.
     </p>
 
     <div class="hero-badges">
@@ -95,11 +95,11 @@
         <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;&nbsp;│ &nbsp;</span><span class="d-cmd">slash command</span><span class="d-comment"> &nbsp;(/start, /stop, /status…)</span></div>
         <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;&nbsp;▼</span></div>
         <div><span class="d-bot">CraftDaemon Bot</span><span class="d-arrow"> ──── </span><span class="d-sys">systemctl start/stop/restart</span><span class="d-arrow"> ────▶ &nbsp;</span><span class="d-mc">Minecraft (systemd)</span></div>
-        <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;(systemd) &nbsp; &nbsp;◀─── </span><span class="d-rcon">RCON 127.0.0.1:25575</span><span class="d-arrow"> ──────────</span></div>
+        <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;(systemd) &nbsp; &nbsp;◀─── </span><span class="d-rcon">RCON 127.0.0.1:25575</span><span class="d-arrow"> ────────── &nbsp;&nbsp;&nbsp;(Minecraft Server)</span></div>
         <br>
         <div><span class="d-comment"># Two systemd services on your Linux host</span></div>
         <div><span class="d-sys">craftdaemon.service</span><span class="d-comment"> &nbsp;&nbsp;&nbsp;→ The Discord bot</span></div>
-        <div><span class="d-mc">minecraft.service &nbsp; &nbsp;</span><span class="d-comment"> &nbsp;&nbsp;&nbsp;→ Your Paper server</span></div>
+        <div><span class="d-mc">minecraft.service &nbsp; &nbsp;</span><span class="d-comment"> &nbsp;&nbsp;&nbsp;→ Your Minecraft server</span></div>
       </div>
     </div>
   </section>
@@ -357,7 +357,7 @@
     <div class="disclaimer-inner">
       <span class="disclaimer-icon">🛠️</span>
       <div>
-        <h4>Early Project — Just One Dev</h4>
+        <h4>Early Project - Just One Dev</h4>
         <p>Heads up: CraftDaemon is still pretty new and changes fast. Stuff might break or change between releases, so always check the release notes before you upgrade.</p>
         <p>This is a solo side project, so things might move slow and I might miss issues or PRs for a bit. Found a bug or want to pitch in? <a href="https://github.com/d1vid3d/CraftDaemon/issues" target="_blank">Open an issue on GitHub</a>, contributions are very much welcome!</p>
       </div>

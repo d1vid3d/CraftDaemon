@@ -8,11 +8,11 @@
 
   <h4>
     A self-hosted Discord bot for controlling a Minecraft server<br>
-    through <b>systemd</b> and <b>RCON</b> — built for people who run<br>
+    through <b>systemd</b> and <b>RCON</b>, built for people who run<br>
     their own Linux server and want Discord as the control panel.
   </h4>
 
-  <a href="https://nodejs.org" target="_blank"><img src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=node.js&logoColor=white" /></a>&nbsp;
+  <a href="https://nodejs.org" target="_blank"><img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white" /></a>&nbsp;
   <a href="https://discord.js.org" target="_blank"><img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=for-the-badge&logo=discord&logoColor=white" /></a>&nbsp;
   <a href="https://systemd.io" target="_blank"><img src="https://img.shields.io/badge/Linux-systemd-FCC624?style=for-the-badge&logo=linux&logoColor=white" /></a>&nbsp;
   <a href="https://papermc.io" target="_blank"><img src="https://img.shields.io/badge/Paper-Recommended-F96854?style=for-the-badge" /></a>&nbsp;
@@ -25,9 +25,7 @@
 
 CraftDaemon gives you Discord slash commands to start, stop, restart, and monitor a Minecraft server running on your own Linux machine. Instead of SSH-ing in or keeping a terminal open, you interact with the server entirely from Discord.
 
-It works by sitting alongside your Minecraft server on the same host — both running as **systemd services**. The bot controls the server by calling `systemctl` commands, and reads live stats (TPS, player list, RCON latency) by talking directly to the server over **RCON**.
-
-Current releases use a **persistent RCON connection manager** with keepalive, reconnect handling, and command queueing. This avoids frequent connect/disconnect churn and keeps presence/stat data more stable.
+It works by sitting alongside your Minecraft server on the same host, both running as **systemd services**. The bot controls the server by calling `systemctl` commands, and reads live stats (TPS, player list, RCON latency) by talking directly to the server over **RCON**.
 
 ### How it works, at a glance
 
@@ -37,7 +35,7 @@ Discord User
      │  slash command (/start, /stop, /status…)
      ▼
 CraftDaemon Bot  ──── systemctl start/stop/restart ────▶  Minecraft systemd service
-  (systemd)      ◀─── RCON (127.0.0.1:25575) ──────────  (Paper server)
+  (systemd)      ◀─── RCON (127.0.0.1:25575) ──────────  (Minecraft Server)
 ```
 
 Two systemd services run on your host:
@@ -45,15 +43,23 @@ Two systemd services run on your host:
 | Service | What it is |
 |---|---|
 | `craftdaemon` (or your chosen name) | The Discord bot itself |
-| `minecraft` (or your chosen name) | Your Minecraft (Paper) server |
+| `minecraft` (or your chosen name) | Your Minecraft server |
 
 The bot does **not** spawn the Minecraft process itself — it delegates entirely to systemd. This means clean startup/shutdown handling, proper logging via `journald`, and automatic restarts on failure, all without the bot being in the middle of the process tree.
 
-### Why Paper?
+### Why Paper Recommended?
 
 CraftDaemon uses the `tps` RCON command to read server performance. This command is provided by **Paper** — it does not exist on vanilla Minecraft servers. Paper is also the standard choice for most server setups, so it's the recommended and tested platform for this bot.
 
 > Vanilla servers will work for basic start/stop/restart/status, but TPS will not be available in `/status`.
+
+### Full Documentation
+
+The full documentation is available at:  
+👉 https://d1vid3d.github.io/CraftDaemon/ On the Docs page.
+
+Detailed guides, configuration options, and advanced usage are covered.  
+If you're setting up the bot beyond the basics, this is your primary reference and source of truth.
 
 ---
 
@@ -73,7 +79,7 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 
 ### Bot Responses (Brief showcase)
 
-📸 **Screenshot:** `/status` embed — online state with RCON stats
+📸 **Screenshot:** `/status` embed - online state with RCON stats
 <p align="left">
   <picture>
     <source srcset="assets/readme-assets/status-example-dark.png" media="(prefers-color-scheme: dark)">
@@ -82,7 +88,7 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
   </picture>
 </p>
 
-📸 **Screenshot:** `/address` embed — assigned address informations
+📸 **Screenshot:** `/address` embed - assigned address informations
 <p align="left">
   <picture>
     <source srcset="assets/readme-assets/address-example-dark.png" media="(prefers-color-scheme: dark)">
@@ -91,7 +97,7 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
   </picture>
 </p>
 
-📸 **Screenshot:** `Auto-Shutdown Warning` embed — notification posted after the set amount of time
+📸 **Screenshot:** `Auto-Shutdown Warning` embed - notification posted after the set amount of time
 <p align="left">
   <picture>
     <source srcset="assets/readme-assets/warning-example-dark.png" media="(prefers-color-scheme: dark)">
@@ -134,23 +140,26 @@ This is handled through the persistent RCON keepalive/player stream — no serve
 
 CraftDaemon is a self-hosted project with no guided installer or dashboard. Setting it up correctly requires working across a few different areas at once. You'll have a much smoother experience if you're already comfortable with:
 
-- **Linux & systemd** — creating and managing service units, reading logs with `journalctl`, and understanding file permissions
-- **Node.js** — running scripts, installing packages with `npm`, and reading basic JavaScript
-- **Discord bots** — creating an application in the Developer Portal, generating a bot token, and understanding OAuth2 scopes
-- **Networking basics** — what RCON is, local vs. public addresses, and basic port concepts
+- **Linux & systemd** - creating and managing service units, reading logs with `journalctl`, and understanding file permissions
+- **Node.js** - running scripts, installing packages with `npm`, and reading basic JavaScript
+- **Discord bots** - creating an application in the Developer Portal, generating a bot token, and understanding OAuth2 scopes
+- **Networking basics** - what RCON is, local vs. public addresses, and basic port concepts
 
-This isn't meant to gatekeep — the documentation tries to be as clear as possible. But if any of the above is unfamiliar territory, it's worth getting comfortable with those fundamentals first, as most setup issues stem from one of these areas rather than the bot itself.
+This isn't meant to gatekeep, the documentation tries to be as clear as possible. But if any of the above is unfamiliar territory, it's worth getting comfortable with those fundamentals first, as most setup issues stem from one of these areas rather than the bot itself.
 
 ---
 
 ## Requirements
 
 - A **Linux machine** running **systemd** (Ubuntu, Debian, Arch, etc.)
-- **Node.js 22** (tested on v22 — older versions may work but are not officially tested)
+- **Node.js 18+** (v22 recommended; used for development and testing)
 - A **Minecraft server** (Paper recommended) configured as a **systemd service**, with RCON enabled
 - A **Discord bot token** from the [Discord Developer Portal](https://discord.com/developers/applications)
 - `sudo` access for the bot's user to run specific `systemctl` commands (see setup)
-- A **public tunnel or forwarded address** (e.g. playit.gg) if you want `/address` to show a main address (optional)
+
+> Operating System Compatibility Note: This bot does not run natively on Windows or macOS. Advanced users may still run it using environments like <strong>Windows Subsystem for Linux (WSL)</strong> on Windows, or other Unix-like setups on macOS, but this is not officially supported.
+
+> Node Version Note: A future migration to <strong>TypeScript</strong> is planned, which will likely require Node.js v22+.
 
 ---
 
@@ -171,14 +180,15 @@ npm install
 
 This will install all required packages, including:
 
-- [`discord.js`](https://discord.js.org/) v14 — Discord bot framework
-- [`rcon`](https://www.npmjs.com/package/rcon) — RCON client for communicating with the Minecraft server
-- [`dotenv`](https://www.npmjs.com/package/dotenv) — environment variable loading
+- [`discord.js`](https://discord.js.org/) v14 - Discord bot framework
+- [`rcon`](https://www.npmjs.com/package/rcon) - RCON client for communicating with the Minecraft server
+- [`dotenv`](https://www.npmjs.com/package/dotenv) - Environment Variables loading
+- [`semver`](https://github.com/npm/node-semver) - Semantic Versioning for GitHub releases comparison
 
 ### 3. Create your Discord bot application
 
 <details>
-<summary><b>Click to expand — Discord Developer Portal walkthrough</b></summary>
+<summary><b>Click to expand - Discord Developer Portal walkthrough</b></summary>
 
 #### 3a. Create the application
 
@@ -226,7 +236,7 @@ This will install all required packages, including:
 ### 4. Configure your environment
 
 <details>
-<summary><b>Click to expand — Configuration setup and references</b></summary>
+<summary><b>Click to expand - Configuration setup and references</b></summary>
 
 <br>
 
@@ -253,7 +263,7 @@ Your environment file is **`config/.env`** (same path the bot and `register-comm
 | `STATUS_CHANNEL_ID` | ✅ | Channel ID where auto-shutdown warnings are posted (from step 3f) | — |
 | **Minecraft & systemd Configuration** | | | |
 | `MC_SERVICE` | ✅ | Your Minecraft server's systemd service name (e.g. `minecraft`) | — |
-| `SERVER_TYPE` | ☑️ | Server Type (for TPS reporting in /status) (e.g. `PAPER`) | `PAPER` (uses /tps), or leave blank for (Not Set) |
+| `SERVER_TYPE` | ☑️ | Server Type (for TPS reporting in /status) | `PAPER` (default left blank), change to PAPER for Paper tps parsing |
 | **RCON Connection** | | | |
 | `RCON_HOST` | ✅ | RCON host IP address (default: `127.0.0.1` if bot and server are on the same machine) | — |
 | `RCON_PORT` | ✅ | RCON port (default: `25575`) | `1–65535` |
@@ -361,14 +371,16 @@ If you haven't already, create a systemd unit for your Minecraft server. Here's 
 # /etc/systemd/system/minecraft.service
 
 [Unit]
-Description=Minecraft Paper Server
+Description=Minecraft Server
 After=network.target
 
 [Service]
+Type=simple
 User=minecraft
-WorkingDirectory=/opt/minecraft
-ExecStart=/usr/bin/java -Xmx4G -Xms1G -jar paper.jar nogui
+WorkingDirectory=/home/minecraft/server
+ExecStart=/usr/bin/java -Xmx8G -Xms8G -jar server.jar nogui
 Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
@@ -411,7 +423,7 @@ Add the following (replace `botuser` with the Linux user that will run the bot):
 botuser ALL=(ALL) NOPASSWD: /bin/systemctl start minecraft, /bin/systemctl stop minecraft, /bin/systemctl restart minecraft, /bin/systemctl show minecraft
 ```
 
-> Keep this as narrow as possible — only grant the exact commands the bot needs.
+> Keep this as narrow as possible - <strong>only</strong> grant the exact commands the bot needs.
 
 ### 8. Register slash commands
 
@@ -435,15 +447,18 @@ For persistent background operation, run it as a systemd service too. Create `/e
 
 ```ini
 [Unit]
-Description=CraftDaemon Discord Bot
+Description=CraftDaemon Bot
 After=network.target
 
 [Service]
+Type=simple
 User=botuser
-WorkingDirectory=/home/botuser/CraftDaemon
+WorkingDirectory=/path/to/CraftDaemon
 ExecStart=/usr/bin/node src/index.js
 Restart=on-failure
-EnvironmentFile=/home/botuser/CraftDaemon/.env
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
@@ -468,11 +483,9 @@ Both services are now managed by systemd and will survive reboots.
 
 ```
 CraftDaemon/
-├── assets/                    # Logo and static assets
 ├── config/
 │   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)
 │   └── .env.example           # Environment variable template
-├── patchnotes/                # Release notes (e.g. v1.2.0.md)
 ├── src/
 │   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader
 │   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)
@@ -499,12 +512,13 @@ CraftDaemon/
 │       ├── minecraftSystemd.js # systemctl + save-all before stop/restart
 │       ├── commandLock.js     # Cooldown lock for start/stop/restart
 │       └── logger.js          # Structured logging utility used across bot modules
-├── util/                      # Optional helpers (e.g. patchnotes broadcast)
 ├── package.json
 └── README.md
 ```
 
 > The `src/` layout is the intended structure, but the bot isn't rigid about it — if you prefer running `index.js` from the project root that works too, as long as paths and your systemd `ExecStart` point to the right place.
+
+> As per v1.2.0 release, the bot now uses a **persistent RCON connection manager** with keepalive, reconnect handling, and command queueing. This avoids frequent connect/disconnect churn and keeps presence/stat data more stable.
 
 </details>
 
@@ -747,7 +761,7 @@ Setting `AUTO_STOP_MINUTES=0` in your `.env` disables auto-shutdown entirely. `W
 
 ---
 
-## RBAC (Role-Based Access Control) Detailed Explanation
+## RBAC (Role-Based Access Control) Explanation
 
 <details>
 <summary><b>Click to expand - RBAC Docs</b></summary>
@@ -794,21 +808,26 @@ CraftDaemon enables `GatewayIntentBits.GuildMembers` in `src/index.js` by defaul
 
 ## Customization
 
+<details>
+<summary><b>Click to expand - Customization</b></summary>
+
 CraftDaemon's codebase is intentionally small and readable, and most behavior is configurable via `.env`; code edits should be the exception. But if the default behavior doesn't quite fit your setup, you're 
 encouraged to open `src/index.js` and adjust things directly — you don't need to be an expert, just comfortable reading 
 through code and making small targeted changes.
 
 Some common customization points:
 
-- **Log verbosity** — set `LOG_LEVEL` in `.env` (`DEBUG`, `INFO`, `WARN`, `ERROR`).
-- **Role-Based Access Control (RBAC)** — configure owners/roles/command permissions in `config/permission-config.js` (see below).
-- **RCON retry/refusal logs** — tune `RCON_REFUSED_LOG_INTERVAL_MS` (`0` = first refusal only).
-- **RCON command timeout** — tune `RCON_COMMAND_TIMEOUT_MS` in `.env`.
-- **RCON reconnect/keepalive cadence** — tune `RCON_RECONNECT_INTERVAL_MS` and `RCON_KEEPALIVE_INTERVAL_MS`.
-- **Embed styling** — all Discord embeds are plain objects inside the slash command handlers. Colors, field labels, and copy are easy to change without touching any bot logic.
-- **Auto-shutdown behavior** — configurable via `.env`, but the underlying logic lives in the `setInterval` block near the bottom of `index.js` if you want to change how it actually works.
+- **Log verbosity** - set `LOG_LEVEL` in `.env` (`DEBUG`, `INFO`, `WARN`, `ERROR`).
+- **Role-Based Access Control (RBAC)** - configure owners/roles/command permissions in `config/permission-config.js` (see below).
+- **RCON retry/refusal logs** - tune `RCON_REFUSED_LOG_INTERVAL_MS` (`0` = first refusal only).
+- **RCON command timeout** - tune `RCON_COMMAND_TIMEOUT_MS` in `.env`.
+- **RCON reconnect/keepalive cadence** - tune `RCON_RECONNECT_INTERVAL_MS` and `RCON_KEEPALIVE_INTERVAL_MS`.
+- **Embed styling** - all Discord embeds are plain objects inside the slash command handlers. Colors, field labels, and copy are easy to change without touching any bot logic.
+- **Auto-shutdown behavior** - configurable via `.env`, but the underlying logic lives in the `setInterval` block near the bottom of `index.js` if you want to change how it actually works.
 
 If something's broken and you suspect it might be a simple fix, take a look at the code before opening an issue — it's probably shorter than you expect.
+
+</details>
 
 ---
 
