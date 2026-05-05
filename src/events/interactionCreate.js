@@ -7,6 +7,9 @@
 const { permissionMiddleware } = require("../permissions/middleware");
 
 // Assuming standard Discord.js event setup
+const { createLogger } = require("../services/logger");
+const discordLogger = createLogger("Discord");
+
 module.exports = (client) => {
   client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
@@ -14,10 +17,22 @@ module.exports = (client) => {
     const command = client.commands?.get(interaction.commandName);
     if (!command) return;
 
-    const allowed = await permissionMiddleware(interaction, command);
-    if (!allowed) return;
+    try {
+      const allowed = await permissionMiddleware(interaction, command);
+      if (!allowed) return;
 
-    await command.execute(interaction);
+      await command.execute(interaction);
+    } catch (error) {
+      discordLogger.error(`Error executing command ${interaction.commandName}:`, error);
+      const message = { content: "An error occurred while executing the command.", ephemeral: true };
+      if (interaction.replied) {
+        await interaction.followUp(message);
+      } else if (interaction.deferred) {
+        await interaction.editReply(message);
+      } else {
+        await interaction.reply(message);
+      }
+    }
   });
 };
 

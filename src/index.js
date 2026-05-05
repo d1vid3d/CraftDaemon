@@ -1,3 +1,6 @@
+// In-line code comment is provided throughout this file to explain the structure and rationale of the bot's main entry point.
+// Review these comments for guidance on how to navigate and modify the codebase.
+
 const fs = require("fs");
 const path = require("path");
 
@@ -21,11 +24,11 @@ const {
 // Import custom logger
 const { createLogger, mainLogger, LogLevel } = require("./services/logger");
 const { init: initUpdateService } = require("./services/updateService");
+const { init: initAutoStopService, AUTO_STOP_MINUTES, EFFECTIVE_WARNING_MINUTES } = require("./services/autoStopService");
 
 // Create category-specific loggers here (Create your own categories as needed by calling createLogger with a custom name in your modules , check docs for details)
 const botLogger = createLogger('Bot');
 const discordLogger = createLogger('Discord');
-const autoStopLogger = createLogger('AutoStop');
 const systemdLogger = createLogger('SystemD');
 
 const LOG_LEVEL_NAME_BY_VALUE = Object.fromEntries(
@@ -110,7 +113,8 @@ function collectLikelyMisconfigWarnings() {
         warnings.push("Minecraft `RCON_PASSWORD` is missing or still looks like a placeholder (RCON features will not work reliably).");
     }
 
-    if (AUTO_STOP_MINUTES > 0 && envLooksUnsetOrPlaceholder(process.env.STATUS_CHANNEL_ID)) {
+    const autoStopMinutes = parseInt(process.env.AUTO_STOP_MINUTES || "0", 10);
+    if (autoStopMinutes > 0 && envLooksUnsetOrPlaceholder(process.env.STATUS_CHANNEL_ID)) {
         warnings.push("Auto-stop is enabled, but `STATUS_CHANNEL_ID` is missing or still looks like a placeholder (warnings/shutdown posts may fail).");
     }
 
@@ -142,21 +146,8 @@ const RCON_HOST = process.env.RCON_HOST || "127.0.0.1";
 const RCON_PORT = getEnvInt("RCON_PORT", 25575, { min: 1, max: 65535 });
 const RCON_PASSWORD = process.env.RCON_PASSWORD || "";
 const MC_SERVICE = process.env.MC_SERVICE || "minecraft";
-const STATUS_CHANNEL_ID = process.env.STATUS_CHANNEL_ID || null;
 const MAIN_ADDRESS = process.env.MAIN_ADDRESS || null;
 
-// Auto-shutdown configuration (from .env with defaults)
-
-const AUTO_STOP_MINUTES = getEnvInt("AUTO_STOP_MINUTES", 10, { min: 0, max: 10_080 }); // 7 days max
-const WARNING_MINUTES = getEnvInt("WARNING_MINUTES", 8, { min: 0, max: 10_080 });
-const EFFECTIVE_WARNING_MINUTES = WARNING_MINUTES > 0
-    ? Math.min(WARNING_MINUTES, Math.max(AUTO_STOP_MINUTES - 1, 1))
-    : 0;
-const CHECK_INTERVAL_MS = getEnvInt(
-    "CHECK_INTERVAL_MS",
-    getEnvInt("CHECK_INTERVAL", 30_000, { min: 5_000, max: 300_000 }), // backward-compatible legacy key
-    { min: 5_000, max: 300_000 }
-);
 const PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS = getEnvInt("PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS", 15_000, { min: 5_000, max: 120_000 });
 const RCON_KEEPALIVE_INTERVAL_MS = getEnvInt("RCON_KEEPALIVE_INTERVAL_MS", DEFAULT_KEEPALIVE_INTERVAL_MS, { min: 10_000, max: 300_000 });
 const RCON_RECONNECT_INTERVAL_MS = getEnvInt("RCON_RECONNECT_INTERVAL_MS", DEFAULT_RECONNECT_INTERVAL_MS, { min: 1_000, max: 60_000 });
@@ -166,9 +157,6 @@ const RCON_MAX_KEEPALIVE_FAILURES = getEnvInt("RCON_MAX_KEEPALIVE_FAILURES", DEF
 const RCON_REFUSED_LOG_INTERVAL_MS = getEnvInt("RCON_REFUSED_LOG_INTERVAL_MS", DEFAULT_REFUSED_LOG_INTERVAL_MS, { min: 0, max: 300_000 });
 
 // ---- Runtime state ---------------------------------------------
-let emptySince   = null;
-let warningSent  = false;
-
 // rconManager is declared here so every part of this file can reference it,
 // but it is only *initialised* inside client.once("clientReady") - after the
 // Discord client is fully logged in - because the manager drives bot presence.
@@ -183,13 +171,12 @@ botLogger.info(`RCON Host: ${RCON_HOST}`);
 botLogger.info(`RCON Port: ${RCON_PORT}`);
 botLogger.info(`Minecraft Service: ${MC_SERVICE}`);
 botLogger.info(`Auto-stop enabled: ${AUTO_STOP_MINUTES > 0 ? `Yes (${AUTO_STOP_MINUTES} min idle, warning at ${EFFECTIVE_WARNING_MINUTES || "disabled"} min)` : "No"}`);
-botLogger.info(`Status channel ID: ${STATUS_CHANNEL_ID || "NOT SET"}`);
 botLogger.info(`Main address: ${MAIN_ADDRESS || "NOT SET"}`);
 botLogger.info(`RCON keepalive/reconnect/timeout: ${RCON_KEEPALIVE_INTERVAL_MS}ms / ${RCON_RECONNECT_INTERVAL_MS}ms / ${RCON_COMMAND_TIMEOUT_MS}ms`);
 botLogger.info("=============================================");
 
 // systemd + RCON query helpers live in ./services/minecraftSystemd and
-// ./services/rconQuery (wired to `rconManager` after login).
+// ./services/rconQuery (wired to rconManager after login).
 
 // ================================================================
 //  Discord client
@@ -234,145 +221,14 @@ const registerInteractionCreate = require("./events/interactionCreate");
 registerInteractionCreate(client);
 
 // ================================================================
-//  Bot presence  (driven by RconManager events, not polling, as per v1.2.0 refactor)
-//  See client.once("clientReady") for the event wiring
+//  Bot presence  
+//  Initialized in clientReady (see below) (driven by RconManager events)
 // ================================================================
 
 // ================================================================
-//  Auto-shutdown  (Uses stopServer())
+//  Auto-shutdown service
+//  Initialized in clientReady (see autoStopService for details)
 // ================================================================
-
-async function sendAutoStopWarning(minutesLeft) {
-    try {
-        const channel = await client.channels.fetch(STATUS_CHANNEL_ID);
-        if (!channel) {
-            autoStopLogger.error("Channel not found. Check STATUS_CHANNEL_ID in .env");
-            return;
-        }
-
-        // Check bot permissions.
-        if (!channel.permissionsFor(client.user).has(PermissionFlagsBits.SendMessages)) {
-            autoStopLogger.warn("Bot missing SendMessages permission.");
-        }
-        if (!channel.permissionsFor(client.user).has(PermissionFlagsBits.EmbedLinks)) {
-            autoStopLogger.error("Bot missing EmbedLinks permission - cannot send embeds.");
-            return;
-        }
-        
-        await channel.send({
-            embeds: [{
-                title: "⚠️ Server Inactivity Warning",
-                description: `No players online for **${AUTO_STOP_MINUTES - minutesLeft}** minute(s).\n\nServer will automatically stop in **${minutesLeft}** minute(s) if no one joins.`,
-                color: 0xffcc00,
-            }],
-        });
-    } catch (err) {
-        autoStopLogger.error(`Failed to send warning: ${err.message}`);
-    }
-}
-
-async function sendAutoStopShutdown() {
-    try {
-        const channel = await client.channels.fetch(STATUS_CHANNEL_ID);
-        if (!channel) {
-            autoStopLogger.error("Channel not found. Check STATUS_CHANNEL_ID in .env");
-            return;
-        }
-
-        // Check bot permissions.
-        if (!channel.permissionsFor(client.user).has(PermissionFlagsBits.SendMessages)) {
-            autoStopLogger.warn("Bot missing SendMessages permission.");
-        }
-        if (!channel.permissionsFor(client.user).has(PermissionFlagsBits.EmbedLinks)) {
-            autoStopLogger.error("Bot missing EmbedLinks permission - cannot send embeds.");
-            return;
-        }
-        
-        await channel.send({
-            embeds: [{
-                title: "🛑 Server Shut Down",
-                description: `Server has been automatically stopped due to inactivity (${AUTO_STOP_MINUTES} minutes with no players online).`,
-                color: 0xff0000,
-            }],
-        });
-    } catch (err) {
-        autoStopLogger.error(`Failed to send shutdown notification: ${err.message}`);
-    }
-}
-
-// ================================================================
-//  Auto-stop and its interval.
-//  Player count is sourced from rconManager.playerCount (kept fresh
-//  by the manager's keepalive loop) rather than making separate RCON
-//  calls, which eliminates double-polling and log spam.
-// ================================================================
-
-setInterval(async () => {
-    if (AUTO_STOP_MINUTES <= 0) return; // Explicitly disabled by config.
-
-    // If the manager hasn't been initialised yet (pre-ready), skip this tick.
-    if (!rconManager) return;
-
-    // Use the manager's connection state as the authoritative "is server up"
-    // signal, replacing the old isServerRunning() systemctl check.
-    if (!rconManager.connected) {
-        if (emptySince !== null) {
-            // [AUTO-STOP TRACKING] Server offline - reset timer
-            autoStopLogger.info("Server went offline. Resetting auto-stop timer.");
-        }
-        emptySince  = null;
-        warningSent = false;
-        return;
-    }
-
-    // playerCount is null if the keepalive hasn't resolved yet (still starting).
-    const players = rconManager.playerCount;
-    if (players === null) return; // RCON not ready yet, skip this tick
-
-    if (players > 0) {
-        if (emptySince !== null) {
-            // [AUTO-STOP TRACKING] Players joined - cancel shutdown
-            autoStopLogger.info(`Players detected (${players}). Cancelling auto-stop timer.`);
-        }
-        emptySince  = null;
-        warningSent = false;
-        return;
-    }
-
-    // No players online
-    if (!emptySince) {
-        // [AUTO-STOP TRACKING] Server became empty - start timer
-        emptySince  = Date.now();
-        warningSent = false;
-        autoStopLogger.info(`Server is now empty. Auto-stop timer started (${AUTO_STOP_MINUTES} minutes until shutdown).`);
-        return;
-    }
-
-    const minutesEmpty = (Date.now() - emptySince) / 60_000;
-
-    if (EFFECTIVE_WARNING_MINUTES > 0 && minutesEmpty >= EFFECTIVE_WARNING_MINUTES && !warningSent) {
-        const minutesLeft = Math.ceil(AUTO_STOP_MINUTES - minutesEmpty);
-        // [AUTO-STOP TRACKING] Sending warning
-        autoStopLogger.warn(`Server empty for ${minutesEmpty.toFixed(1)} minutes. Warning sent (${minutesLeft} min until shutdown).`);
-        await sendAutoStopWarning(minutesLeft);
-        warningSent = true;
-    }
-
-    if (minutesEmpty >= AUTO_STOP_MINUTES) {
-        // [AUTO-STOP TRACKING] Threshold reached - shutting down
-        autoStopLogger.info(`Server empty for ${minutesEmpty.toFixed(1)} minutes (threshold: ${AUTO_STOP_MINUTES}). Initiating shutdown.`);
-        try {
-            await stopServer();
-            await sendAutoStopShutdown();
-            autoStopLogger.warn(`Server stopped due to inactivity. Shutdown notification sent.`);
-        } catch (err) {
-            autoStopLogger.error(`Failed to stop server: ${err.message}`);
-        }
-        emptySince  = null;
-        warningSent = false;
-    }
-
-}, CHECK_INTERVAL_MS);
 
 // ================================================================
 //  Ready
@@ -391,7 +247,7 @@ client.once("clientReady", async () => {
         warnStartupOperatorChecklist();
     }
 
-    // ── Initialise RconManager ───────────────────────────────
+    //  ========== Initialise RconManager =========
     //  Must happen here (post-login) because the manager immediately
     //  drives client.user.setPresence(), which requires an authenticated
     //  Discord session.  Creating it at module scope would crash on
@@ -410,7 +266,7 @@ client.once("clientReady", async () => {
     });
     setRconManager(rconManager);
 
-    // ── Presence event wiring ────────────────────────────────
+    //  ========== Presence event wiring =========
     //  Each handler is a single setPresence call, keeping presence
     //  logic co-located and easy to audit.
 
@@ -419,6 +275,7 @@ client.once("clientReady", async () => {
      * If systemd says the service is active/activating, show "Starting";
      * otherwise show "Offline".
      */
+
     async function setDisconnectedPresenceFromSystemd() {
         if (!rconManager || rconManager.connected) return;
 
@@ -491,6 +348,10 @@ client.once("clientReady", async () => {
     //  keepalive + reconnect lifecycle.
     rconManager.start();
 
+    // ── Initialize auto-stop service ─────────────────────────
+    //  Uses rconManager for player count tracking.
+    initAutoStopService(client, rconManager);
+
     // While disconnected, periodically refine presence from systemd state so
     // startup is shown as "Starting..." instead of always "Offline".
     setInterval(() => {
@@ -504,6 +365,6 @@ client.once("clientReady", async () => {
 });
 
 // Slash commands live in ./commands and are dispatched from
-// ./events/interactionCreate.js (RBAC via `permissionMiddleware`).
+// ./events/interactionCreate.js (RBAC via permissionMiddleware).
 
 client.login(process.env.TOKEN);

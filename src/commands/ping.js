@@ -7,7 +7,7 @@ module.exports = {
     permission: null,
     data: new SlashCommandBuilder()
         .setName("ping")
-        .setDescription('"Pong!"'),
+        .setDescription('Pong!'),
     async execute(interaction) {
         discordLogger.info(`Ping command from ${interaction.user.tag}`);
         const sent = await interaction.reply({
@@ -22,7 +22,7 @@ module.exports = {
         return interaction.editReply({
             embeds: [{
                 title: "🏓 Pong!",
-                description: `Bot latency: **${latency}ms**`,
+                description: `Bot latency (Discord API): **${latency}ms**`,
                 color: 0x5865f2,
             }],
         });
