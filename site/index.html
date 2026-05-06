@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CraftDaemon - Discord Bot for Minecraft Servers</title>
   <link rel="icon" type="image/png" href="logo/favicon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles/index-styles.css" />
+  <!-- Font Preloads to prevent FOUT -->
+  <link rel="preload" href="./fonts/space-mono-v17-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./fonts/space-mono-v17-latin-700.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./fonts/syne-v24-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./fonts/syne-v24-latin-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./fonts/syne-v24-latin-700.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="./styles/index-styles.css" />
 </head>
 <body>
 
@@ -316,8 +319,8 @@
     </div>
     <div class="req-grid reveal">
       <div class="req-item"><span class="req-icon">🐧</span><div><h4>Linux + systemd</h4><p>Ubuntu, Debian, Arch, or any distro with systemd. The bot runs as its own service.</p></div></div>
-      <div class="req-item"><span class="req-icon">⬡</span><div><h4>Node.js 22</h4><p>Tested on v22. Older versions may work but are not officially supported.</p></div></div>
-      <div class="req-item"><span class="req-icon">🪵</span><div><h4>Paper Server</h4><p>Required for TPS data. Vanilla servers work for start/stop/restart but not <span class="ic ic-g">/status</span> TPS.</p></div></div>
+      <div class="req-item"><span class="req-icon">⬡</span><div><h4>Node.js 18+</h4><p>v22 recommended; used for development and testing and future migration plan to Typescript.</p></div></div>
+      <div class="req-item"><span class="req-icon">⛏️</span><div><h4>Any Minecraft Server</h4><p>Your actual Minecraft server, Duh.. (Paper is recommended, Required for TPS data.)</p></div></div>
       <div class="req-item"><span class="req-icon">🤖</span><div><h4>Discord Bot Token</h4><p>Create an application in the Discord Developer Portal and enable Guild Members Intent.</p></div></div>
       <div class="req-item"><span class="req-icon">🔑</span><div><h4>sudo Access</h4><p>A passwordless sudoers rule for the bot's user to run specific <span class="ic ic-g">systemctl</span> commands.</p></div></div>
       <div class="req-item"><span class="req-icon">🌐</span><div><h4>RCON Enabled</h4><p>Enable RCON in your <span class="ic ic-g">server.properties</span>. Used for live stats and graceful save-before-stop.</p></div></div>

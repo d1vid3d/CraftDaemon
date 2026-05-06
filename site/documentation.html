@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CraftDaemon - Full Documentation</title>
   <link rel="icon" type="image/png" href="logo/favicon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles/documentation-styles.css" />
+  <!-- Font Preloads to prevent FOUT -->
+  <link rel="preload" href="./fonts/space-mono-v17-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./fonts/space-mono-v17-latin-700.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./fonts/syne-v24-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./fonts/syne-v24-latin-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="./fonts/syne-v24-latin-700.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="./styles/documentation-styles.css" />
 </head>
 <body>
 
@@ -656,7 +659,7 @@
 
         <h2 class="section-subtitle">Directory Structure</h2>
         <p class="section-desc">Here's the full layout of the repository and what each file/folder of the bot does:</p>
-        <div class="code-block">CraftDaemon/<br>├── config/<br>│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)<br>│   └── .env.example           # Environment variable template<br>├── src/<br>│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader<br>│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)<br>│   ├── commands/              # One file per slash command (data + permission + execute)<br>│   │   ├── ping.js<br>│   │   ├── start.js<br>│   │   ├── stop.js<br>│   │   ├── restart.js<br>│   │   ├── address.js<br>│   │   ├── status.js<br>│   │   └── checkUpdate.js<br>│   ├── events/<br>│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()<br>│   ├── permissions/<br>│   │   ├── index.js<br>│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)<br>│   │   └── resolver.js        # hasPermission() against permission-config.js<br>│   ├── utils/<br>│   │   └── storage.js         # JSON persistence for per-guild update-notification state<br>│   └── services/<br>│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery<br>│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline<br>│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)<br>│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart<br>│       ├── commandLock.js     # Cooldown lock for start/stop/restart<br>│       └── logger.js          # Structured logging utility used across bot modules<br>├── package.json<br>└── README.md</div>
+        <div class="code-block">CraftDaemon/<br>├── config/<br>│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)<br>│   └── .env.example           # Environment variable template<br>├── src/<br>│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader<br>│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)<br>│   ├── commands/              # One file per slash command (data + permission + execute)<br>│   │   ├── ping.js<br>│   │   ├── start.js<br>│   │   ├── stop.js<br>│   │   ├── restart.js<br>│   │   ├── address.js<br>│   │   ├── status.js<br>│   │   └── checkUpdate.js<br>│   ├── events/<br>│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()<br>│   ├── permissions/<br>│   │   ├── index.js<br>│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)<br>│   │   └── resolver.js        # hasPermission() against permission-config.js<br>│   ├── utils/<br>│   │   └── storage.js         # JSON persistence for per-guild update-notification state<br>│   └── services/<br>│       ├── autoStopService.js # Auto-Stop/Auto-Shutdown logic and handler<br>│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery<br>│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline<br>│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)<br>│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart<br>│       ├── commandLock.js     # Cooldown lock for start/stop/restart<br>│       └── logger.js          # Structured logging utility used across bot modules<br>├── package.json<br>└── README.md</div>
 
         <div class="callout info">
           <div class="callout-title">ℹ️ Layout flexibility (Advanced)</div>
@@ -833,6 +836,11 @@
           <li>Push to your fork: <span class="code-inline">git push origin feature/my-feature</span></li>
           <li>Open a Pull Request on GitHub against the main repo</li>
         </ol>
+
+        <div class="callout info">
+          <div><div class="callout-title">💡 Note</div></div>
+          <p>You should open an issue first for substantial, larger changes, or breaking changes, so we can align before you put work in.</p>
+        </div>
 
         <h2 class="section-subtitle">Reporting Bugs</h2>
         <p class="section-desc">

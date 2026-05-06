@@ -365,7 +365,7 @@ module.exports = {
 
 ### 5. Set up the Minecraft server as a systemd service (If you haven't yet)
 
-If you haven't already, create a systemd unit for your Minecraft server. Here's a minimal example using Paper:
+If you haven't already, create a systemd unit for your Minecraft server. Here's a minimal example:
 
 ```ini
 # /etc/systemd/system/minecraft.service
@@ -506,6 +506,7 @@ CraftDaemon/
 │   ├── utils/
 │   │   └── storage.js         # JSON persistence for per-guild update-notification state
 │   └── services/
+        ├── autoStopService.js # Auto-Stop/Auto-Shutdown handling and logic
 │       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery
 │       ├── rconmanager.js     # Persistent RCON connection lifecycle + command pipeline
 │       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)
@@ -683,7 +684,7 @@ If you're not seeing expected logs:
 To add logging to your own functions:
 
 ```javascript
-const { createLogger } = require("./services/logger");
+const { createLogger } = require("./services/logger"); // Don't forget to fill out any custom properties in logger.js if you have any.
 const myLogger = createLogger('MyComponent');
 
 // Use it:
@@ -699,6 +700,8 @@ Startup config messages:
 
 ``` bash
 Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] ========== BOT STARTUP CONFIGURATION ==========
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] CraftDaemon v1.2.1
+Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] Active Log Level: INFO
 Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] RCON Host: 127.0.0.1
 Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] RCON Port: 25575
 Apr 16 03:15:30 node-0 node[3040518]: 03:15:30 [Bot] [INFO] Minecraft Service: minecraft-service.service
@@ -840,10 +843,10 @@ Run `node src/register-commands.js` and wait a few minutes. Make sure your bot i
 The sudoers rule isn't set up correctly, is configured for the wrong user, or the service name in the sudoers file doesn't match `MC_SERVICE`. Re-check step 8.
 
 **`/status` shows RCON not responding right after `/start`**
-This is expected — Paper takes time to boot and open RCON. During this window, bot presence should show `Server Starting...` and RCON logs may show refused retries.
+This is expected — Minecraft servers takes time to boot and open RCON. During this window, bot presence should show `Server Starting...` and RCON logs may show refused retries.
 
 **TPS not showing in `/status`**
-TPS is read via the `tps` command which only exists on Paper. Vanilla servers will show N/A here.
+TPS is read via the `tps` command which only exists on Paper. Other servers that does not support `tps` will show (Not Set) here.
 
 **`RCON_PASSWORD is not set` error**
 Your `config/.env` file is missing or not being loaded. Make sure it exists next to `config/.env.example` and that `dotenv` is installed (`npm install`).
