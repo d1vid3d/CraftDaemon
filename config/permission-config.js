@@ -35,7 +35,7 @@ module.exports = {
   // User-specific overrides (takes precedence over role-based permissions)
   // Use case: If you want to add yourself or another user as an exception to the role-based permissions without giving them a specific role
   users: {
-    "444444444444444444": ["logs.delete"] // user-specific override
+    "444444444444444444": ["server.start"] // user-specific override
     // Add more...
   },
 
@@ -100,6 +100,10 @@ module.exports = {
       "reload",
       // Add more as needed...
     ],
+
+    // Silent Mode Roles
+    // Defines which roles are allowed to use the silent flag for /exec commands.
+    // OWNER is always allowed silently and doesn't need to be listed here.
+    silentRoles: ["ADMIN", "MOD"],
   }
 };
-

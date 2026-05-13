@@ -15,6 +15,7 @@ const { isBlocked, isDangerous } = require("../services/execServices/blacklist")
 const { requestConfirmation } = require("../services/execServices/confirmations");
 const { executeCommand } = require("../services/execServices/executeCommand");
 const { getAutocompleteResults } = require("../services/execServices/commandAutocomplete");
+const permissionConfig = require("../../config/permission-config");
 
 const execLogger = createLogger("Exec");
 
@@ -73,10 +74,10 @@ module.exports = {
         }
 
         // Step 2: Silent mode restriction
-        // Only ADMIN and OWNER may use silent mode.
-        if (silent && !["ADMIN", "OWNER"].includes(permResult.role)) {
+        // Only roles in silentRoles config may use silent mode.
+        if (silent && !permissionConfig.exec.silentRoles.includes(permResult.role)) {
             return interaction.reply({
-                content: "❌ Silent execution requires **Admin** or higher.",
+                content: "❌ Silent execution requires one of the following roles or higher: " + permissionConfig.exec.silentRoles.join(", "),
                 ephemeral: true,
             });
         }
