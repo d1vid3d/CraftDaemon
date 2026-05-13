@@ -44,9 +44,10 @@ function hasActiveSession(channelId) {
  *
  * @param {string} channelId
  * @param {import("discord.js").Message} message - The live-updating Discord message.
+ * @param {string} [footer=""] - Optional footer to include at the end of each message.
  * @returns {{ success: boolean, error?: string }}
  */
-function startSession(channelId, message) {
+function startSession(channelId, message, footer = "") {
     if (activeSessions.has(channelId)) {
         return { success: false, error: "A log session is already active in this channel." };
     }
@@ -75,7 +76,11 @@ function startSession(channelId, message) {
     const interval = setInterval(async () => {
         if (!buffer.hasChanged()) return;
 
-        const content = buffer.getContent();
+        let content = buffer.getContent();
+        if (footer) {
+            // Place footer above the codeblock
+            content = `${footer}\n${content}`;
+        }
         buffer.markSent();
 
         try {
@@ -125,8 +130,7 @@ async function stopSession(channelId, reason = "Session ended.") {
 
     // Update the Discord message with a final notice.
     try {
-        const finalContent = session.buffer.getContent().replace(/```$/, "") +
-            `\n--- [${reason}] ---\n` + "```";
+        const finalContent = `--- [${reason}] ---\n${session.buffer.getContent()}`;
         await session.message.edit({ content: finalContent });
     } catch (err) {
         logsLogger.warn(`[session] final message edit failed: ${err.message}`);

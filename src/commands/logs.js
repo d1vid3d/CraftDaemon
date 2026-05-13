@@ -28,7 +28,7 @@ module.exports = {
         .addIntegerOption((option) =>
             option
                 .setName("lines")
-                .setDescription("Number of lines to fetch (tail mode only)")
+                .setDescription("Number of lines to fetch (only for tail mode, does not affect live mode)")
                 .setRequired(false)
                 .setMinValue(1)
                 .setMaxValue(50)
@@ -52,14 +52,10 @@ module.exports = {
                 ? content.substring(content.length - 1900)
                 : content;
 
+            const footer = `📋 Server Logs (Tail) • Last ${logLines.length} line(s) • Source: ${LOGS_SOURCE}`;
+
             return interaction.editReply({
-                embeds: [{
-                    title: "📋 Server Logs (Tail)",
-                    description: "```\n" + truncated + "\n```",
-                    color: 0x5865f2,
-                    footer: { text: `Last ${logLines.length} line(s) • Source: ${LOGS_SOURCE}` },
-                    timestamp: new Date().toISOString(),
-                }],
+                content: `${footer}\n\`\`\`\n${truncated}\n\`\`\``,
             });
         }
 
@@ -90,7 +86,8 @@ module.exports = {
         // manager will edit every 2 seconds.
         await liveMessage.edit({ embeds: [], content: "```\nWaiting for log output...\n```" });
 
-        const result = startSession(interaction.channelId, liveMessage);
+        const footer = `📡 Live Server Logs • Source: ${LOGS_SOURCE} • Auto-stops after 60s`;
+        const result = startSession(interaction.channelId, liveMessage, footer, 'above');
 
         if (!result.success) {
             logsLogger.warn(`Failed to start session: ${result.error}`);
