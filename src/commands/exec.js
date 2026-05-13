@@ -147,7 +147,7 @@ function buildResultEmbed(interaction, command, result, silent) {
                 { name: "Command", value: `\`${command}\`` },
                 { name: "Response", value: `\`\`\`\n${result.response}\n\`\`\`` },
             ],
-            color: 0x00ff66,
+            color: 0x0042A3,
             timestamp: new Date().toISOString(),
         };
     }

@@ -45,6 +45,10 @@ module.exports = {
   // These settings extend the existing RBAC system with exec-specific
   // allowlists and safety lists for the /exec command.
 
+  // Extremely configurable, works with non-vanilla commands, but be very careful when modifying these!
+  // Incorrect settings can lead to security risks or unintended command access.
+  // Always double-check command lists and test changes in a safe environment before deploying to production.
+
   // Role Priority
   // Defines the order of role precedence for exec permission resolution.
   // Checked from left to right; the first matching role is returned.

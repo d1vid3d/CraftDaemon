@@ -23,7 +23,7 @@
 
 ## Overview
 
-CraftDaemon gives you Discord slash commands to start, stop, restart, and monitor a Minecraft server running on your own Linux machine. Instead of SSH-ing in or keeping a terminal open, you interact with the server entirely from Discord.
+CraftDaemon gives you Discord slash commands to start, stop, restart, monitor, execute console commands, and stream live logs — all from Discord. Instead of SSH-ing in or keeping a terminal open, you interact with the server entirely from Discord.
 
 It works by sitting alongside your Minecraft server on the same host, both running as **systemd services**. The bot controls the server by calling `systemctl` commands, and reads live stats (TPS, player list, RCON latency) by talking directly to the server over **RCON**.
 
@@ -63,7 +63,7 @@ If you're setting up the bot beyond the basics, this is your primary reference a
 
 ---
 
-## Features
+## Features (For full showcase checkout the Website!)
 
 ### Slash Commands
 
@@ -72,6 +72,8 @@ If you're setting up the bot beyond the basics, this is your primary reference a
 | `/start` | Starts the Minecraft server via `systemctl start` |
 | `/stop` | Stops the server via `systemctl stop` |
 | `/restart` | Restarts the server via `systemctl restart` |
+| `/logs` | Streams live Minecraft server logs in real-time (`live` mode) or fetches recent lines (`tail` mode) via journalctl |
+| `/exec` | Executes Minecraft server commands through RCON with safety checks, in-game announcements, and confirmation prompts |
 | `/status` | Shows a full status embed: systemd state, uptime, TPS, player list, and RCON ping |
 | `/address` | Shows the server's connection addresses (main address, LAN, Java version) |
 | `/ping` | Checks the bot's Discord API latency |
@@ -85,6 +87,15 @@ If you're setting up the bot beyond the basics, this is your primary reference a
     <source srcset="assets/readme-assets/status-example-dark.png" media="(prefers-color-scheme: dark)">
     <source srcset="assets/readme-assets/status-example-light.png" media="(prefers-color-scheme: light)">
     <img src="assets/status-example-dark.png" width="60%"/>
+  </picture>
+</p>
+
+📸 **Screenshot:** `/exec` response embed - The response embed shows the executor, the command ran, the result, and a timestamp.
+<p align="left">
+  <picture>
+    <source srcset="assets/readme-assets/exec-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/readme-assets/exec-example-light.png" media="(prefers-color-scheme: light)">
+    <img src="assets/exec-example-dark.png" width="60%"/>
   </picture>
 </p>
 
@@ -133,6 +144,30 @@ The bot's Discord status is event-driven from the persistent RCON manager, with 
 When the server has been empty for a configurable amount of time (default: **10 minutes**), CraftDaemon automatically stops it to save resources. Before that, at the **8-minute** mark, it posts a warning to your configured status channel. Both thresholds and the check interval are fully configurable in your `config/.env`.
 
 This is handled through the persistent RCON keepalive/player stream — no server mods needed.
+
+### Live Logs (`/logs`)
+
+Authorized users can stream live Minecraft server logs directly in Discord. The command supports two modes:
+
+| Mode | Behavior |
+|---|---|
+| `live` (default) | Streams new log lines in real-time, editing a Discord message every 2 seconds for up to 60 seconds |
+| `tail` | Fetches the last N lines as a one-time static snapshot, no live updates |
+
+Logs are sourced from `journalctl` by default (using `MC_SERVICE` as the systemd unit), with a `file` fallback for users not running the server as a systemd service. A rotating buffer keeps only the most recent lines, and a debounced 2-second edit interval stays well within Discord's rate limits.
+
+Only one active live session per channel is allowed. Sessions auto-stop after 60 seconds, cleaning up the child process and session state.
+
+### Remote Command Execution (`/exec`)
+
+The `/exec` command lets authorized users send Minecraft server commands through RCON directly from Discord. It's built as a full administration tool with safety layers:
+
+- **RCON execution** - commands are sent through the existing persistent RCON connection
+- **Tellraw injection** - optionally announces executed commands in-game so players see who did what
+- **Safety lists** - `dangerousCommands` require a confirmation prompt; `blockedCommands` are completely prevented regardless of role
+- **Silent mode** - Admin/Owner-only flag to suppress in-game announcements for sensitive commands
+- **Command autocomplete** - base Minecraft commands are autocompleted as you type in Discord
+- **Execution logging (Accountability)** - every command is appended as JSONL to a configurable log file (`./logs/exec.jsonl`)
 
 ---
 
@@ -275,6 +310,16 @@ Your environment file is **`config/.env`** (same path the bot and `register-comm
 | `SAVEALL_DELAY_MS` | ✅ | Delay (in milliseconds) between `save-all` command and stop/restart to allow world data to flush (default: `1000`) | `500–3000` |
 | **Command Behavior** | | | |
 | `COMMAND_COOLDOWN_MS` | ✅ | Cooldown timeout (in milliseconds) between accepting start/stop/restart commands to prevent spam (default: `10000`, set to `0` to disable) | `2000–60000` |
+| **Live Logs Configuration** | | | |
+| `LOGS_SOURCE` | ✅ | Log source for `/logs` command (`journalctl` or `file`, default: `journalctl`) | `journalctl` or `file` |
+| `LOG_FILE_PATH` | ☑️ | Path to log file, only used if `LOGS_SOURCE=file` (default: `./logs/latest.log`) | — |
+| **Remote Command Execution** | | | |
+| `EXEC_TELLRAW_ENABLED` | ✅ | Enable in-game announcements for `/exec` commands (default: `true`) | `true` or `false` |
+| `EXEC_TELLRAW_TARGET` | ✅ | Minecraft target selector for tellraw announcements (default: `@a`) | — |
+| `EXEC_TELLRAW_COLOR` | ✅ | Minecraft color name for the announcement prefix (default: `light_purple`) | Minecraft color name convention |
+| `EXEC_TELLRAW_PREFIX` | ✅ | Prefix shown in-game before the announcement text (default: `[DISCORD]`) | — |
+| `EXEC_SILENT_COMMANDS` | ☑️ | Comma-separated base commands that never produce a tellraw announcement (default: `login,register`) | — |
+| `EXEC_LOG_PATH` | ✅ | Path for the JSONL execution log, appended on each `/exec` (default: `./logs/exec.jsonl`) | — |
 | **RCON Manager Tuning** | | | |
 | `RCON_KEEPALIVE_INTERVAL_MS` | ✅ | Interval (in milliseconds) for persistent RCON keepalive heartbeat (default: `45000`) | `30000–60000` |
 | `RCON_RECONNECT_INTERVAL_MS` | ✅ | Delay (in milliseconds) between reconnect attempts when RCON is down (default: `5000`) | `3000–10000` |
@@ -320,10 +365,12 @@ RBAC (Role-Based Access Control) determines who can run which commands via `conf
 |---|---|---|
 | `/start` | `server.start` | `ADMIN`, `MOD` |
 | `/stop` | `server.stop` | `ADMIN`, `MOD` |
-| `/restart` | `server.restart` | `ADMIN` |
+| `/restart` | `server.restart` | `ADMIN`, `MOD` | 
 | `/status` | `server.status` | `ADMIN`, `MOD` |
 | `/address` | `server.address` | `ADMIN`, `MOD` |
 | `/checkupdate` | `bot.checkUpdate` | `ADMIN`, `MOD` |
+| `/logs` | `admin.logs` | `ADMIN`, `MOD` |
+| `/exec` | `admin.exec` | `ADMIN`, `MOD` |
 | `/ping` | *(none)* | Everyone |
 
 #### Setting Up RBAC
@@ -350,16 +397,54 @@ module.exports = {
     "server.stop": ["ADMIN", "MOD"],
     "server.status": ["ADMIN", "MOD"],
     "server.address": ["ADMIN", "MOD"],
-    "server.restart": ["ADMIN"]
+    "server.restart": ["ADMIN", "MOD"],
+    "bot.checkUpdate": ["ADMIN", "MOD"],
+    "admin.logs": ["ADMIN", "MOD"],
+    "admin.exec": ["ADMIN", "MOD"],
   },
 
   // User-specific overrides (takes precedence over role-based permissions)
   // Use case: If you want to add yourself or another user as an exception to the role-based permissions without giving them a specific role
   users: {
     "444444444444444444": ["logs.delete"] // user-specific override
+  },
+
+  // Exec-specific configuration
+  // Controls which Minecraft commands each role can run, plus safety lists.
+  // See the Exec Config Reference section for details.
+  rolePriority: ["ADMIN", "MOD"],
+
+  exec: {
+    allowlist: {
+      MOD: ["say", "kick", "time", "weather", "list", "tell", "msg", "w", "me"],
+      ADMIN: ["*"],
+    },
+
+    dangerousCommands: [
+      "stop", "op", "deop", "whitelist off", "ban", "pardon",
+      "reload", "ban-ip", "clear", "summon", "give", "tp", "kill"
+    ],
+
+    blockedCommands: [
+      "stop",
+      "reload",
+    ],
   }
 };
 ```
+
+#### Exec Config Reference
+
+The `/exec` command extends the existing RBAC with exec-specific controls inside `config/permission-config.js`:
+
+| Structure | Description |
+|---|---|
+| `rolePriority` | Ordered array of role keys for exec permission resolution (checked left to right) |
+| `exec.allowlist` | Maps role keys to arrays of allowed Minecraft commands. `"*"` = unrestricted (except blocked) |
+| `exec.dangerousCommands` | Commands that require a confirmation button prompt before execution |
+| `exec.blockedCommands` | Commands completely blocked from execution through `/exec` regardless of role |
+
+**Safety list priority:** If a command appears in both `dangerousCommands` and `blockedCommands`, `blockedCommands` takes precedence, it cannot run at all.
 
 </details>
 
@@ -394,8 +479,6 @@ sudo systemctl enable minecraft
 ```
 
 The service name you use here (e.g. `minecraft`) must match `MC_SERVICE` in your `.env`.
-
-> **⚠️ Heads up - console access:** Running the server as a systemd service means you lose direct console input from your terminal. You can still read logs with `journalctl -u minecraft -f`, but you won't be able to type commands directly into the server console over SSH. The practical workaround is to use an RCON terminal client like [mcrcon](https://github.com/Tiiffi/mcrcon), it opens an interactive RCON session from your shell where you can run any server command without a leading `/`. CraftDaemon does not currently have a send-console-command feature, so mcrcon (or equivalent) is the recommended solution for direct server administration (For now).
 
 ### 6. Enable RCON on your Minecraft server
 
@@ -481,6 +564,8 @@ Both services are now managed by systemd and will survive reboots.
 <details>
 <summary><b>Click to expand - Project Filestructure</b></summary>
 
+<p>
+
 ```
 CraftDaemon/
 ├── config/
@@ -496,7 +581,9 @@ CraftDaemon/
 │   │   ├── restart.js
 │   │   ├── address.js
 │   │   ├── status.js
-│   │   └── checkUpdate.js
+│   │   ├── checkUpdate.js
+│   │   ├── logs.js
+│   │   └── exec.js
 │   ├── events/
 │   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()
 │   ├── permissions/
@@ -506,13 +593,25 @@ CraftDaemon/
 │   ├── utils/
 │   │   └── storage.js         # JSON persistence for per-guild update-notification state
 │   └── services/
-        ├── autoStopService.js # Auto-Stop/Auto-Shutdown handling and logic
+│       ├── autoStopService.js # Auto-Stop/Auto-Shutdown handling and logic
 │       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery
 │       ├── rconmanager.js     # Persistent RCON connection lifecycle + command pipeline
 │       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)
 │       ├── minecraftSystemd.js # systemctl + save-all before stop/restart
 │       ├── commandLock.js     # Cooldown lock for start/stop/restart
-│       └── logger.js          # Structured logging utility used across bot modules
+│       ├── logger.js          # Structured logging utility used across bot modules
+│       ├── logsServices/      # Live log streaming for /logs command
+│       │   ├── logStream.js      # Spawns journalctl/tail, manages the child process
+│       │   ├── sessionManager.js # Active sessions Map, session lifecycle (start/stop/expire)
+│       │   └── logBuffer.js      # Rotating buffer logic, MAX_LINES trimming
+│       └── execServices/      # Remote command execution for /exec command
+│           ├── executeCommand.js    # Centralized RCON execution with middleware pipeline
+│           ├── commandLogger.js     # JSONL logging for every executed command
+│           ├── permissions.js       # Exec-specific permission resolution against allowlist
+│           ├── blacklist.js         # Dangerous + blocked command safety checks
+│           ├── confirmations.js     # Confirmation button prompts with expiry
+│           ├── tellrawInjector.js   # In-game announcement via tellraw
+│           └── commandAutocomplete.js # Minecraft command autocomplete for Discord
 ├── package.json
 └── README.md
 ```
@@ -530,9 +629,11 @@ CraftDaemon/
 <details>
 <summary><b>Click to expand - Useful systemd & journalctl commands</b></summary>
 
-Once both services are running, you'll mostly interact with them through Discord. But here are the essential commands to know for when you need to manage things directly from your server.
+<p>
 
-### systemctl — controlling services
+Once both services are running, you'll mostly interact with them through Discord. If you are not very familiar with systemctl and systemd in general, here are the essential commands to know for when you need to manage things directly from your server.
+
+### systemctl - controlling services
 
 ```bash
 # Check the current status of a service (active state, recent logs, PID)
@@ -558,7 +659,7 @@ sudo systemctl disable craftdaemon
 sudo systemctl daemon-reload
 ```
 
-### journalctl — reading logs
+### journalctl - reading logs
 
 ```bash
 # View the last 50 lines of logs for the bot
@@ -587,6 +688,8 @@ journalctl -u craftdaemon --since "1 hour ago"
 
 <details>
 <summary><b>Click to expand - Logging</b></summary>
+
+<p>
 
 ### The bot uses a structured logging system with category-based prefixes, timestamps, and color-coded log levels. This makes it easier to track what's happening across different components.
 
@@ -751,6 +854,8 @@ Apr 16 03:27:00 node-0 node[3040518]: 03:27:00 [AutoStop] [INFO] Server empty fo
 <details>
 <summary><b>Click to expand - Auto-Stop </b></summary>
 
+<p>
+
 The bot uses persistent RCON player count state and checks it on the interval defined by `CHECK_INTERVAL_MS` (or legacy `CHECK_INTERVAL`) in your `.env`. The shutdown sequence works like this:
 
 1. Server is running, 0 players online → inactivity timer starts
@@ -768,6 +873,8 @@ Setting `AUTO_STOP_MINUTES=0` in your `.env` disables auto-shutdown entirely. `W
 
 <details>
 <summary><b>Click to expand - RBAC Docs</b></summary>
+
+<p>
 
 CraftDaemon uses a **config-driven RBAC** layer for slash commands.
 
@@ -813,6 +920,8 @@ CraftDaemon enables `GatewayIntentBits.GuildMembers` in `src/index.js` by defaul
 
 <details>
 <summary><b>Click to expand - Customization</b></summary>
+
+<p>
 
 CraftDaemon's codebase is intentionally small and readable, and most behavior is configurable via `.env`; code edits should be the exception. But if the default behavior doesn't quite fit your setup, you're 
 encouraged to open `src/index.js` and adjust things directly — you don't need to be an expert, just comfortable reading 

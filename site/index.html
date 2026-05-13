@@ -95,7 +95,7 @@
       <div class="diagram-body">
         <div><span class="d-user">Discord User</span></div>
         <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;&nbsp;│</span></div>
-        <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;&nbsp;│ &nbsp;</span><span class="d-cmd">slash command</span><span class="d-comment"> &nbsp;(/start, /stop, /status…)</span></div>
+        <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;&nbsp;│ &nbsp;</span><span class="d-cmd">slash command</span><span class="d-comment"> &nbsp;(/start, /stop, /status, /exec, /logs…)</span></div>
         <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;&nbsp;▼</span></div>
         <div><span class="d-bot">CraftDaemon Bot</span><span class="d-arrow"> ──── </span><span class="d-sys">systemctl start/stop/restart</span><span class="d-arrow"> ────▶ &nbsp;</span><span class="d-mc">Minecraft (systemd)</span></div>
         <div><span class="d-arrow">&nbsp;&nbsp;&nbsp;(systemd) &nbsp; &nbsp;◀─── </span><span class="d-rcon">RCON 127.0.0.1:25575</span><span class="d-arrow"> ────────── &nbsp;&nbsp;&nbsp;(Minecraft Server)</span></div>
@@ -139,19 +139,37 @@
         <span class="feature-icon">💤</span>
         <h3>Auto-Shutdown</h3>
         <p>Empty server? The bot can shut it down after a timeout (with a warning in Discord first). Don’t want it? Flip one env var and it’s off.</p>
-        <span class="feature-tag tag-green">configurable</span>
+        <span class="feature-tag tag-green">Configurable</span>
       </div>
       <div class="feature-card reveal">
         <span class="feature-icon">🔐</span>
         <h3>Config-Driven RBAC</h3>
         <p>Permissions are just code. Map Discord roles or user IDs to commands in <span class="ic ic-g">permission-config.js</span>. Defaults to strict, but you’re in control.</p>
-        <span class="feature-tag tag-green">security</span>
+        <span class="feature-tag tag-green">Security</span>
       </div>
       <div class="feature-card reveal">
         <span class="feature-icon">📡</span>
         <h3>Update Notifications</h3>
-        <p>Run <span class="ic ic-b">/checkupdate</span> to see if there’s a new release. If there is, you’ll get a Discord embed with the changelog.</p>
+        <p>Run <span class="ic ic-b">/checkupdate</span> to see if there's a new release. If there is, you'll get a Discord embed with the changelog.</p>
         <span class="feature-tag tag-blurple">GitHub</span>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">📜</span>
+        <h3>Live Log Streaming</h3>
+        <p>Stream your Minecraft server logs directly in Discord with <span class="ic ic-b">/logs</span>. Two modes: <span class="ic ic-g">live</span> for real-time updates and <span class="ic ic-g">tail</span> for a static snapshot. One session per channel, auto-timeout after 60s.</p>
+        <span class="feature-tag tag-yellow">journalctl</span>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">🎮</span>
+        <h3>Remote Command Execution</h3>
+        <p>Send any Minecraft command through RCON with <span class="ic ic-b">/exec</span>. Features tellraw injection, configurable safety lists, confirmation prompts for dangerous commands, and a full audit log.</p>
+        <span class="feature-tag tag-blurple">RCON</span>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-icon">🚀</span>
+        <h3>And More!</h3>
+        <p>Log streaming, remote command execution, auto-shutdown, RBAC, live presence, update notifications - and there's more cooking. PRs, ideas, and bug reports are always welcome on <a href="https://github.com/d1vid3d/CraftDaemon" style="color: var(--blurple-bright); text-decoration: none;">GitHub</a>.</p>
+        <span class="feature-tag tag-blurple">Growing!</span>
       </div>
     </div>
   </section>
@@ -164,7 +182,6 @@
       <p class="section-label">In action</p>
       <h2>See it for yourself.</h2>
       <p>A look at CraftDaemon's Discord embeds and bot presence in a real server.</p>
-      <p style="margin-top: 1.5rem; color: var(--green-bright); font-weight: 600; font-size: 0.9rem;">And more planned to come! 🚀</p>
     </div>
     <div class="showcase-grid">
 
@@ -213,6 +230,30 @@
           <span class="showcase-label">🤖 Presence</span>
           <h4>Live Bot Status</h4>
           <p>The bot's Discord status and activity reflect the server state in real time, visible from the member list or bot profile without running any command.</p>
+        </div>
+      </div>
+
+      <div class="showcase-card reveal">
+        <div class="showcase-img-wrap">
+          <img src="pages-assets/exec-example.png" alt="/exec command"
+            onerror="this.parentElement.innerHTML='<div class=\'showcase-placeholder\'><span class=\'showcase-placeholder-icon\'>🎮</span><span class=\'showcase-placeholder-text\'>EXEC COMMAND</span></div>'" />
+        </div>
+        <div class="showcase-caption">
+          <span class="showcase-label">🎮 /exec</span>
+          <h4>Remote Command Execution</h4>
+          <p>Execute any server command directly from Discord. The response embed shows the executor, the command ran, the result, and a timestamp. Every execution is logged to <span class="ic ic-g">exec.jsonl</span> for a full audit trail.</p>
+        </div>
+      </div>
+
+      <div class="showcase-card reveal">
+        <div class="showcase-img-wrap">
+          <img src="pages-assets/logs-example.png" alt="/logs command"
+            onerror="this.parentElement.innerHTML='<div class=\'showcase-placeholder\'><span class=\'showcase-placeholder-icon\'>📜</span><span class=\'showcase-placeholder-text\'>LOGS COMMAND</span></div>'" />
+        </div>
+        <div class="showcase-caption">
+          <span class="showcase-label">📜 /logs</span>
+          <h4>Live Log Streaming</h4>
+          <p>Stream Minecraft server logs in real-time with <span class="ic ic-g">live</span> mode or grab a static snapshot with <span class="ic ic-g">tail</span> mode. One session per channel, sourced from journalctl by default. (Image got cut off of course)</p>
         </div>
       </div>
 
@@ -299,13 +340,14 @@
         <tr><td class="cmd-name">/start</td><td>Starts the Minecraft server via <span class="ic ic-g">systemctl start</span></td></tr>
         <tr><td class="cmd-name">/stop</td><td>Gracefully stops the server, running <span class="ic ic-g">save-all</span> first</td></tr>
         <tr><td class="cmd-name">/restart</td><td>Saves world data then restarts via <span class="ic ic-g">systemctl restart</span></td></tr>
+        <tr><td class="cmd-name">/logs</td><td>Streams live server logs in real-time (<span class="ic ic-g">live</span>) or fetches recent lines (<span class="ic ic-g">tail</span>) via journalctl</td></tr>
+        <tr><td class="cmd-name">/exec</td><td>Executes Minecraft server commands via RCON with safety checks, confirmation prompts, and in-game announcements</td></tr>
         <tr><td class="cmd-name">/status</td><td>Full status embed: systemd state, uptime, live TPS, player list, RCON ping</td></tr>
         <tr><td class="cmd-name">/address</td><td>Shows server connection addresses, public, LAN, and Java edition version</td></tr>
         <tr><td class="cmd-name">/ping</td><td>Checks the bot's Discord API latency</td></tr>
         <tr><td class="cmd-name">/checkupdate</td><td>Compares current version against latest GitHub release and posts an embed if newer</td></tr>
       </tbody>
     </table>
-    <div style="margin-top: 2rem; text-align: center; color: var(--green-bright); font-weight: 600; font-size: 0.9rem;" class="reveal">And more planned to come! 🚀</div>
   </section>
    
   <div class="section-divider"></div>
@@ -319,7 +361,7 @@
     </div>
     <div class="req-grid reveal">
       <div class="req-item"><span class="req-icon">🐧</span><div><h4>Linux + systemd</h4><p>Ubuntu, Debian, Arch, or any distro with systemd. The bot runs as its own service.</p></div></div>
-      <div class="req-item"><span class="req-icon">⬡</span><div><h4>Node.js 18+</h4><p>v22 recommended; used for development and testing and future migration plan to Typescript.</p></div></div>
+      <div class="req-item"><span class="req-icon">⬡</span><div><h4>Node.js 18+</h4><p>v22 recommended; used for development and testing and future migration plan to TypeScript.</p></div></div>
       <div class="req-item"><span class="req-icon">⛏️</span><div><h4>Any Minecraft Server</h4><p>Your actual Minecraft server, Duh.. (Paper is recommended, Required for TPS data.)</p></div></div>
       <div class="req-item"><span class="req-icon">🤖</span><div><h4>Discord Bot Token</h4><p>Create an application in the Discord Developer Portal and enable Guild Members Intent.</p></div></div>
       <div class="req-item"><span class="req-icon">🔑</span><div><h4>sudo Access</h4><p>A passwordless sudoers rule for the bot's user to run specific <span class="ic ic-g">systemctl</span> commands.</p></div></div>
@@ -367,14 +409,14 @@
     </div>
   </div>
 
-  <!-- ROADMAP DISCLAIMER -->
+  <!-- ROADMAP -->
   <div class="disclaimer-banner reveal" style="margin-bottom: 3rem; margin-top: -1.5rem;">
     <div class="disclaimer-inner" style="background: rgba(88,101,242,0.05); border-color: rgba(88,101,242,0.2);">
       <span class="disclaimer-icon">🎯</span>
       <div>
-        <h4 style="color: var(--blurple-bright);">Barebones Today, Powerful Tomorrow</h4>
-        <p>Right now, CraftDaemon does the essentials: start, stop, restart, and check status. It's intentionally minimal and lean. But that's just the foundation. Future releases will bring full admin controls straight from Discord, player moderation, and a whole lot more.</p>
-        <p>Getting there takes time and testing, so stick with us as we build it out. Your feedback and patience are super appreciated!</p>
+        <h4 style="color: var(--blurple-bright);">What's Next?</h4>
+        <p>CraftDaemon v1.3.0 brought major administration features - live log streaming <span class="ic ic-g">/logs</span> and remote command execution <span class="ic ic-g">/exec</span> with safety checks, tellraw announcements, and a full audit trail. But there's always more to build.</p>
+        <p>Future updates will expand the admin toolkit further: server monitoring support, moderation commands, automation, observability, autocomplete, and more. Your feedback and contributions on GitHub help shape what comes next!</p>
       </div>
     </div>
   </div>

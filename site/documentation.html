@@ -320,6 +320,54 @@
               <td><span class="code-inline">0</span> or <span class="code-inline">2000-60000</span> (default: <span class="code-inline">10000</span>)</td>
             </tr>
             <tr>
+              <td><span class="code-inline">LOGS_SOURCE</span></td>
+              <td>☑️</td>
+              <td>Log source for <span class="code-inline">/logs</span> command</td>
+              <td><span class="code-inline">journalctl</span> (default) or <span class="code-inline">file</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">LOG_FILE_PATH</span></td>
+              <td>☑️</td>
+              <td>Path to log file, only used if <span class="code-inline">LOGS_SOURCE=file</span></td>
+              <td>Default: <span class="code-inline">./logs/latest.log</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">EXEC_TELLRAW_ENABLED</span></td>
+              <td>☑️</td>
+              <td>Enable in-game announcements for <span class="code-inline">/exec</span> commands</td>
+              <td><span class="code-inline">true</span> (default) or <span class="code-inline">false</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">EXEC_TELLRAW_TARGET</span></td>
+              <td>☑️</td>
+              <td>Minecraft target selector for tellraw announcements</td>
+              <td>Default: <span class="code-inline">@a</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">EXEC_TELLRAW_COLOR</span></td>
+              <td>☑️</td>
+              <td>Minecraft color name for the announcement prefix</td>
+              <td>Default: <span class="code-inline">light_purple</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">EXEC_TELLRAW_PREFIX</span></td>
+              <td>☑️</td>
+              <td>Prefix shown in-game before the announcement text</td>
+              <td>Default: <span class="code-inline">[DISCORD]</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">EXEC_SILENT_COMMANDS</span></td>
+              <td>☑️</td>
+              <td>Comma-separated base commands that never produce a tellraw</td>
+              <td>Default: <span class="code-inline">login,register</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">EXEC_LOG_PATH</span></td>
+              <td>☑️</td>
+              <td>Path for the JSONL execution log, appended on each <span class="code-inline">/exec</span></td>
+              <td>Default: <span class="code-inline">./logs/exec.jsonl</span></td>
+            </tr>
+            <tr>
               <td><span class="code-inline">PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS</span></td>
               <td>☑️</td>
               <td>Presence fallback interval while RCON is disconnected</td>
@@ -414,16 +462,196 @@
         <p class="section-desc"><strong>Legend:</strong> ✅ = Required, ☑️ = Optional (defaults are used when omitted).</p>
 
         <h2 class="section-subtitle">Permission Configuration</h2>
-        <p class="section-desc">Edit <span class="code-inline">config/permission-config.js</span> to control which Discord roles and users can run which commands. Open it with <span class="code-inline">nano config/permission-config.js</span>. The file exports a single object with four keys:</p>
-        <ul>
-          <li><strong>owner:</strong> an array of Discord user IDs that bypass all permission checks — typically just you</li>
-          <li><strong>roles:</strong> a map of short label names (e.g. <span class="code-inline">ADMIN</span>) to Discord role IDs</li>
-          <li><strong>commands:</strong> maps each permission key to an array of role labels that can use it</li>
-          <li><strong>users:</strong> optional per-user overrides that grant specific permission keys to individual users regardless of their roles</li>
-        </ul>
-        <div class="code-block">module.exports = {<br>&nbsp;&nbsp;owner: ["123456789012345678"],<br>&nbsp;&nbsp;roles: {<br>&nbsp;&nbsp;&nbsp;&nbsp;ADMIN: "111111111111111111",<br>&nbsp;&nbsp;&nbsp;&nbsp;MOD: "222222222222222222",<br>&nbsp;&nbsp;&nbsp;&nbsp;Add more...: "333333333333333333"<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;commands: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.start":   ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.stop":    ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.restart": ["ADMIN"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.status":  ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.address": ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"bot.checkUpdate":["ADMIN", "MOD"]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;users: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"444444444444444444": ["logs.delete"]<br>&nbsp;&nbsp;}<br>};</div>
+        <p class="section-desc">CraftDaemon uses a <strong>config-driven RBAC (Role-Based Access Control)</strong> layer for slash commands. All permission rules live in a single file: <span class="code-inline">config/permission-config.js</span>. There is no hardcoded permission logic inside the bot's command handlers — everything is driven by this config, making it easy to audit and customize without touching code.</p>
 
-        <p class="section-desc">Replace the placeholder IDs with your actual Discord role and user IDs. Owners bypass all command checks entirely. Entries in <span class="code-inline">users</span> take precedence over role-based permissions — useful for granting or restricting access to specific individuals.</p>
+        <h3 class="section-subsubtitle">Configuration Structure Reference</h3>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-inline">owner</span></td>
+              <td>Array of user IDs</td>
+              <td>Discord user IDs that bypass <em>all</em> permission checks — no role required</td>
+              <td><span class="code-inline">["123456789012345678"]</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">roles</span></td>
+              <td>Key-value map</td>
+              <td>Maps descriptive role names (uppercase by convention) to Discord role IDs</td>
+              <td><span class="code-inline">{ ADMIN: "111111111111111111" }</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">commands</span></td>
+              <td>Key-value map</td>
+              <td>Maps permission strings to arrays of allowed role names</td>
+              <td><span class="code-inline">{ "server.start": ["ADMIN", "MOD"] }</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">users</span></td>
+              <td>Key-value map</td>
+              <td>Per-user overrides mapping Discord user IDs to permission strings — takes precedence over role-based permissions</td>
+              <td><span class="code-inline">{ "444444444444444444": ["admin.logs"] }</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">rolePriority</span></td>
+              <td>Array of role keys</td>
+              <td>Order of role precedence for <span class="code-inline">/exec</span> permission resolution. Checked left to right; the first matching role is used</td>
+              <td><span class="code-inline">["ADMIN", "MOD"]</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">exec.allowlist</span></td>
+              <td>Key-value map</td>
+              <td>Maps role keys to arrays of allowed Minecraft commands. <span class="code-inline">"*"</span> = unrestricted (except blocked commands)</td>
+              <td><span class="code-inline">{ MOD: ["say", "kick"], ADMIN: ["*"] }</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">exec.dangerousCommands</span></td>
+              <td>Array of command names</td>
+              <td>Minecraft commands that require a confirmation button before executing</td>
+              <td><span class="code-inline">["stop", "op", "ban"]</span></td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">exec.blockedCommands</span></td>
+              <td>Array of command names</td>
+              <td>Minecraft commands completely blocked from execution through <span class="code-inline">/exec</span> — no override possible</td>
+              <td><span class="code-inline">["stop", "reload"]</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="section-subsubtitle">Permission Hierarchy</h3>
+        <p class="section-desc">The RBAC system checks permissions in this order, returning the first match:</p>
+        <ol>
+          <li><strong>Owners</strong> — always pass regardless of the command. If a user's ID is in the <span class="code-inline">owner</span> array, they are granted access immediately with no further checks. This is intended for the server administrator.</li>
+          <li><strong>User overrides</strong> — checked next. If the user's ID has an entry in <span class="code-inline">users</span>, their permission strings are checked directly. This takes precedence over any role assignments.</li>
+          <li><strong>Role-based</strong> — checked last. The bot fetches the user's Discord roles, matches them against the role keys defined in <span class="code-inline">roles</span>, and checks if any of the matched roles are listed for the required permission string.</li>
+        </ol>
+        <p class="section-desc"><strong>Strict fail:</strong> If a permission string is not registered in the <span class="code-inline">commands</span> object at all, it is <em>denied by default</em> — not granted.</p>
+
+        <h3 class="section-subsubtitle">Permission Strings & Defaults</h3>
+        <p class="section-desc">Each command declares a permission string that is checked against the config. Here are the default role assignments shipped with CraftDaemon:</p>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Permission String</th>
+              <th>Default Roles</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-inline">/start</span></td>
+              <td><span class="code-inline">server.start</span></td>
+              <td>ADMIN, MOD</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">/stop</span></td>
+              <td><span class="code-inline">server.stop</span></td>
+              <td>ADMIN, MOD</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">/restart</span></td>
+              <td><span class="code-inline">server.restart</span></td>
+              <td>ADMIN, MOD</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">/status</span></td>
+              <td><span class="code-inline">server.status</span></td>
+              <td>ADMIN, MOD</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">/address</span></td>
+              <td><span class="code-inline">server.address</span></td>
+              <td>ADMIN, MOD</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">/checkupdate</span></td>
+              <td><span class="code-inline">bot.checkUpdate</span></td>
+              <td>ADMIN, MOD</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">/logs</span></td>
+              <td><span class="code-inline">admin.logs</span></td>
+              <td>ADMIN, MOD</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">/exec</span></td>
+              <td><span class="code-inline">admin.exec</span></td>
+              <td>ADMIN, MOD</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">/ping</span></td>
+              <td><em>(none)</em></td>
+              <td>Everyone</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="section-subsubtitle">Exec-Specific Configuration</h3>
+        <p class="section-desc">The <span class="code-inline">/exec</span> command extends the RBAC system with Minecraft-command-level controls. Three separate lists determine granular permission:</p>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Config Key</th>
+              <th>Purpose</th>
+              <th>Precedence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-inline">exec.allowlist</span></td>
+              <td>Defines which Minecraft commands each role can run. <span class="code-inline">"*"</span> grants access to all non-blocked commands. Owner gets <span class="code-inline">"*"</span> automatically via the RBAC owner override — no entry needed.</td>
+              <td>Lowest (but must pass to proceed)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">exec.dangerousCommands</span></td>
+              <td>Commands that trigger a confirmation prompt (Confirm / Cancel buttons). Anyone with exec permission can confirm and run them. Useful for preventing accidental <span class="code-inline">op</span>, <span class="code-inline">ban</span>, or <span class="code-inline">give</span> calls.</td>
+              <td>Middle (checked after allowlist)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">exec.blockedCommands</span></td>
+              <td>Commands completely prevented from running through <span class="code-inline">/exec</span>. No role can override this — it is a hard safety net. If a command appears in both <span class="code-inline">dangerousCommands</span> and <span class="code-inline">blockedCommands</span>, block takes precedence.</td>
+              <td>Highest (checked first, immediate reject)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="section-subsubtitle">Setting Up RBAC</h3>
+        <ol>
+          <li><strong>Enable Developer Mode</strong> in Discord: User Settings → Advanced → Developer Mode</li>
+          <li>Get your <strong>Discord user ID</strong>: right-click your name in the server member list → Copy User ID. Add this to the <span class="code-inline">owner</span> array.</li>
+          <li>Get <strong>role IDs</strong>: Server Settings → Roles → right-click each role → Copy Role ID. Add these to the <span class="code-inline">roles</span> map with descriptive keys.</li>
+          <li>Adjust <span class="code-inline">commands</span> to match your desired permission layout — each permission string maps to an array of role keys from step 3.</li>
+          <li>If using <span class="code-inline">/exec</span>, configure the <span class="code-inline">exec</span> block: set <span class="code-inline">rolePriority</span>, define which Minecraft commands each role can run in <span class="code-inline">allowlist</span>, and review the safety lists.</li>
+          <li>Test your setup with <span class="code-inline">DEBUG_PERMS="true"</span> in <span class="code-inline">config/.env</span> — this logs every permission check (user, command, allowed) to help you verify your rules.</li>
+        </ol>
+
+        <h3 class="section-subsubtitle">Requirements</h3>
+        <p class="section-desc">For role-based permission checks to work reliably, the bot must have:</p>
+        <ul>
+          <li><strong>Gateway Intent:</strong> <span class="code-inline">GuildMembers</span> enabled in the bot's code (enabled by default in <span class="code-inline">src/index.js</span>)</li>
+          <li><strong>Discord Developer Portal:</strong> "Server Members Intent" checkbox enabled in the Bot section of your application settings</li>
+        </ul>
+        <p class="section-desc">Without these, the bot cannot see the roles of guild members and role-based permission checks will fail.</p>
+
+        <h3 class="section-subsubtitle">DM Restrictions</h3>
+        <p class="section-desc">Permissions only work inside guilds — <span class="code-inline">interaction.inGuild()</span> must be true. Direct messages (DMs) are denied regardless of what the permission config says.</p>
+
+        <h3 class="section-subsubtitle">Full Config Example</h3>
+        <p class="section-desc">Here is a complete example with all sections. Replace all placeholder IDs with your real Discord IDs:</p>
+        <div class="code-block">module.exports = {<br>&nbsp;&nbsp;owner: ["123456789012345678"],<br>&nbsp;&nbsp;roles: {<br>&nbsp;&nbsp;&nbsp;&nbsp;ADMIN: "111111111111111111",<br>&nbsp;&nbsp;&nbsp;&nbsp;MOD: "222222222222222222",<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;commands: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.start":     ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.stop":      ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.restart":   ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.status":    ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"server.address":   ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"bot.checkUpdate":  ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"admin.logs":       ["ADMIN", "MOD"],<br>&nbsp;&nbsp;&nbsp;&nbsp;"admin.exec":       ["ADMIN", "MOD"],<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;users: {<br>&nbsp;&nbsp;&nbsp;&nbsp;"444444444444444444": ["admin.logs"]<br>&nbsp;&nbsp;},<br>&nbsp;&nbsp;rolePriority: ["ADMIN", "MOD"],<br>&nbsp;&nbsp;exec: {<br>&nbsp;&nbsp;&nbsp;&nbsp;allowlist: {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MOD: ["say", "kick", "time", "weather", "list", "tell", "msg", "w", "me"],<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ADMIN: ["*"],<br>&nbsp;&nbsp;&nbsp;&nbsp;},<br>&nbsp;&nbsp;&nbsp;&nbsp;dangerousCommands: [<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"stop", "op", "deop", "whitelist off", "ban", "pardon",<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"reload", "ban-ip", "clear", "summon", "give", "tp", "kill"<br>&nbsp;&nbsp;&nbsp;&nbsp;],<br>&nbsp;&nbsp;&nbsp;&nbsp;blockedCommands: ["stop", "reload"],<br>&nbsp;&nbsp;}<br>};</div>
+
+        <div class="callout info">
+          <div class="callout-title">🔍 Testing Your Permissions</div>
+          <p>Set <span class="code-inline">DEBUG_PERMS="true"</span> in your <span class="code-inline">config/.env</span> to see detailed permission check logs. Each time a user runs a command, the bot will log the user, the required permission string, which role keys they matched, and whether access was allowed or denied. This is the easiest way to verify your RBAC setup without guessing.</p>
+        </div>
       </section>
 
       <!-- COMMANDS -->
@@ -486,7 +714,149 @@
           <li><strong>Response:</strong> Embed showing current version vs latest GitHub release</li>
           <li><strong>If newer:</strong> Displays the full changelog from the release notes</li>
         </ul>
+
+        <h2 class="section-subtitle">/logs</h2>
+        <p class="section-desc">Streams live Minecraft server logs directly in Discord, or fetches recent lines as a static snapshot. Logs are sourced from <span class="code-inline">journalctl</span> by default, with a <span class="code-inline">file</span> fallback for non-systemd setups.</p>
+
+        <h3 class="section-subsubtitle">Command Syntax</h3>
+        <div class="code-block">/logs [mode:live|tail] [lines:number]</div>
+
+        <h3 class="section-subsubtitle">Modes</h3>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Mode</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-inline">live</span></td>
+              <td>Default. Opens a live-updating message that streams log lines in real time. A <code>journalctl -f</code> or <code>tail -f</code> child process is spawned and its output is collected via a rotating buffer. The message is edited every 2 seconds with new content. The session auto-stops after 60 seconds and the child process is killed.</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">tail </span></td>
+              <td>One-shot fetch of the last N lines (default 15, adjustable via the <span class="code-inline">lines</span> option). Returns a static code block embed immediately. No live session or timeout involved.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="section-subsubtitle">Code Examples</h3>
+        <div class="code-block">/logs                        → live mode (default)<br>/logs mode:live              → explicitly live<br>/logs mode:tail              → last 15 lines as a static embed<br>/logs mode:tail lines:50     → last 50 lines</div>
+
+        <h3 class="section-subsubtitle">Live Session Behavior</h3>
+        <ul>
+          <li><strong>Rotating buffer:</strong> Only the 15 most recent lines are kept and displayed</li>
+          <li><strong>Edit cadence:</strong> The Discord message is updated every 2 seconds (debounced — skipped if no new lines since last edit), well under Discord's 5-edits-per-5-seconds rate limit</li>
+          <li><strong>One session per channel:</strong> If a user already has a live session running in a channel, other users in that channel see a warning instead of starting a second session</li>
+          <li><strong>Auto-timeout:</strong> Sessions expire after 60 seconds. On timeout, the child process is killed, the edit interval is cleared, the session is deleted, and the message is updated with a <code>[session ended]</code> notice</li>
+          <li><strong>Permission:</strong> <span class="code-inline">admin.logs</span></li>
+          <li><strong>Log source:</strong> Controlled by <span class="code-inline">LOGS_SOURCE</span> in <span class="code-inline">config/.env</span> (<span class="code-inline">journalctl</span> or <span class="code-inline">file</span>)</li>
+        </ul>
+
+        <h3 class="section-subsubtitle">Under the Hood</h3>
+        <p class="section-desc">The command uses <span class="code-inline">child_process.spawn()</span> to run <span class="code-inline">journalctl -f -u &lt;service&gt; --output=short --no-pager</span> (or <span class="code-inline">tail -f &lt;logfile&gt;</span> for file mode). Lines are collected from the stdout <span class="code-inline">data</span> event, pushed into a rotating buffer, and the session manager handles lifecycle (start, stop, timeout, cleanup). All child processes are guaranteed to be killed when a session ends to avoid orphans.</p>
+
+        <h2 class="section-subtitle">/exec</h2>
+        <p class="section-desc">Sends Minecraft server commands through RCON directly from Discord. Built as a full administration tool with accountability, safety checks, and in-game visibility.</p>
+
+        <h3 class="section-subsubtitle">Command Syntax</h3>
+        <div class="code-block">/exec command:&lt;minecraft_command&gt; [silent:true|false]</div>
+
+        <h3 class="section-subsubtitle">Code Examples</h3>
+        <div class="code-block">/exec command:time set day           → sets the time to day<br>/exec command:weather clear          → clears the weather<br>/exec command:gamemode creative @p   → sets the nearest player to creative<br>/exec command:kick Steve You are banned! → kicks a player with a reason<br>/exec silent:true command:gamerule doDaylightCycle false → silently changes a gamerule (Admin/Owner only)</div>
+
+        <h3 class="section-subsubtitle">Execution Flow</h3>
+        <ol>
+          <li>User runs <span class="code-inline">/exec</span> with a Minecraft command</li>
+          <li>Bot validates permissions against the exec allowlist in <span class="code-inline">permission-config.js</span></li>
+          <li>Bot checks if the base command is in <span class="code-inline">blockedCommands</span> — hard blocked, no override</li>
+          <li>If in <span class="code-inline">dangerousCommands</span>, a confirmation button prompt is sent</li>
+          <li>If confirmed (or not dangerous), the bot optionally injects a <span class="code-inline">tellraw</span> for in-game visibility</li>
+          <li>The command is sent through RCON and the result is returned as a Discord embed</li>
+          <li>Every execution is logged to <span class="code-inline">EXEC_LOG_PATH</span> as a JSONL line</li>
+        </ol>
+
+        <h3 class="section-subsubtitle">Safety System</h3>
+        <p class="section-desc">Two independent safety lists in <span class="code-inline">permission-config.js</span> protect your server:</p>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>List</th>
+              <th>Behavior</th>
+              <th>Who Can Override</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-inline">dangerousCommands</span></td>
+              <td>Prompts for a confirmation button before executing</td>
+              <td>Anyone with exec permission (after confirming)</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">blockedCommands</span></td>
+              <td>Completely prevented — no one can run these through /exec</td>
+              <td>No one (hard block)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="section-subsubtitle">Confirmation Prompts</h3>
+        <p class="section-desc">When a dangerous command is detected, the bot sends a message with two Discord buttons:</p>
+        <ul>
+          <li><strong>✅ Confirm</strong> — executes the command</li>
+          <li><strong>❌ Cancel</strong> — aborts and removes the pending confirmation</li>
+        </ul>
+        <p class="section-desc">Pending confirmations expire after 60 seconds. The interaction collector listens for button clicks from the original user only.</p>
+
+        <h3 class="section-subsubtitle">Tellraw Injection</h3>
+        <p class="section-desc">When enabled (default), executed commands are announced in-game with a <span class="code-inline">tellraw</span> message showing who executed what. Configuration options in <span class="code-inline">config/.env</span>:</p>
+        <ul>
+          <li><span class="code-inline">EXEC_TELLRAW_ENABLED</span> — master toggle</li>
+          <li><span class="code-inline">EXEC_TELLRAW_TARGET</span> — who sees the message (default: <span class="code-inline">@a</span>)</li>
+          <li><span class="code-inline">EXEC_TELLRAW_COLOR</span> — Minecraft color name (default: <span class="code-inline">light_purple</span>)</li>
+          <li><span class="code-inline">EXEC_TELLRAW_PREFIX</span> — prefix text (default: <span class="code-inline">[DISCORD]</span>)</li>
+          <li><span class="code-inline">EXEC_SILENT_COMMANDS</span> — base commands that skip tellraw entirely (default: <span class="code-inline">login,register</span>)</li>
+        </ul>
+
+        <h3 class="section-subsubtitle">Silent Mode</h3>
+        <p class="section-desc">The <span class="code-inline">silent:true</span> option suppresses the tellraw announcement. This is restricted to Admin and Owner roles only, preventing lower roles from secretly executing commands without in-game visibility.</p>
+
+        <h3 class="section-subsubtitle">Command Autocomplete</h3>
+        <p class="section-desc">As you type a Minecraft command in the <span class="code-inline">command</span> field, Discord shows autocomplete suggestions from a static list of base commands (e.g. <span class="code-inline">time</span>, <span class="code-inline">weather</span>, <span class="code-inline">gamemode</span>, <span class="code-inline">tp</span>, <span class="code-inline">give</span>, etc.). This list is version-pinned to the Minecraft version the bot was built against.</p>
+
+        <h3 class="section-subsubtitle">Exec Feedback Embed</h3>
+        <p class="section-desc">The bot returns an embed with the following fields for every execution attempt:</p>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Content</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Executor</strong></td>
+              <td>Discord username who ran the command</td>
+            </tr>
+            <tr>
+              <td><strong>Command</strong></td>
+              <td>The full Minecraft command executed</td>
+            </tr>
+            <tr>
+              <td><strong>Result</strong></td>
+              <td>✅ Success or ❌ Failure with the RCON response</td>
+            </tr>
+            <tr>
+              <td><strong>Timestamp</strong></td>
+              <td>When the command was executed</td>
+            </tr>
+          </tbody>
+        </table>
       </section>
+
+      
+
 
       <!-- PERMISSIONS -->
       <section id="permissions" class="doc-section">
@@ -527,6 +897,14 @@
             <tr>
               <td><span class="code-inline">bot.checkUpdate</span></td>
               <td>/checkupdate command</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">admin.logs</span></td>
+              <td>/logs command</td>
+            </tr>
+            <tr>
+              <td><span class="code-inline">admin.exec</span></td>
+              <td>/exec command</td>
             </tr>
           </tbody>
         </table>
@@ -599,6 +977,43 @@
         <p class="section-desc">
           Run <span class="code-inline">/checkupdate</span> at any time to see if a newer version of CraftDaemon is available. The bot fetches the latest release tag from GitHub and compares it to the version currently running. If an update is available, the full changelog from the release notes is shown in the response embed so you know exactly what changed before updating.
         </p>
+
+        <h2 class="section-subtitle">Live Logs (<span class="code-inline">/logs</span>)</h2>
+        <p class="section-desc">
+          The <span class="code-inline">/logs</span> command streams Minecraft server logs directly into Discord, giving authorized users real-time visibility into server activity without needing SSH access. It supports two modes: <strong>live</strong> (real-time streaming) and <strong>tail</strong> (static snapshot).
+        </p>
+        <p class="section-desc"><strong>How live mode works:</strong></p>
+        <ol>
+          <li>The bot spawns a <span class="code-inline">journalctl -f</span> (or <span class="code-inline">tail -f</span>) child process</li>
+          <li>New log lines are collected via the stdout <span class="code-inline">data</span> event and pushed into a rotating 15-line buffer</li>
+          <li>Every 2 seconds, the bot checks if the buffer changed since the last edit — if so, it edits the Discord message with the latest lines</li>
+          <li>After 60 seconds, the session expires: the child process is killed, the edit interval is cleared, and the message is marked <code>[session ended]</code></li>
+        </ol>
+        <p class="section-desc"><strong>Configuration:</strong> Set <span class="code-inline">LOGS_SOURCE</span> in <span class="code-inline">config/.env</span> to <span class="code-inline">journalctl</span> (default) or <span class="code-inline">file</span>. If using file mode, set <span class="code-inline">LOG_FILE_PATH</span> to the path of your <span class="code-inline">latest.log</span>. The default <span class="code-inline">journalctl</span> source automatically uses your configured <span class="code-inline">MC_SERVICE</span>.</p>
+        <p class="section-desc"><strong>Session guard:</strong> Only one active live session is allowed per channel at a time. This prevents conflicting edit loops from multiple users in the same channel.</p>
+
+        <h2 class="section-subtitle">Remote Command Execution (<span class="code-inline">/exec</span>)</h2>
+        <p class="section-desc">
+          The <span class="code-inline">/exec</span> command turns Discord into a remote administration console for your Minecraft server. Every command execution is logged, optionally announced in-game, and protected by configurable safety lists.
+        </p>
+
+        <h3 class="section-subsubtitle">Architecture</h3>
+        <p class="section-desc">Every <span class="code-inline">/exec</span> command passes through a middleware pipeline before reaching the server:</p>
+        <div class="code-block">/exec<br>  ↓<br>Permission check (allowlist)<br>  ↓<br>Blocked command check<br>  ↓<br>Dangerous command check → confirmation prompt<br>  ↓<br>Tellraw injector (unless silent or in silent list)<br>  ↓<br>Execute via RCON<br>  ↓<br>Log to exec.jsonl<br>  ↓<br>Return feedback embed</div>
+
+        <h3 class="section-subsubtitle">Exec Allowlist</h3>
+        <p class="section-desc">The exec permission system extends the existing RBAC with Minecraft-command-level granularity. Defined in <span class="code-inline">config/permission-config.js</span> under <span class="code-inline">exec.allowlist</span>, it maps roles to arrays of allowed Minecraft commands. The <span class="code-inline">rolePriority</span> array determines role resolution order. A value of <span class="code-inline">"*"</span> grants access to all non-blocked commands.</p>
+
+        <h3 class="section-subsubtitle">Safety Lists</h3>
+        <p class="section-desc">Two lists protect your server from accidental or malicious commands:</p>
+        <ul>
+          <li><strong>dangerousCommands:</strong> Commands that need explicit confirmation before they run (e.g. <span class="code-inline">ban</span>, <span class="code-inline">op</span>, <span class="code-inline">give</span>). Anyone with exec permission can confirm and run them.</li>
+          <li><strong>blockedCommands:</strong> Commands that cannot be executed through <span class="code-inline">/exec</span> at all, regardless of role. Even owners cannot override this without editing the config.</li>
+        </ul>
+
+        <h3 class="section-subsubtitle">Execution Logging</h3>
+        <p class="section-desc">Every <span class="code-inline">/exec</span> command is logged as a JSONL line to <span class="code-inline">./logs/exec.jsonl</span> (configurable via <span class="code-inline">EXEC_LOG_PATH</span>). Each entry captures who, what, and when — enabling audit trails and future analytics:</p>
+        <div class="code-block">{ "timestamp": 1714920211, "userId": "123456789", "username": "David", "command": "time set day", "success": true, "requiresConfirmation": false, "silent": false }</div>
       </section>
 
       <!-- TROUBLESHOOTING -->
@@ -659,7 +1074,7 @@
 
         <h2 class="section-subtitle">Directory Structure</h2>
         <p class="section-desc">Here's the full layout of the repository and what each file/folder of the bot does:</p>
-        <div class="code-block">CraftDaemon/<br>├── config/<br>│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)<br>│   └── .env.example           # Environment variable template<br>├── src/<br>│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader<br>│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)<br>│   ├── commands/              # One file per slash command (data + permission + execute)<br>│   │   ├── ping.js<br>│   │   ├── start.js<br>│   │   ├── stop.js<br>│   │   ├── restart.js<br>│   │   ├── address.js<br>│   │   ├── status.js<br>│   │   └── checkUpdate.js<br>│   ├── events/<br>│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()<br>│   ├── permissions/<br>│   │   ├── index.js<br>│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)<br>│   │   └── resolver.js        # hasPermission() against permission-config.js<br>│   ├── utils/<br>│   │   └── storage.js         # JSON persistence for per-guild update-notification state<br>│   └── services/<br>│       ├── autoStopService.js # Auto-Stop/Auto-Shutdown logic and handler<br>│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery<br>│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline<br>│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)<br>│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart<br>│       ├── commandLock.js     # Cooldown lock for start/stop/restart<br>│       └── logger.js          # Structured logging utility used across bot modules<br>├── package.json<br>└── README.md</div>
+        <div class="code-block">CraftDaemon/<br>├── config/<br>│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)<br>│   └── .env.example           # Environment variable template<br>├── src/<br>│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader<br>│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)<br>│   ├── commands/              # One file per slash command (data + permission + execute)<br>│   │   ├── ping.js<br>│   │   ├── start.js<br>│   │   ├── stop.js<br>│   │   ├── restart.js<br>│   │   ├── address.js<br>│   │   ├── status.js<br>│   │   ├── checkUpdate.js<br>│   │   ├── logs.js            # /logs - live log streaming and tail mode<br>│   │   └── exec.js            # /exec - remote command execution<br>│   ├── events/<br>│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()<br>│   ├── permissions/<br>│   │   ├── index.js<br>│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)<br>│   │   └── resolver.js        # hasPermission() against permission-config.js<br>│   ├── utils/<br>│   │   └── storage.js         # JSON persistence for per-guild update-notification state<br>│   └── services/<br>│       ├── autoStopService.js # Auto-Stop/Auto-Shutdown logic and handler<br>│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery<br>│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline<br>│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)<br>│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart<br>│       ├── commandLock.js     # Cooldown lock for start/stop/restart<br>│       ├── logger.js          # Structured logging utility used across bot modules<br>│       ├── logsServices/      # Live log streaming for /logs command<br>│       │   ├── logStream.js      # Spawns journalctl/tail, manages the child process<br>│       │   ├── sessionManager.js # Active sessions Map, session lifecycle (start/stop/expire)<br>│       │   └── logBuffer.js      # Rotating buffer logic, MAX_LINES trimming<br>│       └── execServices/      # Remote command execution for /exec command<br>│           ├── executeCommand.js    # Centralized RCON execution with middleware pipeline<br>│           ├── commandLogger.js     # JSONL logging for every executed command<br>│           ├── permissions.js       # Exec-specific permission resolution against allowlist<br>│           ├── blacklist.js         # Dangerous + blocked command safety checks<br>│           ├── confirmations.js     # Confirmation button prompts with expiry<br>│           ├── tellrawInjector.js   # In-game announcement via tellraw<br>│           └── commandAutocomplete.js # Minecraft command autocomplete for Discord<br>├── package.json<br>└── README.md</div>
 
         <div class="callout info">
           <div class="callout-title">ℹ️ Layout flexibility (Advanced)</div>
@@ -676,6 +1091,8 @@
           <li><strong>commandLock.js:</strong> Cooldown guard that prevents rapid repeated start/stop/restart calls within the configured <span class="code-inline">COMMAND_COOLDOWN_MS</span> window</li>
           <li><strong>middleware.js / resolver.js:</strong> RBAC enforcement layer — every slash command interaction passes through <span class="code-inline">permissionMiddleware</span> before <span class="code-inline">command.execute()</span> is called</li>
           <li><strong>storage.js:</strong> Lightweight JSON persistence for per-guild state (e.g. update notification tracking)</li>
+          <li><strong>logsServices/ (logStream.js, sessionManager.js, logBuffer.js):</strong> Powers the <span class="code-inline">/logs</span> command — spawns journalctl/tail child processes, manages live session lifecycle (start, stop, 60-second timeout), and maintains a rotating line buffer for Discord-safe edits</li>
+          <li><strong>execServices/ (executeCommand.js, commandLogger.js, permissions.js, blacklist.js, confirmations.js, tellrawInjector.js, commandAutocomplete.js):</strong> Powers the <span class="code-inline">/exec</span> command — centralized RCON execution with safety middleware pipeline, JSONL audit logging, role-based allowlist resolution, dangerous/blocked command checks, confirmation button prompts with expiry, in-game tellraw injection, and Minecraft command autocomplete</li>
         </ul>
       </section>
 
@@ -861,6 +1278,7 @@
           <li>Add comments for any complex or non-obvious logic</li>
           <li>Test your changes before submitting</li>
           <li>Follow the existing code style throughout the project</li>
+          <li>JSDoc comments</li>
         </ul>
 
         <h2 class="section-subtitle">License</h2>

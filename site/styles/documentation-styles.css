@@ -285,7 +285,7 @@
     /* SIDEBAR */
     .sidebar {
       position: sticky;
-      top: 80px;
+      top: 10%;
       height: fit-content;
       background: var(--surface);
       border: 1px solid var(--border);
@@ -376,6 +376,14 @@
       color: var(--green-bright);
     }
 
+    .section-subsubtitle {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 1.8rem;
+      margin-bottom: 0.6rem;
+      color: var(--text);
+    }
+
     .section-desc {
       color: var(--text-dim);
       margin-bottom: 1.5rem;
@@ -456,6 +464,11 @@
       color: var(--text-dim);
       border-bottom: 1px solid var(--border);
       word-break: break-word;
+    }
+
+    .doc-table td:first-child {
+      white-space: nowrap;
+      min-width: 120px;
     }
 
     .doc-table tr:hover td {
