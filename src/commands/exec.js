@@ -75,7 +75,8 @@ module.exports = {
 
         // Step 2: Silent mode restriction
         // Only roles in silentRoles config may use silent mode.
-        if (silent && !permissionConfig.exec.silentRoles.includes(permResult.role)) {
+        // OWNER bypasses this restriction unconditionally.
+        if (silent && permResult.role !== "OWNER" && !permissionConfig.exec.silentRoles.includes(permResult.role)) {
             return interaction.reply({
                 content: "❌ Silent execution requires one of the following roles or higher: " + permissionConfig.exec.silentRoles.join(", "),
                 flags: MessageFlags.Ephemeral,

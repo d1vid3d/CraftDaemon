@@ -104,6 +104,6 @@ module.exports = {
     // Silent Mode Roles
     // Defines which roles are allowed to use the silent flag for /exec commands.
     // OWNER is always allowed silently and doesn't need to be listed here.
-    silentRoles: ["ADMIN", "MOD"],
+    silentRoles: ["ADMIN", "MOD"] // Map more roles as needed..
   }
 };
