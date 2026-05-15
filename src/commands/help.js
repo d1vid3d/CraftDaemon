@@ -1,5 +1,5 @@
-//  /help command  |  Command reference & quick start guide
-//  Public command — no permission required.
+//  /help command  -  Command reference & quick start guide - v1.3.1
+//  Public command, no permission required.
 //  Uses a StringSelectMenu to switch between pages.
 
 "use strict";
@@ -17,7 +17,7 @@ const helpLogger = createLogger("Help");
 
 const SELECT_TIMEOUT_MS = 120_000; // 2 minutes
 
-// ── Data ────────────────────────────────────────────────────────
+// Data
 
 const COMMAND_CATEGORIES = [
     {
@@ -50,7 +50,7 @@ const COMMAND_CATEGORIES = [
     },
 ];
 
-// ── Embed Builders ──────────────────────────────────────────────
+// Embed Builders
 
 function buildCommandsEmbed() {
     const fields = COMMAND_CATEGORIES.map((cat) => {
@@ -130,7 +130,7 @@ function buildQuickStartEmbed() {
     };
 }
 
-// ── Select Menu ─────────────────────────────────────────────────
+// Select Menu
 
 function buildSelectRow(activeValue) {
     const menu = new StringSelectMenuBuilder()
@@ -155,7 +155,7 @@ function buildSelectRow(activeValue) {
     return new ActionRowBuilder().addComponents(menu);
 }
 
-// ── Command Definition ──────────────────────────────────────────
+// Command Definition
 
 module.exports = {
     permission: null,
@@ -208,7 +208,7 @@ module.exports = {
 
                 await interaction.editReply({ components: [disabledRow] });
             } catch (_) {
-                // Message may have been deleted — ignore.
+                // Message may have been deleted - ignore.
             }
         });
     },

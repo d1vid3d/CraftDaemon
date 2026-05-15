@@ -75,7 +75,7 @@ async function executeCommand({ user, command, silent = false, requiresConfirmat
     // Step 4: Return result
     if (success) {
         execLogger.info(`Command executed successfully: ${command} → ${response}`);
-        return { success: true, response: response || "(Command Has No Response, check Logs instead.)" };
+        return { success: true, response: response || "(Responseless Command, Check Logs Instead.)" };
     }
 
     const errorMsg = "RCON is currently unavailable. The server may be offline or reconnecting.";

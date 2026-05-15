@@ -23,7 +23,7 @@
 
 ## Overview
 
-CraftDaemon gives you Discord slash commands to start, stop, restart, monitor, execute console commands, and stream live logs — all from Discord. Instead of SSH-ing in or keeping a terminal open, you interact with the server entirely from Discord.
+CraftDaemon gives you Discord slash commands to start, stop, restart, monitor, execute console commands, and stream live logs, all from Discord. Instead of SSH-ing in or keeping a terminal open, you interact with the server entirely from Discord.
 
 It works by sitting alongside your Minecraft server on the same host, both running as **systemd services**. The bot controls the server by calling `systemctl` commands, and reads live stats (TPS, player list, RCON latency) by talking directly to the server over **RCON**.
 
@@ -32,7 +32,7 @@ It works by sitting alongside your Minecraft server on the same host, both runni
 ```
 Discord User
      │
-     │  slash command (/start, /stop, /status…)
+     │  slash command (/start, /stop, /status, /exec, /logs…)
      ▼
 CraftDaemon Bot  ──── systemctl start/stop/restart ────▶  Minecraft systemd service
   (systemd)      ◀─── RCON (127.0.0.1:25575) ──────────  (Minecraft Server)
