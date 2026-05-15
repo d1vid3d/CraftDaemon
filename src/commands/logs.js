@@ -33,7 +33,7 @@ module.exports = {
                 .setDescription("Number of lines to fetch (only for tail mode, does not affect live mode)")
                 .setRequired(false)
                 .setMinValue(1)
-                .setMaxValue(50)
+                .setMaxValue(25)
         ),
 
     async execute(interaction) {

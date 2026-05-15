@@ -6,7 +6,7 @@
 
 "use strict";
 
-const MAX_LINES = 50;
+const MAX_LINES = 25;
 
 class LogBuffer {
     /**
