@@ -1,8 +1,8 @@
 //  /logs command  |  Live server log streaming & tail snapshot
-//  Modes:
-//    live - streams new log lines in real-time (default)
-//    tail - fetches last N lines as a static snapshot
-//    stop - stops the active log session in this channel
+//  Subcommands:
+//    live        - streams new log lines in real-time
+//    tail [N]    - fetches last N lines as a static snapshot
+//    stop        - stops the active log session in this channel
 
 const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { createLogger } = require("../services/logger");
@@ -16,34 +16,37 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("logs")
         .setDescription("Stream or view live server logs")
-        .addStringOption((option) =>
-            option
-                .setName("mode")
-                .setDescription("Log viewing mode")
-                .setRequired(false)
-                .addChoices(
-                    { name: "live", value: "live" },
-                    { name: "tail", value: "tail" },
-                    { name: "stop", value: "stop" }
+        .addSubcommand((sub) =>
+            sub
+                .setName("live")
+                .setDescription("Stream new log lines in real-time")
+        )
+        .addSubcommand((sub) =>
+            sub
+                .setName("tail")
+                .setDescription("Fetch the last N lines as a static snapshot")
+                .addIntegerOption((option) =>
+                    option
+                        .setName("lines")
+                        .setDescription("Number of lines to fetch")
+                        .setRequired(false)
+                        .setMinValue(1)
+                        .setMaxValue(25)
                 )
         )
-        .addIntegerOption((option) =>
-            option
-                .setName("lines")
-                .setDescription("Number of lines to fetch (only for tail mode, does not affect live mode)")
-                .setRequired(false)
-                .setMinValue(1)
-                .setMaxValue(25)
+        .addSubcommand((sub) =>
+            sub
+                .setName("stop")
+                .setDescription("Stop the active log session in this channel")
         ),
 
     async execute(interaction) {
-        const mode = interaction.options.getString("mode") || "live";
-        const lines = interaction.options.getInteger("lines") || 20;
+        const subcommand = interaction.options.getSubcommand();
 
-        logsLogger.info(`/logs ${mode} from ${interaction.user.tag} (source: ${LOGS_SOURCE})`);
+        logsLogger.info(`/logs ${subcommand} from ${interaction.user.tag} (source: ${LOGS_SOURCE})`);
 
-        // Stop mode
-        if (mode === "stop") {
+        // Stop
+        if (subcommand === "stop") {
             if (!hasActiveSession(interaction.channelId)) {
                 return interaction.reply({
                     content: "⚠️ No active log session in this channel.",
@@ -57,10 +60,11 @@ module.exports = {
             });
         }
 
-        // Tail mode
-        if (mode === "tail") {
+        // Tail
+        if (subcommand === "tail") {
             await interaction.deferReply();
 
+            const lines = interaction.options.getInteger("lines") || 20;
             const logLines = fetchTailLines(lines);
             const content = logLines.join("\n");
 
@@ -76,7 +80,7 @@ module.exports = {
             });
         }
 
-        // Live mode
+        // Live
 
         // Concurrent session guard — one per channel.
         if (hasActiveSession(interaction.channelId)) {

@@ -147,12 +147,13 @@ This is handled through the persistent RCON keepalive/player stream — no serve
 
 ### Live Logs (`/logs`)
 
-Authorized users can stream live Minecraft server logs directly in Discord. The command supports two modes:
+Authorized users can stream live Minecraft server logs directly in Discord. The command has three subcommands:
 
-| Mode | Behavior |
+| Subcommand | Behavior |
 |---|---|
-| `live` (default) | Streams new log lines in real-time, editing a Discord message every 2 seconds for up to 60 seconds |
-| `tail` | Fetches the last N lines as a one-time static snapshot, no live updates |
+| `/logs live` | Streams new log lines in real-time, editing a Discord message every 2 seconds for up to your desired time |
+| `/logs tail [lines]` | Fetches the last N lines as a one-time static snapshot, no live updates |
+| `/logs stop` | Stops the active live log session in the current channel |
 
 Logs are sourced from `journalctl` by default (using `MC_SERVICE` as the systemd unit), with a `file` fallback for users not running the server as a systemd service. A rotating buffer keeps only the most recent lines, and a debounced 2-second edit interval stays well within Discord's rate limits.
 
