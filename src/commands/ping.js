@@ -10,14 +10,15 @@ module.exports = {
         .setDescription('Pong!'),
     async execute(interaction) {
         discordLogger.info(`Ping command from ${interaction.user.tag}`);
-        const sent = await interaction.reply({
+        const replyRes = await interaction.reply({
             embeds: [{
                 title: "🏓 Pinging...",
                 description: "Measuring latency...",
                 color: 0x5865f2,
             }],
-            fetchReply: true,
+            withResponse: true,
         });
+        const sent = replyRes.resource.message;
         const latency = sent.createdTimestamp - interaction.createdTimestamp;
         return interaction.editReply({
             embeds: [{

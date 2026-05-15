@@ -1,5 +1,7 @@
 // Global lock for state-changing slash commands (start / stop / restart).
 
+const { MessageFlags } = require("discord.js");
+
 function getEnvInt(name, fallback, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) {
     const raw = process.env[name];
     if (raw === undefined || raw === null || raw === "") return fallback;
@@ -27,7 +29,7 @@ async function acquireLock(interaction, commandName) {
                 description: `Previous \`${lastCommand}\` command is still processing. Please wait...`,
                 color: 0xffcc00,
             }],
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
         });
         return true;
     }

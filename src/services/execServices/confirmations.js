@@ -40,7 +40,7 @@ async function requestConfirmation(interaction, command) {
 
     const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
 
-    const confirmMsg = await interaction.reply({
+    const replyRes = await interaction.reply({
         embeds: [{
             title: "⚠️ Dangerous Command",
             description: [
@@ -55,8 +55,9 @@ async function requestConfirmation(interaction, command) {
             timestamp: new Date().toISOString(),
         }],
         components: [row],
-        fetchReply: true,
+        withResponse: true,
     });
+    const confirmMsg = replyRes.resource.message;
 
     try {
         // Only the original user can confirm/cancel.

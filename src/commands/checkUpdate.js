@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { createLogger } = require("../services/logger");
 const { runUpdateCheck } = require("../services/updateService");
 
@@ -11,7 +11,7 @@ module.exports = {
         .setDescription("Check GitHub for a newer CraftDaemon release and notify if needed"),
     async execute(interaction) {
         discordLogger.info(`checkUpdate command from ${interaction.user.tag}`);
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         try {
             const { summary } = await runUpdateCheck(interaction.client, { manual: true });

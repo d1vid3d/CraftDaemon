@@ -18,7 +18,19 @@ const logsLogger = createLogger("Logs");
 const activeSessions = new Map();
 
 const EDIT_INTERVAL_MS = 2000;  // 2 seconds — safe for Discord rate limits
-const SESSION_TIMEOUT_MS = 60_000; // 60 seconds auto-stop
+
+/**
+ * Read session timeout from env. 0 = no timeout.
+ * @type {number}
+ */
+function getEnvInt(name, fallback) {
+    const raw = process.env[name];
+    if (raw === undefined || raw === null || raw === "") return fallback;
+    const parsed = parseInt(raw, 10);
+    if (Number.isNaN(parsed) || parsed < 0) return fallback;
+    return parsed;
+}
+const SESSION_TIMEOUT_MS = getEnvInt("LOG_SESSION_TIMEOUT_MS", 60_000);
 
 /**
  * @typedef {Object} Session
@@ -92,10 +104,13 @@ function startSession(channelId, message, footer = "") {
         }
     }, EDIT_INTERVAL_MS);
 
-    // 60s Auto-Stop Timeout
-    const timeout = setTimeout(() => {
-        stopSession(channelId, "Session timed out after 60 seconds.");
-    }, SESSION_TIMEOUT_MS);
+    // Auto-Stop Timeout (0 = disabled)
+    let timeout = null;
+    if (SESSION_TIMEOUT_MS > 0) {
+        timeout = setTimeout(() => {
+            stopSession(channelId, `Session timed out after ${SESSION_TIMEOUT_MS / 1000} seconds.`);
+        }, SESSION_TIMEOUT_MS);
+    }
 
     // Register session
     activeSessions.set(channelId, {
@@ -123,7 +138,7 @@ async function stopSession(channelId, reason = "Session ended.") {
     // Kill child process first to stop new data flowing in.
     session.kill();
     clearInterval(session.interval);
-    clearTimeout(session.timeout);
+    if (session.timeout) clearTimeout(session.timeout);
     activeSessions.delete(channelId);
 
     logsLogger.info(`Live log session stopped in channel ${channelId}: ${reason}`);
@@ -137,4 +152,4 @@ async function stopSession(channelId, reason = "Session ended.") {
     }
 }
 
-module.exports = { hasActiveSession, startSession, stopSession };
+module.exports = { hasActiveSession, startSession, stopSession, SESSION_TIMEOUT_MS };

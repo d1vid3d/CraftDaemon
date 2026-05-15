@@ -8,7 +8,7 @@
 //    - Autocomplete for Minecraft commands
 //    - Silent mode (Admin/Owner only)
 
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { createLogger } = require("../services/logger");
 const { checkExecPermission, resolveExecRole } = require("../services/execServices/permissions");
 const { isBlocked, isDangerous } = require("../services/execServices/blacklist");
@@ -69,7 +69,7 @@ module.exports = {
                     description: permResult.reason,
                     color: 0xff0000,
                 }],
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
@@ -78,7 +78,7 @@ module.exports = {
         if (silent && !permissionConfig.exec.silentRoles.includes(permResult.role)) {
             return interaction.reply({
                 content: "❌ Silent execution requires one of the following roles or higher: " + permissionConfig.exec.silentRoles.join(", "),
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
@@ -94,7 +94,7 @@ module.exports = {
                     ].join("\n"),
                     color: 0xff0000,
                 }],
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
@@ -141,7 +141,7 @@ module.exports = {
 function buildResultEmbed(interaction, command, result, silent) {
     if (result.success) {
         return {
-            title: "✅ Executed Successfully",
+            title: "☑️ Executed Successfully",
             fields: [
                 { name: "Executor", value: interaction.user.tag, inline: true },
                 { name: "Silent", value: silent ? "Yes" : "No", inline: true },

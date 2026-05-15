@@ -2,10 +2,11 @@
 //  Modes:
 //    live - streams new log lines in real-time (default)
 //    tail - fetches last N lines as a static snapshot
+//    stop - stops the active log session in this channel
 
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { createLogger } = require("../services/logger");
-const { hasActiveSession, startSession } = require("../services/logsServices/sessionManager");
+const { hasActiveSession, startSession, stopSession, SESSION_TIMEOUT_MS } = require("../services/logsServices/sessionManager");
 const { fetchTailLines, LOGS_SOURCE } = require("../services/logsServices/logStream");
 
 const logsLogger = createLogger("Logs");
@@ -22,7 +23,8 @@ module.exports = {
                 .setRequired(false)
                 .addChoices(
                     { name: "live", value: "live" },
-                    { name: "tail", value: "tail" }
+                    { name: "tail", value: "tail" },
+                    { name: "stop", value: "stop" }
                 )
         )
         .addIntegerOption((option) =>
@@ -39,6 +41,21 @@ module.exports = {
         const lines = interaction.options.getInteger("lines") || 20;
 
         logsLogger.info(`/logs ${mode} from ${interaction.user.tag} (source: ${LOGS_SOURCE})`);
+
+        // Stop mode
+        if (mode === "stop") {
+            if (!hasActiveSession(interaction.channelId)) {
+                return interaction.reply({
+                    content: "⚠️ No active log session in this channel.",
+                    flags: MessageFlags.Ephemeral,
+                });
+            }
+            stopSession(interaction.channelId, "Stopped by user.");
+            return interaction.reply({
+                content: "🛑 Log stream stopped.",
+                flags: MessageFlags.Ephemeral,
+            });
+        }
 
         // Tail mode
         if (mode === "tail") {
@@ -65,28 +82,33 @@ module.exports = {
         if (hasActiveSession(interaction.channelId)) {
             return interaction.reply({
                 content: "⚠️ A log session is already active in this channel. Wait for it to end or try again later.",
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
+        const timeoutLabel = SESSION_TIMEOUT_MS === 0
+            ? "No timeout"
+            : `Auto-stops after ${SESSION_TIMEOUT_MS / 1000}s`;
+
         // Send the initial message that will be live-edited.
-        await interaction.reply({
+        const replyRes = await interaction.reply({
             embeds: [{
                 title: "📡 Live Server Logs",
                 description: "Starting log stream...",
                 color: 0x00ff66,
-                footer: { text: `Source: ${LOGS_SOURCE} • Auto-stops after 60s` },
+                footer: { text: `Source: ${LOGS_SOURCE} • ${timeoutLabel}` },
             }],
+            withResponse: true,
         });
 
         // Fetch the sent message so we can edit it.
-        const liveMessage = await interaction.fetchReply();
+        const liveMessage = replyRes.resource.message;
 
         // Replace the embed with a plain code block that the session
         // manager will edit every 2 seconds.
         await liveMessage.edit({ embeds: [], content: "```\nWaiting for log output...\n```" });
 
-        const footer = `📡 Live Server Logs • Source: ${LOGS_SOURCE} • Auto-stops after 60s`;
+        const footer = `📡 Live Server Logs • Source: ${LOGS_SOURCE} • ${timeoutLabel}`;
         const result = startSession(interaction.channelId, liveMessage, footer, 'above');
 
         if (!result.success) {
