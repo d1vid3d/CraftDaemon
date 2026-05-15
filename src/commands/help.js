@@ -1,4 +1,4 @@
-//  /help command  -  Command reference & quick start guide - v1.4.0
+//  /help command  -  Command reference & quick start guide - v1.3.1
 //  Public command, no permission required.
 //  Uses a StringSelectMenu to switch between pages.
 //  Supports /help commands:<name> for detailed command info.
@@ -374,13 +374,14 @@ module.exports = {
 
         let currentPage = "commands";
 
-        await interaction.reply({
+        const replyRes = await interaction.reply({
             embeds: [buildCommandsEmbed()],
             components: [buildSelectRow(currentPage)],
             flags: MessageFlags.Ephemeral,
+            withResponse: true,
         });
 
-        const reply = await interaction.fetchReply();
+        const reply = replyRes.resource.message;
         const collector = reply.createMessageComponentCollector({
             componentType: ComponentType.StringSelect,
             filter: (i) => i.user.id === interaction.user.id,

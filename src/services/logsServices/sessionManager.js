@@ -3,7 +3,7 @@
 //  Each session owns:
 //    - The spawned child process (journalctl / tail -f)
 //    - The 2-second Discord message edit interval
-//    - The 60-second auto-stop timeout
+//    - The configurable auto-stop log stream timeout
 //    - The rotating LogBuffer instance
 
 "use strict";
