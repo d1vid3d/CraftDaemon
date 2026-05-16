@@ -56,7 +56,7 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 ### Full Documentation
 
 The full documentation is available at:  
-👉 https://d1vid3d.github.io/CraftDaemonSite/ On the Docs page.
+👉 https://craftdaemon.corenode.sbs/ On the Docs page.
 
 Detailed guides, configuration options, and advanced usage are covered.  
 If you're setting up the bot beyond the basics, this is your primary reference and source of truth.
