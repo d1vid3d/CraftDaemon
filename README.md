@@ -7,9 +7,8 @@
   </picture>
 
   <h4>
-    A self-hosted Discord bot for controlling a Minecraft server<br>
-    through <b>systemd</b> and <b>RCON</b>, built for people who run<br>
-    their own Linux server and want Discord as the control panel.
+    CraftDaemon is a lightweight Discord-native control panel for self-hosted Minecraft servers<br>
+    built around systemd, RCON, and Linux-native workflows, without requiring a web dashboard.
   </h4>
 
   <a href="https://nodejs.org" target="_blank"><img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white" /></a>&nbsp;
@@ -77,6 +76,7 @@ If you're setting up the bot beyond the basics, this is your primary reference a
 | `/status` | Shows a full status embed: systemd state, uptime, TPS, player list, and RCON ping |
 | `/address` | Shows the server's connection addresses (main address, LAN, Java version) |
 | `/ping` | Checks the bot's Discord API latency |
+| `/help` | Shows an interactive command reference with category pages and detailed per-command info via a dropdown menu |
 | `/checkupdate` | Checks GitHub for a newer release vs `package.json` and posts an announcement embed when appropriate (see `UPDATE_*` env vars) |
 
 ### Bot Responses (Brief showcase)
@@ -155,7 +155,7 @@ Authorized users can stream live Minecraft server logs directly in Discord. The 
 | `/logs tail [lines]` | Fetches the last N lines as a one-time static snapshot, no live updates |
 | `/logs stop` | Stops the active live log session in the current channel |
 
-Logs are sourced from `journalctl` by default (using `MC_SERVICE` as the systemd unit), with a `file` fallback for users not running the server as a systemd service. A rotating buffer keeps only the most recent lines, and a debounced 2-second edit interval stays well within Discord's rate limits.
+Logs are sourced from `journalctl` by default (using `MC_SERVICE` as the systemd unit), with a `file` fallback for users not running the server as a systemd service. A rotating buffer (default: 25 lines) keeps content within Discord's 2000-character embed limit, and a debounced 2-second edit interval stays well within Discord's rate limits.
 
 Only one active live session per channel is allowed. Sessions auto-stop after 60 seconds, cleaning up the child process and session state.
 
@@ -167,7 +167,7 @@ The `/exec` command lets authorized users send Minecraft server commands through
 - **Tellraw injection** - optionally announces executed commands in-game so players see who did what
 - **Safety lists** - `dangerousCommands` require a confirmation prompt; `blockedCommands` are completely prevented regardless of role
 - **Silent mode** - Admin/Owner-only flag to suppress in-game announcements for sensitive commands
-- **Command autocomplete** - base Minecraft commands are autocompleted as you type in Discord
+- **Walking command autocomplete** - a tree-driven autocomplete system that suggests base Minecraft commands and walks through argument slots (players, selectors, items, literals, numbers, free-text), with RBAC filtering applied at the base-command level
 - **Execution logging (Accountability)** - every command is appended as JSONL to a configurable log file (`./logs/exec.jsonl`)
 
 ---
@@ -584,19 +584,21 @@ CraftDaemon/
 │   │   ├── status.js
 │   │   ├── checkUpdate.js
 │   │   ├── logs.js
-│   │   └── exec.js
+│   │   ├── exec.js
+│   │   └── help.js
 │   ├── events/
-│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute()
+│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute() + autocomplete routing
 │   ├── permissions/
 │   │   ├── index.js
 │   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)
 │   │   └── resolver.js        # hasPermission() against permission-config.js
 │   ├── utils/
-│   │   └── storage.js         # JSON persistence for per-guild update-notification state
+│   │   ├── storage.js         # JSON persistence for per-guild update-notification state
+│   │   └── env.js             # Shared env parsers: getEnvInt, getEnvString, getEnvBool, getEnvFloat
 │   └── services/
 │       ├── autoStopService.js # Auto-Stop/Auto-Shutdown handling and logic
 │       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery
-│       ├── rconmanager.js     # Persistent RCON connection lifecycle + command pipeline
+│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline
 │       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)
 │       ├── minecraftSystemd.js # systemctl + save-all before stop/restart
 │       ├── commandLock.js     # Cooldown lock for start/stop/restart
@@ -612,7 +614,9 @@ CraftDaemon/
 │           ├── blacklist.js         # Dangerous + blocked command safety checks
 │           ├── confirmations.js     # Confirmation button prompts with expiry
 │           ├── tellrawInjector.js   # In-game announcement via tellraw
-│           └── commandAutocomplete.js # Minecraft command autocomplete for Discord
+│           └── autocomplete/        # Walking command autocomplete system
+│               ├── commandAutocomplete.js # Input parser, tree walker, RCON player cache, RBAC filter, Discord formatter
+│               └── commandTree.js        # Static Minecraft command argument structure (single source of truth)
 ├── package.json
 └── README.md
 ```
