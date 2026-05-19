@@ -99,4 +99,14 @@ function checkExecPermission(interaction, minecraftCommand) {
     return { allowed: true, role };
 }
 
-module.exports = { resolveExecRole, isCommandAllowed, checkExecPermission };
+function resolveExecPermissions(command, userId, member, permConfig) {
+    const role = resolveExecRole(member, userId);
+    if (!role) return false;
+    if (role === "OWNER") return true;
+    const allowedCommands = permConfig.exec.allowlist[role];
+    if (!allowedCommands) return false;
+    if (allowedCommands.includes("*")) return true;
+    return allowedCommands.some(cmd => cmd.toLowerCase() === command.toLowerCase());
+}
+
+module.exports = { resolveExecRole, isCommandAllowed, checkExecPermission, resolveExecPermissions };

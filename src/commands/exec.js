@@ -14,7 +14,7 @@ const { checkExecPermission, resolveExecRole } = require("../services/execServic
 const { isBlocked, isDangerous } = require("../services/execServices/blacklist");
 const { requestConfirmation } = require("../services/execServices/confirmations");
 const { executeCommand } = require("../services/execServices/executeCommand");
-const { getAutocompleteResults } = require("../services/execServices/commandAutocomplete");
+const { resolveAutocomplete } = require("../services/execServices/autocomplete/commandAutocomplete");
 const permissionConfig = require("../../config/permission-config");
 
 const execLogger = createLogger("Exec");
@@ -43,10 +43,20 @@ module.exports = {
      *
      * @param {import("discord.js").AutocompleteInteraction} interaction
      */
+
+    // Parses the focused input into base command, committed args, current arg, and arg index.
     async autocomplete(interaction) {
         const focused = interaction.options.getFocused();
-        const results = getAutocompleteResults(focused);
-        await interaction.respond(results);
+        try {
+            const suggestions = await resolveAutocomplete(
+                focused,
+                interaction,
+                permissionConfig
+            );
+            await interaction.respond(suggestions);
+        } catch (err) {
+            await interaction.respond([]).catch(() => {});
+        }
     },
 
     /**
