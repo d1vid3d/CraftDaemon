@@ -11,6 +11,7 @@
 const { createLogger } = require("../logger");
 const { LogBuffer } = require("./logBuffer");
 const { createLiveStream } = require("./logStream");
+const { getEnvInt } = require("../../utils/env");
 
 const logsLogger = createLogger("Logs");
 
@@ -20,17 +21,10 @@ const activeSessions = new Map();
 const EDIT_INTERVAL_MS = 2000;  // 2 seconds — safe for Discord rate limits
 
 /**
- * Read session timeout from env. 0 = no timeout.
+ * Read session timeout from env. 0 = no timeout (negative values clamp to 0, which also means no timeout).
  * @type {number}
  */
-function getEnvInt(name, fallback) {
-    const raw = process.env[name];
-    if (raw === undefined || raw === null || raw === "") return fallback;
-    const parsed = parseInt(raw, 10);
-    if (Number.isNaN(parsed) || parsed < 0) return fallback;
-    return parsed;
-}
-const SESSION_TIMEOUT_MS = getEnvInt("LOG_SESSION_TIMEOUT_MS", 60_000);
+const SESSION_TIMEOUT_MS = getEnvInt("LOG_SESSION_TIMEOUT_MS", 60_000, { min: 0 });
 
 /**
  * @typedef {Object} Session

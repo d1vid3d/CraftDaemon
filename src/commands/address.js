@@ -1,9 +1,12 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { createLogger } = require("../services/logger");
+const { getEnvString } = require("../utils/env");
 
 const discordLogger = createLogger("Discord");
 
-const MAIN_ADDRESS = process.env.MAIN_ADDRESS || null;
+const MAIN_ADDRESS = getEnvString("MAIN_ADDRESS", null);
+const JAVA_EDITION_VERSION = getEnvString("JAVA_EDITION_VERSION", "Not configured");
+const LOCAL_ADDRESS = getEnvString("LOCAL_ADDRESS", "Not configured");
 
 module.exports = {
     permission: "server.address",
@@ -28,8 +31,8 @@ module.exports = {
                 color: 0x5865f2,
                 fields: [
                     { name: "Main Address", value: `\`${MAIN_ADDRESS}\``, inline: false },
-                    { name: "Java Edition", value: `\`${process.env.JAVA_EDITION_VERSION || "Not configured"}\``, inline: true },
-                    { name: "LAN Address", value: `\`${process.env.LOCAL_ADDRESS || "Not configured"}\``, inline: true },
+                    { name: "Java Edition", value: `\`${JAVA_EDITION_VERSION}\``, inline: true },
+                    { name: "LAN Address", value: `\`${LOCAL_ADDRESS}\``, inline: true },
                 ],
             }],
         });

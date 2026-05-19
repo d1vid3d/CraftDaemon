@@ -73,6 +73,7 @@ module.exports = {
     // Anyone with exec permission can run these, but they get a
     // confirmation prompt first.
 
+    // [IMPORTANT] 
     dangerousCommands: [
       "stop",
       "op",
@@ -95,6 +96,7 @@ module.exports = {
     // regardless of role. Hard safety net.
     // If a command appears in both lists, blockedCommands takes precedence.
 
+    // [IMPORTANT]
     blockedCommands: [
       "stop",
       "reload",

@@ -8,6 +8,7 @@ const semver = require("semver");
 const { EmbedBuilder, ChannelType, PermissionFlagsBits } = require("discord.js");
 const { createLogger } = require("./logger");
 const { getLastNotifiedVersion, setLastNotifiedVersion } = require("../utils/storage");
+const { getEnvBool, getEnvString } = require("../utils/env");
 
 const updateLogger = createLogger("Updates");
 
@@ -19,9 +20,9 @@ const STORAGE_PATH = path.join(__dirname, "../../data/guild-update-notifications
 /** @type {{ repo: { owner: string, repo: string }, debug: boolean, FORCE_LATEST?: string, updateNotifyChannelId: string|null }} */
 const CONFIG = {
     repo: { owner: "d1vid3d", repo: "CraftDaemon" },
-    debug: String(process.env.UPDATE_SERVICE_DEBUG || "").toLowerCase() === "true",
-    FORCE_LATEST: process.env.UPDATE_SERVICE_FORCE_LATEST?.trim() || undefined,
-    updateNotifyChannelId: process.env.UPDATE_NOTIFY_CHANNEL_ID?.trim() || null,
+    debug: getEnvBool("UPDATE_SERVICE_DEBUG", false),
+    FORCE_LATEST: getEnvString("UPDATE_SERVICE_FORCE_LATEST", undefined),
+    updateNotifyChannelId: getEnvString("UPDATE_NOTIFY_CHANNEL_ID", null),
 };
 
 const PACKAGE_JSON_PATH = path.join(__dirname, "../../package.json");

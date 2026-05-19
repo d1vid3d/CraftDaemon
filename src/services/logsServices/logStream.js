@@ -12,14 +12,15 @@
 const { spawn, execSync } = require("child_process");
 const EventEmitter = require("events");
 const { createLogger } = require("../logger");
+const { getEnvString } = require("../../utils/env");
 
 const logsLogger = createLogger("Logs");
 
 // Env configuration.
 
-const LOGS_SOURCE = (process.env.LOGS_SOURCE || "journalctl").toLowerCase().trim();
-const MC_SERVICE = process.env.MC_SERVICE || "minecraft";
-const LOG_FILE_PATH = process.env.LOG_FILE_PATH || "./logs/latest.log";
+const LOGS_SOURCE = getEnvString("LOGS_SOURCE", "journalctl").toLowerCase();
+const MC_SERVICE = getEnvString("MC_SERVICE", "minecraft");
+const LOG_FILE_PATH = getEnvString("LOG_FILE_PATH", "./logs/latest.log");
 
 /**
  * Creates a live log stream (for live mode).

@@ -5,19 +5,12 @@ const { exec } = require("child_process");
 const { promisify } = require("util");
 const { createLogger } = require("./logger");
 const { rconSend } = require("./rconQuery");
+const { getEnvInt, getEnvString } = require("../utils/env");
 
 const execAsync = promisify(exec);
 const minecraftLogger = createLogger("Minecraft");
 
-function getEnvInt(name, fallback, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) {
-    const raw = process.env[name];
-    if (raw === undefined || raw === null || raw === "") return fallback;
-    const parsed = parseInt(raw, 10);
-    if (Number.isNaN(parsed)) return fallback;
-    return Math.max(min, Math.min(max, parsed));
-}
-
-const MC_SERVICE = process.env.MC_SERVICE || "minecraft";
+const MC_SERVICE = getEnvString("MC_SERVICE", "minecraft");
 const SAVEALL_DELAY_MS = getEnvInt("SAVEALL_DELAY_MS", 1_000, { min: 0, max: 30_000 });
 
 async function getServiceState() {

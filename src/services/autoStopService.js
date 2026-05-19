@@ -5,18 +5,11 @@
 const { PermissionFlagsBits } = require("discord.js");
 const { createLogger } = require("./logger");
 const { stopServer } = require("./minecraftSystemd");
+const { getEnvInt, getEnvString } = require("../utils/env");
 
 const autoStopLogger = createLogger("AutoStop");
 
-// ========== Configuration parsing (from .env with defaults) ==========
-
-function getEnvInt(name, fallback, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) {
-    const raw = process.env[name];
-    if (raw === undefined || raw === null || raw === "") return fallback;
-    const parsed = parseInt(raw, 10);
-    if (Number.isNaN(parsed)) return fallback;
-    return Math.max(min, Math.min(max, parsed));
-}   
+// ========== Configuration parsing (from .env with defaults) ==========   
 
 const AUTO_STOP_MINUTES = getEnvInt("AUTO_STOP_MINUTES", 10, { min: 0, max: 10_080 }); // 7 days max
 const WARNING_MINUTES = getEnvInt("WARNING_MINUTES", 8, { min: 0, max: 10_080 });
@@ -28,7 +21,7 @@ const CHECK_INTERVAL_MS = getEnvInt(
     getEnvInt("CHECK_INTERVAL", 30_000, { min: 5_000, max: 300_000 }), // backward-compatible legacy key
     { min: 5_000, max: 300_000 }
 );
-const STATUS_CHANNEL_ID = process.env.STATUS_CHANNEL_ID || null;
+const STATUS_CHANNEL_ID = getEnvString("STATUS_CHANNEL_ID", null);
 
 // ========== Runtime state ==========
 

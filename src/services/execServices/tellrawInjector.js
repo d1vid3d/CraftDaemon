@@ -9,18 +9,19 @@
 "use strict";
 
 const { createLogger } = require("../logger");
+const { getEnvBool, getEnvString } = require("../../utils/env");
 
 const execLogger = createLogger("Exec");
 
 // Configuration
 
-const TELLRAW_ENABLED = (process.env.EXEC_TELLRAW_ENABLED || "true").toLowerCase() === "true";
-const TELLRAW_TARGET = process.env.EXEC_TELLRAW_TARGET || "@a";
-const TELLRAW_COLOR = process.env.EXEC_TELLRAW_COLOR || "gold";
-const TELLRAW_PREFIX = process.env.EXEC_TELLRAW_PREFIX || "[DISCORD]";
+const TELLRAW_ENABLED = getEnvBool("EXEC_TELLRAW_ENABLED", true);
+const TELLRAW_TARGET = getEnvString("EXEC_TELLRAW_TARGET", "@a");
+const TELLRAW_COLOR = getEnvString("EXEC_TELLRAW_COLOR", "gold");
+const TELLRAW_PREFIX = getEnvString("EXEC_TELLRAW_PREFIX", "[DISCORD]");
 
 /** Commands that should never produce a tellraw announcement. */
-const SILENT_COMMANDS = (process.env.EXEC_SILENT_COMMANDS || "")
+const SILENT_COMMANDS = getEnvString("EXEC_SILENT_COMMANDS", "")
     .split(",")
     .map((c) => c.trim().toLowerCase())
     .filter(Boolean);

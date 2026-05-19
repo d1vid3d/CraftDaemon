@@ -25,6 +25,7 @@ const {
 const { createLogger, mainLogger, LogLevel } = require("./services/logger");
 const { init: initUpdateService } = require("./services/updateService");
 const { init: initAutoStopService, AUTO_STOP_MINUTES, EFFECTIVE_WARNING_MINUTES } = require("./services/autoStopService");
+const { getEnvInt, getEnvString } = require("./utils/env");
 
 // Create category-specific loggers here (Create your own categories as needed by calling createLogger with a custom name in your modules , check docs for details)
 const botLogger = createLogger('Bot');
@@ -134,19 +135,11 @@ let startupOperatorChecklistWarned = false;
 // Config parsing and validation (with defaults and sanity checks)
 // Hardcoding is not reccomended for these values since they may differ between environments, but you can change the defaults here if you want:
 
-function getEnvInt(name, fallback, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) {
-    const raw = process.env[name];
-    if (raw === undefined || raw === null || raw === "") return fallback;
-    const parsed = parseInt(raw, 10);
-    if (Number.isNaN(parsed)) return fallback;
-    return Math.max(min, Math.min(max, parsed));
-}
-
-const RCON_HOST = process.env.RCON_HOST || "127.0.0.1";
+const RCON_HOST = getEnvString("RCON_HOST", "127.0.0.1");
 const RCON_PORT = getEnvInt("RCON_PORT", 25575, { min: 1, max: 65535 });
 const RCON_PASSWORD = process.env.RCON_PASSWORD || "";
-const MC_SERVICE = process.env.MC_SERVICE || "minecraft";
-const MAIN_ADDRESS = process.env.MAIN_ADDRESS || null;
+const MC_SERVICE = getEnvString("MC_SERVICE", "minecraft");
+const MAIN_ADDRESS = getEnvString("MAIN_ADDRESS", null);
 
 const PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS = getEnvInt("PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS", 15_000, { min: 5_000, max: 120_000 });
 const RCON_KEEPALIVE_INTERVAL_MS = getEnvInt("RCON_KEEPALIVE_INTERVAL_MS", DEFAULT_KEEPALIVE_INTERVAL_MS, { min: 10_000, max: 300_000 });

@@ -1,14 +1,7 @@
 // Global lock for state-changing slash commands (start / stop / restart).
 
 const { MessageFlags } = require("discord.js");
-
-function getEnvInt(name, fallback, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) {
-    const raw = process.env[name];
-    if (raw === undefined || raw === null || raw === "") return fallback;
-    const parsed = parseInt(raw, 10);
-    if (Number.isNaN(parsed)) return fallback;
-    return Math.max(min, Math.min(max, parsed));
-}
+const { getEnvInt } = require("../utils/env");
 
 const COMMAND_COOLDOWN_MS = getEnvInt("COMMAND_COOLDOWN_MS", 10_000, { min: 2_000, max: 60_000 });
 

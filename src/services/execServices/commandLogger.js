@@ -7,10 +7,11 @@
 const fs = require("fs");
 const path = require("path");
 const { createLogger } = require("../logger");
+const { getEnvString } = require("../../utils/env");
 
 const execLogger = createLogger("Exec");
 
-const EXEC_LOG_PATH = process.env.EXEC_LOG_PATH || "./logs/exec.jsonl";
+const EXEC_LOG_PATH = getEnvString("EXEC_LOG_PATH", "./logs/exec.jsonl");
 
 /**
  * Ensures the log directory exists.

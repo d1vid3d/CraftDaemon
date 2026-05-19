@@ -6,11 +6,12 @@
 // decisions during development and troubleshooting. The resolver is designed to be used by the permissions middleware, which integrates it into the command handling flow.
 
 const { createLogger } = require("../services/logger");
+const { getEnvBool } = require("../utils/env");
 
 const permissionLogger = createLogger("Permissions");
 
 function shouldDebugPerms() {
-  return String(process.env.DEBUG_PERMS).toLowerCase() === "true";
+  return getEnvBool("DEBUG_PERMS", false);
 }
 
 function debugPerms(interaction, payload) {

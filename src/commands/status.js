@@ -2,12 +2,13 @@ const { SlashCommandBuilder } = require("discord.js");
 const { createLogger } = require("../services/logger");
 const { getTps, getPlayerListWithPing } = require("../services/rconQuery");
 const { getServiceState, getServiceUptime } = require("../services/minecraftSystemd");
+const { getEnvString } = require("../utils/env");
 
 const systemdLogger = createLogger("SystemD");
 const minecraftLogger = createLogger("Minecraft");
 
-const MAIN_ADDRESS = process.env.MAIN_ADDRESS || null;
-const SERVER_TYPE = process.env.SERVER_TYPE || null;
+const MAIN_ADDRESS = getEnvString("MAIN_ADDRESS", null);
+const SERVER_TYPE = getEnvString("SERVER_TYPE", null);
 
 module.exports = {
     permission: "server.status",
