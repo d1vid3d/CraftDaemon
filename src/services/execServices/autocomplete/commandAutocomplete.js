@@ -5,6 +5,7 @@
 "use strict";
 
 const commandTree = require('./commandTree');
+const { COMMON_ITEMS } = require('./commandTree');
 const { resolveExecPermissions } = require('../permissions');
 const { rconSend } = require('../../rconQuery');
 
@@ -114,7 +115,6 @@ async function resolveArgSuggestions(argDef, current, committed) {
     }
 
     case 'item': {
-      const { COMMON_ITEMS } = require('./commandTree');
       return COMMON_ITEMS.filter(item =>
         current === '' || item.toLowerCase().includes(current.toLowerCase())
       );

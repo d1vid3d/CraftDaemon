@@ -53,7 +53,7 @@ module.exports = {
                     flags: MessageFlags.Ephemeral,
                 });
             }
-            stopSession(interaction.channelId, "Stopped by user.");
+            await stopSession(interaction.channelId, "Stopped by user.");
             return interaction.reply({
                 content: "🛑 Log stream stopped.",
                 flags: MessageFlags.Ephemeral,
@@ -113,7 +113,7 @@ module.exports = {
         await liveMessage.edit({ embeds: [], content: "```\nWaiting for log output...\n```" });
 
         const footer = `📡 Live Server Logs • Source: ${LOGS_SOURCE} • ${timeoutLabel}`;
-        const result = startSession(interaction.channelId, liveMessage, footer, 'above');
+        const result = startSession(interaction.channelId, liveMessage, footer);
 
         if (!result.success) {
             logsLogger.warn(`Failed to start session: ${result.error}`);

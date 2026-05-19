@@ -112,7 +112,7 @@ module.exports = {
 
   'ban-ip': {
     args: [
-      { type: 'player' },
+      { type: 'freetext', hint: '<player or IP address>' },
       { type: 'freetext', hint: '<reason>' }
     ]
   },
@@ -236,24 +236,51 @@ module.exports = {
 
   effect: {
     args: [
+      { type: 'literal', values: ['give', 'clear'] },
       { type: 'selector' },
       {
         type: 'literal',
+        dependsOn: { argIndex: 0, value: 'give' },
         values: [
-          'clear', 'give', 'speed', 'slowness', 'haste',
-          'mining_fatigue', 'strength', 'instant_health',
-          'instant_damage', 'jump_boost', 'nausea', 'regeneration',
-          'resistance', 'fire_resistance', 'water_breathing',
+          'speed', 'slowness', 'haste', 'mining_fatigue', 'strength',
+          'instant_health', 'instant_damage', 'jump_boost', 'nausea',
+          'regeneration', 'resistance', 'fire_resistance', 'water_breathing',
           'invisibility', 'blindness', 'night_vision', 'hunger',
           'weakness', 'poison', 'wither', 'health_boost',
           'absorption', 'saturation', 'glowing', 'levitation',
           'luck', 'unluck', 'slow_falling', 'conduit_power',
-          'dolphins_grace', 'bad_omen', 'hero_of_the_village',
-          'darkness'
+          'dolphins_grace', 'bad_omen', 'hero_of_the_village', 'darkness'
+        ],
+        fallback: [
+          {
+            type: 'literal',
+            dependsOn: { argIndex: 0, value: 'clear' },
+            values: [
+              'speed', 'slowness', 'haste', 'mining_fatigue', 'strength',
+              'instant_health', 'instant_damage', 'jump_boost', 'nausea',
+              'regeneration', 'resistance', 'fire_resistance', 'water_breathing',
+              'invisibility', 'blindness', 'night_vision', 'hunger',
+              'weakness', 'poison', 'wither', 'health_boost',
+              'absorption', 'saturation', 'glowing', 'levitation',
+              'luck', 'unluck', 'slow_falling', 'conduit_power',
+              'dolphins_grace', 'bad_omen', 'hero_of_the_village', 'darkness'
+            ],
+            fallback: []
+          }
         ]
       },
-      { type: 'number', hint: '<duration seconds>' },
-      { type: 'number', hint: '<amplifier 0-255>' }
+      {
+        type: 'number',
+        hint: '<duration seconds>',
+        dependsOn: { argIndex: 0, value: 'give' },
+        fallback: []
+      },
+      {
+        type: 'number',
+        hint: '<amplifier 0-255>',
+        dependsOn: { argIndex: 0, value: 'give' },
+        fallback: []
+      }
     ]
   },
 
@@ -369,6 +396,267 @@ module.exports = {
   reload: { args: [] },
 
   stop: { args: [] },
+
+  title: {
+    args: [
+      { type: 'selector' },
+      { type: 'literal', values: ['clear', 'reset', 'title', 'subtitle', 'actionbar', 'times'] },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 1, matchesAny: ['title', 'subtitle', 'actionbar'] },
+        hint: '<json text>',
+        fallback: [
+          {
+            type: 'number',
+            dependsOn: { argIndex: 1, value: 'times' },
+            hint: '<fade in ticks>',
+            fallback: []
+          }
+        ]
+      },
+      {
+        type: 'number',
+        dependsOn: { argIndex: 1, value: 'times' },
+        hint: '<stay ticks>',
+        fallback: []
+      },
+      {
+        type: 'number',
+        dependsOn: { argIndex: 1, value: 'times' },
+        hint: '<fade out ticks>',
+        fallback: []
+      }
+    ]
+  },
+
+  tellraw: {
+    args: [
+      { type: 'selector' },
+      { type: 'freetext', hint: '<json message>' }
+    ]
+  },
+
+  execute: {
+    args: [
+      { type: 'literal', values: ['as', 'at', 'in', 'positioned', 'rotated', 'facing', 'align', 'anchored', 'store', 'if', 'unless', 'run'] },
+      {
+        type: 'selector',
+        dependsOn: { argIndex: 0, matchesAny: ['as', 'at'] },
+        fallback: [
+          {
+            type: 'literal',
+            dependsOn: { argIndex: 0, value: 'in' },
+            values: ['minecraft:overworld', 'minecraft:the_nether', 'minecraft:the_end'],
+            fallback: [
+              {
+                type: 'literal',
+                dependsOn: { argIndex: 0, value: 'align' },
+                values: ['x', 'y', 'z', 'xy', 'xz', 'yz', 'xyz'],
+                fallback: [
+                  {
+                    type: 'literal',
+                    dependsOn: { argIndex: 0, value: 'anchored' },
+                    values: ['eyes', 'feet'],
+                    fallback: [
+                      {
+                        type: 'freetext',
+                        dependsOn: { argIndex: 0, matchesAny: ['positioned', 'rotated', 'facing', 'store', 'if', 'unless'] },
+                        hint: '<sub-args>',
+                        fallback: [
+                          {
+                            type: 'freetext',
+                            dependsOn: { argIndex: 0, value: 'run' },
+                            hint: '<command>',
+                            fallback: []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  fill: {
+    args: [
+      { type: 'freetext', hint: '<x1 y1 z1>' },
+      { type: 'freetext', hint: '<x2 y2 z2>' },
+      { type: 'item' },
+      { type: 'literal', values: ['destroy', 'hollow', 'keep', 'outline', 'replace'] }
+    ]
+  },
+
+  clone: {
+    args: [
+      { type: 'freetext', hint: '<x1 y1 z1>' },
+      { type: 'freetext', hint: '<x2 y2 z2>' },
+      { type: 'freetext', hint: '<x y z destination>' },
+      { type: 'literal', values: ['replace', 'masked', 'filtered'] },
+      { type: 'literal', values: ['normal', 'force', 'move'] }
+    ]
+  },
+
+  setblock: {
+    args: [
+      { type: 'freetext', hint: '<x y z>' },
+      { type: 'item' },
+      { type: 'literal', values: ['destroy', 'keep', 'replace'] }
+    ]
+  },
+
+  data: {
+    args: [
+      { type: 'literal', values: ['get', 'merge', 'modify', 'remove'] },
+      { type: 'literal', values: ['block', 'entity', 'storage'] },
+      { type: 'freetext', hint: '<target coords or selector>' },
+      { type: 'freetext', hint: '<nbt path>' }
+    ]
+  },
+
+  datapack: {
+    args: [
+      { type: 'literal', values: ['disable', 'enable', 'list'] },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 0, matchesAny: ['disable', 'enable'] },
+        hint: '<datapack name>',
+        fallback: []
+      }
+    ]
+  },
+
+  locate: {
+    args: [
+      { type: 'literal', values: ['structure', 'biome'] },
+      { type: 'freetext', hint: '<name>' }
+    ]
+  },
+
+  worldborder: {
+    args: [
+      { type: 'literal', values: ['set', 'add', 'center', 'damage', 'warning', 'get'] },
+      {
+        type: 'number',
+        dependsOn: { argIndex: 0, matchesAny: ['set', 'add'] },
+        hint: '<distance>',
+        fallback: [
+          {
+            type: 'freetext',
+            dependsOn: { argIndex: 0, value: 'center' },
+            hint: '<x z>',
+            fallback: [
+              {
+                type: 'literal',
+                dependsOn: { argIndex: 0, value: 'damage' },
+                values: ['buffer', 'amount'],
+                fallback: [
+                  {
+                    type: 'literal',
+                    dependsOn: { argIndex: 0, value: 'warning' },
+                    values: ['time', 'distance'],
+                    fallback: []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  recipe: {
+    args: [
+      { type: 'literal', values: ['give', 'take'] },
+      { type: 'selector' },
+      { type: 'freetext', hint: '<recipe or *>' }
+    ]
+  },
+
+  advancement: {
+    args: [
+      { type: 'literal', values: ['grant', 'revoke'] },
+      { type: 'selector' },
+      { type: 'literal', values: ['everything', 'only', 'from', 'through', 'until'] },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 2, matchesAny: ['only', 'from', 'through', 'until'] },
+        hint: '<advancement>',
+        fallback: []
+      }
+    ]
+  },
+
+  bossbar: {
+    args: [
+      { type: 'literal', values: ['add', 'get', 'list', 'remove', 'set'] },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 0, matchesAny: ['add', 'get', 'remove', 'set'] },
+        hint: '<bossbar id>',
+        fallback: []
+      },
+      {
+        type: 'literal',
+        dependsOn: { argIndex: 0, value: 'set' },
+        values: ['name', 'color', 'style', 'value', 'max', 'visible', 'players'],
+        fallback: [
+          {
+            type: 'freetext',
+            dependsOn: { argIndex: 0, value: 'add' },
+            hint: '<name json>',
+            fallback: []
+          }
+        ]
+      }
+    ]
+  },
+
+  attribute: {
+    args: [
+      { type: 'selector' },
+      {
+        type: 'literal',
+        values: [
+          'minecraft:generic.max_health', 'minecraft:generic.knockback_resistance',
+          'minecraft:generic.movement_speed', 'minecraft:generic.attack_damage',
+          'minecraft:generic.armor', 'minecraft:generic.armor_toughness',
+          'minecraft:generic.luck', 'minecraft:generic.follow_range',
+          'minecraft:generic.attack_speed', 'minecraft:generic.flying_speed',
+          'minecraft:horse.jump_strength', 'minecraft:zombie.spawn_reinforcements'
+        ]
+      },
+      { type: 'literal', values: ['get', 'set', 'base', 'modifier'] },
+      {
+        type: 'number',
+        dependsOn: { argIndex: 2, matchesAny: ['set', 'base'] },
+        hint: '<value>',
+        fallback: [
+          {
+            type: 'literal',
+            dependsOn: { argIndex: 2, value: 'modifier' },
+            values: ['add', 'remove', 'value', 'get'],
+            fallback: []
+          }
+        ]
+      }
+    ]
+  },
+
+  spreadplayers: {
+    args: [
+      { type: 'freetext', hint: '<x z center>' },
+      { type: 'number', hint: '<spread distance>' },
+      { type: 'number', hint: '<max range>' },
+      { type: 'literal', values: ['true', 'false'] },
+      { type: 'selector' }
+    ]
+  },
 
 };
 
