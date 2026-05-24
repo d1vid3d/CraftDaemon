@@ -1,4 +1,4 @@
-//  commandTree.js - Static Minecraft command argument structure
+//  commandTree.js - Static Minecraft command argument structure (v1.3.3)
 //  Single source of truth for autocomplete argument data. Zero logic, zero imports.
 
 // Structure:
@@ -655,6 +655,412 @@ module.exports = {
       { type: 'number', hint: '<max range>' },
       { type: 'literal', values: ['true', 'false'] },
       { type: 'selector' }
+    ]
+  },
+
+  playsound: {
+    args: [
+      {
+        type: 'literal',
+        values: [
+          'minecraft:ambient.cave', 'minecraft:ambient.underwater.enter',
+          'minecraft:block.anvil.break', 'minecraft:block.anvil.destroy',
+          'minecraft:block.anvil.land', 'minecraft:block.anvil.use',
+          'minecraft:block.bell.use', 'minecraft:block.brewing_stand.brew',
+          'minecraft:block.chest.close', 'minecraft:block.chest.locked',
+          'minecraft:block.chest.open', 'minecraft:block.ender_chest.close',
+          'minecraft:block.ender_chest.open', 'minecraft:block.furnace.fire_crackle',
+          'minecraft:block.lantern.break', 'minecraft:block.lantern.fall',
+          'minecraft:block.lantern.hit', 'minecraft:block.lantron.place',
+          'minecraft:block.lantern.step',
+          'minecraft:entity.experience_orb.pickup', 'minecraft:entity.item.pickup',
+          'minecraft:entity.player.burp', 'minecraft:entity.player.death',
+          'minecraft:entity.player.hurt', 'minecraft:entity.player.levelup',
+          'minecraft:entity.player.breath', 'minecraft:entity.player.splash',
+          'minecraft:entity.player.swim',
+          'minecraft:entity.zombie.ambient', 'minecraft:entity.zombie.death',
+          'minecraft:entity.zombie.hurt', 'minecraft:entity.zombie.infect',
+          'minecraft:entity.skeleton.ambient', 'minecraft:entity.skeleton.death',
+          'minecraft:entity.skeleton.hurt',
+          'minecraft:entity.creeper.primed', 'minecraft:entity.creeper.death',
+          'minecraft:entity.endermen.ambient', 'minecraft:entity.endermen.death',
+          'minecraft:entity.endermen.hurt', 'minecraft:entity.endermen.scream',
+          'minecraft:entity.endermen.stare', 'minecraft:entity.endermen.teleport',
+          'minecraft:entity.blaze.ambient', 'minecraft:entity.blaze.death',
+          'minecraft:entity.blaze.hurt', 'minecraft:entity.blaze.shoot',
+          'minecraft:entity.ghast.ambient', 'minecraft:entity.ghast.death',
+          'minecraft:entity.ghast.hurt', 'minecraft:entity.ghast.scream',
+          'minecraft:entity.spider.ambient', 'minecraft:entity.spider.death',
+          'minecraft:entity.spider.hurt',
+          'minecraft:entity.witch.ambient', 'minecraft:entity.witch.death',
+          'minecraft:entity.witch.hurt',
+          'minecraft:entity.dolphin.ambient', 'minecraft:entity.dolphin.death',
+          'minecraft:entity.dolphin.hurt', 'minecraft:entity.dolphin.jump',
+          'minecraft:entity.panda.ambient', 'minecraft:entity.panda.death',
+          'minecraft:entity.panda.hurt', 'minecraft:entity.panda.sneeze',
+          'minecraft:entity.wolf.ambient', 'minecraft:entity.wolf.death',
+          'minecraft:entity.wolf.hurt', 'minecraft:entity.wolf.howl',
+          'minecraft:entity.cat.hiss', 'minecraft:entity.cat.purr',
+          'minecraft:entity.cat.beg', 'minecraft:entity.cat.ambient',
+          'minecraft:entity.villager.ambient', 'minecraft:entity.villager.death',
+          'minecraft:entity.villager.hurt', 'minecraft:entity.villager.no',
+          'minecraft:entity.villager.yes',
+          'minecraft:entity.warden.ambient', 'minecraft:entity.warden.angry',
+          'minecraft:entity.warden.attack_impact', 'minecraft:entity.warden.death',
+          'minecraft:entity.warden.hurt', 'minecraft:entity.warden.listen',
+          'minecraft:entity.warden.nearby_closer', 'minecraft:entity.warden.roar',
+          'minecraft:entity.warden.sonic_boom', 'minecraft:entity.warden.sonic_charge',
+          'minecraft:entity.warden.tendril_clicks',
+          'minecraft:item.trident.throw', 'minecraft:item.trident.return',
+          'minecraft:item.trident.riptide', 'minecraft:item.trident.hit',
+          'minecraft:music.disc.11', 'minecraft:music.disc.13',
+          'minecraft:music.disc.blocks', 'minecraft:music.disc.cat',
+          'minecraft:music.disc.chirp', 'minecraft:music.disc.far',
+          'minecraft:music.disc.mellohi', 'minecraft:music.disc.stal',
+          'minecraft:music.disc.strad', 'minecraft:music.disc.wait',
+          'minecraft:music.disc.otherside', 'minecraft:music.disc.pigstep',
+          'minecraft:music.disc.relic',
+          'minecraft:music.overworld', 'minecraft:music.creative',
+          'minecraft:music.menu', 'minecraft:music.end',
+          'minecraft:music.dragon', 'minecraft:music.nether'
+        ]
+      },
+      { type: 'selector' },
+      {
+        type: 'literal',
+        values: ['master', 'music', 'record', 'weather', 'block', 'hostile', 'neutral', 'player', 'ambient', 'voice']
+      },
+      { type: 'number', hint: '<volume 0.0-1.0>' },
+      { type: 'number', hint: '<pitch 0.5-2.0>' },
+      { type: 'freetext', hint: '<x y z>' }
+    ]
+  },
+
+  stopsound: {
+    args: [
+      { type: 'selector' },
+      {
+        type: 'literal',
+        values: ['master', 'music', 'record', 'weather', 'block', 'hostile', 'neutral', 'player', 'ambient', 'voice'],
+        fallback: []
+      },
+      { type: 'freetext', hint: '<sound>', fallback: [] }
+    ]
+  },
+
+  particle: {
+    args: [
+      {
+        type: 'literal',
+        values: [
+          'minecraft:ambient_entity_effect', 'minecraft:angry_villager',
+          'minecraft:block', 'minecraft:block_marker',
+          'minecraft:bubble', 'minecraft:bubble_column_up',
+          'minecraft:bubble_pop', 'minecraft:campfire_cosy_smoke',
+          'minecraft:campfire_signal_smoke', 'minecraft:cloud',
+          'minecraft:composter', 'minecraft:crimson_spore',
+          'minecraft:current_down', 'minecraft:damage_indicator',
+          'minecraft:dolphin', 'minecraft:dragon_breath',
+          'minecraft:dripping_dripstone_lava', 'minecraft:dripping_dripstone_water',
+          'minecraft:dripping_honey', 'minecraft:dripping_lava',
+          'minecraft:dripping_obsidian_tear', 'minecraft:dripping_water',
+          'minecraft:dust', 'minecraft:dust_color_transition',
+          'minecraft:effect', 'minecraft:elder_guardian',
+          'minecraft:electric_spark', 'minecraft:enchant',
+          'minecraft:enchanted_hit', 'minecraft:end_rod',
+          'minecraft:entity_effect', 'minecraft:explosion',
+          'minecraft:explosion_emitter', 'minecraft:falling_dripstone_lava',
+          'minecraft:falling_dripstone_water', 'minecraft:falling_dust',
+          'minecraft:falling_honey', 'minecraft:falling_lava',
+          'minecraft:falling_nectar', 'minecraft:falling_obsidian_tear',
+          'minecraft:falling_spore_blossom', 'minecraft:falling_water',
+          'minecraft:firework', 'minecraft:fishing',
+          'minecraft:flame', 'minecraft:flash',
+          'minecraft:happy_villager', 'minecraft:heart',
+          'minecraft:instant_effect', 'minecraft:item',
+          'minecraft:item_snowball', 'minecraft:landing',
+          'minecraft:landing_honey', 'minecraft:landing_lava',
+          'minecraft:landing_obsidian_tear', 'minecraft:large_smoke',
+          'minecraft:lava', 'minecraft:mycelium',
+          'minecraft:nautilus', 'minecraft:note',
+          'minecraft:poof', 'minecraft:portal',
+          'minecraft:rain', 'minecraft:reverse_portal',
+          'minecraft:sculk_charge', 'minecraft:sculk_charge_pop',
+          'minecraft:sculk_soul', 'minecraft:shriek',
+          'minecraft:small_flame', 'minecraft:small_smoke',
+          'minecraft:snowflake', 'minecraft:soul',
+          'minecraft:soul_fire_flame', 'minecraft:spit',
+          'minecraft:splash', 'minecraft:squid_ink',
+          'minecraft:sweep_attack', 'minecraft:totem_of_undying',
+          'minecraft:underwater', 'minecraft:warped_spore',
+          'minecraft:water_bubble', 'minecraft:wax_off',
+          'minecraft:wax_on', 'minecraft:white_ash',
+          'minecraft:witch'
+        ]
+      },
+      { type: 'selector' },
+      { type: 'freetext', hint: '<x y z>' },
+      { type: 'number', hint: '<delta x>' },
+      { type: 'number', hint: '<delta y>' },
+      { type: 'number', hint: '<delta z>' },
+      { type: 'number', hint: '<speed>' },
+      { type: 'number', hint: '<count>' }
+    ]
+  },
+
+  tag: {
+    args: [
+      { type: 'selector' },
+      { type: 'literal', values: ['add', 'remove', 'list'] },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 1, matchesAny: ['add', 'remove'] },
+        hint: '<tag name>',
+        fallback: []
+      }
+    ]
+  },
+
+  team: {
+    args: [
+      { type: 'literal', values: ['add', 'remove', 'join', 'leave', 'list', 'modify', 'empty'] },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 0, matchesAny: ['add', 'remove', 'join', 'leave', 'modify', 'empty'] },
+        hint: '<team name>',
+        fallback: []
+      },
+      {
+        type: 'selector',
+        dependsOn: { argIndex: 0, matchesAny: ['join', 'leave'] },
+        fallback: [
+          {
+            type: 'freetext',
+            dependsOn: { argIndex: 0, value: 'add' },
+            hint: '<display name>',
+            fallback: [
+              {
+                type: 'literal',
+                dependsOn: { argIndex: 0, value: 'modify' },
+                values: ['color', 'friendlyFire', 'seeFriendlyInvisibles', 'nametagVisibility', 'deathMessageVisibility', 'collisionRule', 'prefix', 'suffix', 'displayName'],
+                fallback: [
+                  {
+                    type: 'selector',
+                    dependsOn: { argIndex: 0, value: 'empty' },
+                    fallback: []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  function: {
+    args: [
+      { type: 'freetext', hint: '<namespace:function_name>' }
+    ]
+  },
+
+  schedule: {
+    args: [
+      { type: 'literal', values: ['function', 'clear'] },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 0, value: 'function' },
+        hint: '<namespace:function_name>',
+        fallback: [
+          {
+            type: 'freetext',
+            dependsOn: { argIndex: 0, value: 'clear' },
+            hint: '<namespace:function_name>',
+            fallback: []
+          }
+        ]
+      },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 0, value: 'function' },
+        hint: '<time e.g. 5s, 10t, 1d>',
+        fallback: []
+      },
+      {
+        type: 'literal',
+        dependsOn: { argIndex: 0, value: 'function' },
+        values: ['append', 'replace'],
+        fallback: []
+      }
+    ]
+  },
+
+  forceload: {
+    args: [
+      { type: 'literal', values: ['add', 'remove', 'query'] },
+      { type: 'freetext', hint: '<x z or chunk coords>' },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 0, matchesAny: ['add', 'remove'] },
+        hint: '<x2 z2 optional range>',
+        fallback: []
+      }
+    ]
+  },
+
+  debug: {
+    args: [
+      { type: 'literal', values: ['start', 'stop', 'report'] }
+    ]
+  },
+
+  help: {
+    args: [
+      { type: 'freetext', hint: '<command or page>', fallback: [] }
+    ]
+  },
+
+  publish: {
+    args: [
+      { type: 'number', hint: '<port>', fallback: [] }
+    ]
+  },
+
+  loot: {
+    args: [
+      { type: 'literal', values: ['spawn', 'give', 'insert', 'replace', 'fish', 'mine'] },
+      {
+        type: 'literal',
+        dependsOn: { argIndex: 0, value: 'spawn' },
+        values: ['target', 'world'],
+        fallback: [
+          {
+            type: 'selector',
+            dependsOn: { argIndex: 0, value: 'give' },
+            fallback: [
+              {
+                type: 'literal',
+                dependsOn: { argIndex: 0, matchesAny: ['insert', 'replace'] },
+                values: ['block', 'entity'],
+                fallback: [
+                  {
+                    type: 'freetext',
+                    dependsOn: { argIndex: 0, value: 'fish' },
+                    hint: '<x y z>',
+                    fallback: []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  item: {
+    args: [
+      { type: 'literal', values: ['replace', 'modify'] },
+      {
+        type: 'literal',
+        dependsOn: { argIndex: 0, value: 'replace' },
+        values: ['block', 'entity'],
+        fallback: [
+          {
+            type: 'literal',
+            dependsOn: { argIndex: 0, value: 'modify' },
+            values: ['block', 'entity'],
+            fallback: []
+          }
+        ]
+      },
+      { type: 'freetext', hint: '<target or selector>' },
+      {
+        type: 'literal',
+        values: ['weapon', 'weapon.offhand', 'armor.head', 'armor.chest', 'armor.legs', 'armor.feet', 'container.0', 'container.1', 'container.2', 'container.3', 'container.4', 'container.5', 'container.6', 'container.7', 'container.8', 'hotbar.0', 'hotbar.1', 'hotbar.2', 'hotbar.3', 'hotbar.4', 'hotbar.5', 'hotbar.6', 'hotbar.7', 'hotbar.8', 'inventory.0', 'inventory.1', 'inventory.2', 'inventory.3', 'inventory.4', 'inventory.5', 'inventory.6', 'inventory.7', 'inventory.8', 'horse.saddle', 'horse.armor', 'horse.chest', 'vehicle.modes']
+      },
+      {
+        type: 'literal',
+        dependsOn: { argIndex: 0, value: 'replace' },
+        values: ['with', 'from'],
+        fallback: []
+      }
+    ]
+  },
+
+  damage: {
+    args: [
+      { type: 'selector' },
+      { type: 'number', hint: '<amount>' },
+      {
+        type: 'literal',
+        values: [
+          'minecraft:arrow', 'minecraft:cactus', 'minecraft:cramming',
+          'minecraft:dragon_breath', 'minecraft:dry_out', 'minecraft:drown',
+          'minecraft:explosion', 'minecraft:fall', 'minecraft:falling_anvil',
+          'minecraft:falling_block', 'minecraft:falling_stalactite',
+          'minecraft:fireworks', 'minecraft:fly_into_wall',
+          'minecraft:freeze', 'minecraft:generic', 'minecraft:hot_floor',
+          'minecraft:in_fire', 'minecraft:in_wall', 'minecraft:indirect_magic',
+          'minecraft:lava', 'minecraft:lightning_bolt', 'minecraft:magic',
+          'minecraft:mob_attack', 'minecraft:mob_attack_no_aggro',
+          'minecraft:on_fire', 'minecraft:out_of_world', 'minecraft:override',
+          'minecraft:piercing', 'minecraft:player_attack',
+          'minecraft:player_explosion', 'minecraft:projectile',
+          'minecraft:sonic_boom', 'minecraft:spit', 'minecraft:starve',
+          'minecraft:sting', 'minecraft:sweet_berry_bush', 'minecraft:thorns',
+          'minecraft:thrown', 'minecraft:trident', 'minecraft:wither',
+          'minecraft:wither_skull', 'minecraft:zone'
+        ]
+      },
+      {
+        type: 'selector',
+        hint: '<attacker>',
+        fallback: []
+      }
+    ]
+  },
+
+  ride: {
+    args: [
+      { type: 'selector' },
+      { type: 'literal', values: ['mount', 'dismount'] },
+      {
+        type: 'selector',
+        dependsOn: { argIndex: 1, value: 'mount' },
+        fallback: []
+      }
+    ]
+  },
+
+  random: {
+    args: [
+      { type: 'literal', values: ['range', 'roll', 'reset'] },
+      {
+        type: 'freetext',
+        dependsOn: { argIndex: 0, matchesAny: ['range', 'roll'] },
+        hint: '<sequence>',
+        fallback: [
+          {
+            type: 'freetext',
+            dependsOn: { argIndex: 0, value: 'reset' },
+            hint: '<sequence>',
+            fallback: []
+          }
+        ]
+      },
+      {
+        type: 'number',
+        dependsOn: { argIndex: 0, matchesAny: ['range', 'roll'] },
+        hint: '<min>',
+        fallback: []
+      },
+      {
+        type: 'number',
+        dependsOn: { argIndex: 0, matchesAny: ['range', 'roll'] },
+        hint: '<max>',
+        fallback: []
+      }
     ]
   },
 
