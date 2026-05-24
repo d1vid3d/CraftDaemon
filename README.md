@@ -44,18 +44,18 @@ Two systemd services run on your host:
 | `craftdaemon` (or your chosen name) | The Discord bot itself |
 | `minecraft` (or your chosen name) | Your Minecraft server |
 
-The bot does **not** spawn the Minecraft process itself — it delegates entirely to systemd. This means clean startup/shutdown handling, proper logging via `journald`, and automatic restarts on failure, all without the bot being in the middle of the process tree.
+The bot does **not** spawn the Minecraft process itself, it delegates entirely to systemd. This means clean startup/shutdown handling, proper logging via `journald`, and automatic restarts on failure, all without the bot being in the middle of the process tree.
 
 ### Why Paper Recommended?
 
-CraftDaemon uses the `tps` RCON command to read server performance. This command is provided by **Paper** — it does not exist on vanilla Minecraft servers. Paper is also the standard choice for most server setups, so it's the recommended and tested platform for this bot.
+CraftDaemon uses the `tps` RCON command to read server performance. This command is provided by **Paper** - it does not exist on vanilla Minecraft servers. Paper is also the standard choice for most server setups, so it's the recommended and tested platform for this bot.
 
 > TPS will not be available in `/status` if you use other non-Paper server that doesn't support `tps`.
 
 ### Full Documentation
 
 The full documentation is available at:  
-👉 [CraftDaemon Website](https://craftdaemon.arcver.xyz/) On the Docs page.
+👉 [CraftDaemon Docs](https://craftdaemon.arcver.xyz/documentation.html) On the website.
 
 Detailed guides, configuration options, and advanced usage are covered.  
 If you're setting up the bot beyond the basics, this is your primary reference and source of truth.
@@ -71,8 +71,9 @@ If you're setting up the bot beyond the basics, this is your primary reference a
 | `/start` | Starts the Minecraft server via `systemctl start` |
 | `/stop` | Stops the server via `systemctl stop` |
 | `/restart` | Restarts the server via `systemctl restart` |
-| `/logs` | Streams live Minecraft server logs in real-time (`live` mode) or fetches recent lines (`tail` mode) via journalctl |
+| `/logs` | Stream live logs, fetch tail snapshots, or download the server log file (`live`, `tail`, `download`, `stop` subcommands) |
 | `/exec` | Executes Minecraft server commands through RCON with safety checks, in-game announcements, and confirmation prompts |
+| `/player` | View a leaderboard of all known players (online/offline status, last seen) or lookup detailed live stats for a specific player |
 | `/status` | Shows a full status embed: systemd state, uptime, TPS, player list, and RCON ping |
 | `/address` | Shows the server's connection addresses (main address, LAN, Java version) |
 | `/ping` | Checks the bot's Discord API latency |
@@ -127,7 +128,7 @@ If you're setting up the bot beyond the basics, this is your primary reference a
 </p>
 
 
-The `/status` command is the most information-dense response in the bot. When the server is fully online and RCON is responding, it shows systemd uptime, live TPS, current player count and names, and RCON round-trip latency — all in a single Discord embed. When the server is offline or still starting up, it reflects that state instead.
+The `/status` command is the most information-dense response in the bot. When the server is fully online and RCON is responding, it shows systemd uptime, live TPS, current player count and names, and RCON round-trip latency, all in a single Discord embed. When the server is offline or still starting up, it reflects that state instead.
 
 ### Smart Bot Presence
 
@@ -147,17 +148,31 @@ This is handled through the persistent RCON keepalive/player stream — no serve
 
 ### Live Logs (`/logs`)
 
-Authorized users can stream live Minecraft server logs directly in Discord. The command has three subcommands:
+Authorized users can stream live Minecraft server logs directly in Discord, fetch snapshots, or download the full log file. The command has four subcommands:
 
 | Subcommand | Behavior |
 |---|---|
 | `/logs live` | Streams new log lines in real-time, editing a Discord message every 2 seconds for up to your desired time |
 | `/logs tail [lines]` | Fetches the last N lines as a one-time static snapshot, no live updates |
+| `/logs download` | Attaches the server's `latest.log` as a downloadable file. Files over 7MB are automatically gzip-compressed |
 | `/logs stop` | Stops the active live log session in the current channel |
 
 Logs are sourced from `journalctl` by default (using `MC_SERVICE` as the systemd unit), with a `file` fallback for users not running the server as a systemd service. A rotating buffer (default: 25 lines) keeps content within Discord's 2000-character embed limit, and a debounced 2-second edit interval stays well within Discord's rate limits.
 
 Only one active live session per channel is allowed. Sessions auto-stop after 60 seconds, cleaning up the child process and session state.
+
+### Player Management (`/player`)
+
+The `/player` command provides a leaderboard-style view of all known players, plus detailed per-player lookups:
+
+| Usage | Behavior |
+|---|---|
+| `/player` | Shows all known players - online first, then offline sorted by most recently seen. Includes online count and total known players |
+| `/player lookup: <name>` | Looks up detailed stats for a specific player. Autocomplete suggests known player names as you type |
+
+**For online players**, live data is fetched via RCON (`data get entity`) showing position, health, food, XP level, and game mode. **For offline players**, stored data is shown with a warning that live data is unavailable. Player data is collected automatically by the RCON keepalive, no server mods needed.
+
+`/player` requires the `player.list` permission. `/player lookup` requires `player.lookup`, which also needs `player.list` as a prerequisite.
 
 ### Remote Command Execution (`/exec`)
 
@@ -314,6 +329,7 @@ Your environment file is **`config/.env`** (same path the bot and `register-comm
 | **Live Logs Configuration** | | | |
 | `LOGS_SOURCE` | ✅ | Log source for `/logs` command (`journalctl` or `file`, default: `journalctl`) | `journalctl` or `file` |
 | `LOG_FILE_PATH` | ☑️ | Path to log file, only used if `LOGS_SOURCE=file` (default: `./logs/latest.log`) | — |
+| `MC_LOG_PATH` | ☑️ | Absolute path to the Minecraft server's `latest.log`. Required for `/logs download`. Leave blank to disable the download subcommand | — |
 | **Remote Command Execution** | | | |
 | `EXEC_TELLRAW_ENABLED` | ✅ | Enable in-game announcements for `/exec` commands (default: `true`) | `true` or `false` |
 | `EXEC_TELLRAW_TARGET` | ✅ | Minecraft target selector for tellraw announcements (default: `@a`) | — |
@@ -361,6 +377,7 @@ RBAC (Role-Based Access Control) determines who can run which commands via `conf
 | `users` | Map Discord user IDs to permission strings (direct overrides, takes precedence) | `{ "444444444444444444": ["server.address"] }` |
 
 #### Permission Strings & Defaults
+> Commands and its subcommands unless otherwise listed.
 
 | Command | Permission | Default Roles |
 |---|---|---|
@@ -372,7 +389,10 @@ RBAC (Role-Based Access Control) determines who can run which commands via `conf
 | `/checkupdate` | `bot.checkUpdate` | `ADMIN`, `MOD` |
 | `/logs` | `admin.logs` | `ADMIN`, `MOD` |
 | `/exec` | `admin.exec` | `ADMIN`, `MOD` |
+| `/player` | `player.list` | `ADMIN`, `MOD` |
+| `/player lookup` | `player.lookup` | `ADMIN`, `MOD` |
 | `/ping` | *(none)* | Everyone |
+| `/checkupdate` | *(none)* | Everyone |
 
 #### Setting Up RBAC
 
@@ -584,6 +604,7 @@ CraftDaemon/
 │   │   ├── status.js
 │   │   ├── checkUpdate.js
 │   │   ├── logs.js
+│   │   ├── player.js
 │   │   ├── exec.js
 │   │   └── help.js
 │   ├── events/
@@ -594,11 +615,12 @@ CraftDaemon/
 │   │   └── resolver.js        # hasPermission() against permission-config.js
 │   ├── utils/
 │   │   ├── storage.js         # JSON persistence for per-guild update-notification state
+│   │   ├── playerStore.js     # JSON persistence for player data (online status, first/last seen)
 │   │   └── env.js             # Shared env parsers: getEnvInt, getEnvString, getEnvBool, getEnvFloat
 │   └── services/
 │       ├── autoStopService.js # Auto-Stop/Auto-Shutdown handling and logic
 │       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery
-│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline
+│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline + player tracking
 │       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)
 │       ├── minecraftSystemd.js # systemctl + save-all before stop/restart
 │       ├── commandLock.js     # Cooldown lock for start/stop/restart
