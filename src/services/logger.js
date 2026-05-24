@@ -1,7 +1,7 @@
 //  Logger Utility - Structured logging with prefixes and timestamps
 //  Provides category-based loggers with color coding and log levels
 
-// You do not need to run node on this file directly. Instead, import the createLogger function (Like the default export) in your other modules to create loggers for different categories (e.g., Bot, Discord, RCON, etc.).
+// Import the createLogger function (Like the default export) in your other modules to create loggers for different categories (e.g., Bot, Discord, RCON, etc.).
 
 const LogLevel = {
     DEBUG: 0,

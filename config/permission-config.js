@@ -26,9 +26,11 @@ module.exports = {
     "server.status": ["ADMIN", "MOD"],
     "server.address": ["ADMIN", "MOD"],
     "server.restart": ["ADMIN", "MOD"],
-    "bot.checkUpdate": ["ADMIN", "MOD"],
     "admin.logs": ["ADMIN", "MOD"],
     "admin.exec": ["ADMIN", "MOD"],
+    "player.list": ["ADMIN", "MOD"],
+    "player.lookup": ["ADMIN", "MOD"],
+    "bot.checkUpdate": ["ADMIN", "MOD"],
     // Adjust key mappings..
   },
 

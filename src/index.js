@@ -7,6 +7,7 @@ const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../config/.env") });
 
 const { Client, Collection, GatewayIntentBits, ActivityType, PermissionFlagsBits } = require("discord.js");
+
 // Per release version 1.2.0 RconManager replaces the old stateless rcon helper.
 // The raw `rcon` package is now an internal detail of RconManager only.
 const { setRconManager } = require("./services/rconQuery");
@@ -149,7 +150,7 @@ const RCON_COMMAND_TIMEOUT_MS = getEnvInt("RCON_COMMAND_TIMEOUT_MS", DEFAULT_COM
 const RCON_MAX_KEEPALIVE_FAILURES = getEnvInt("RCON_MAX_KEEPALIVE_FAILURES", DEFAULT_MAX_KEEPALIVE_FAILURES, { min: 1, max: 10 });
 const RCON_REFUSED_LOG_INTERVAL_MS = getEnvInt("RCON_REFUSED_LOG_INTERVAL_MS", DEFAULT_REFUSED_LOG_INTERVAL_MS, { min: 0, max: 300_000 });
 
-// ---- Runtime state ---------------------------------------------
+// Runtime state
 // rconManager is declared here so every part of this file can reference it,
 // but it is only *initialised* inside client.once("clientReady") - after the
 // Discord client is fully logged in - because the manager drives bot presence.
@@ -171,9 +172,8 @@ botLogger.info("=============================================");
 // systemd + RCON query helpers live in ./services/minecraftSystemd and
 // ./services/rconQuery (wired to rconManager after login).
 
-// ================================================================
+
 //  Discord client
-// ================================================================
 
 const client = new Client({
     intents: [
@@ -184,10 +184,8 @@ const client = new Client({
     ],
 });
 
-// ================================================================
-//  Commands (config-driven RBAC expects command objects)
-// ================================================================
 
+//  Commands (config-driven RBAC expects command objects)
 // Load commands from the commands directory
 
 client.commands = new Collection();
@@ -206,9 +204,8 @@ if (fs.existsSync(commandsPath)) {
     }
 }
 
-// ================================================================
+
 //  Events
-// ================================================================
 
 const registerInteractionCreate = require("./events/interactionCreate");
 registerInteractionCreate(client);
@@ -240,7 +237,7 @@ client.once("clientReady", async () => {
         warnStartupOperatorChecklist();
     }
 
-    //  ========== Initialise RconManager =========
+    //  Initialise RconManager
     //  Must happen here (post-login) because the manager immediately
     //  drives client.user.setPresence(), which requires an authenticated
     //  Discord session.  Creating it at module scope would crash on
@@ -259,7 +256,7 @@ client.once("clientReady", async () => {
     });
     setRconManager(rconManager);
 
-    //  ========== Presence event wiring =========
+    //  Presence event wiring
     //  Each handler is a single setPresence call, keeping presence
     //  logic co-located and easy to audit.
 
@@ -336,12 +333,12 @@ client.once("clientReady", async () => {
         });
     });
 
-    // ── Start the persistent connection ─────────────────────
+    // Start the persistent connection
     //  This triggers the first connect attempt and kicks off the
     //  keepalive + reconnect lifecycle.
     rconManager.start();
 
-    // ── Initialize auto-stop service ─────────────────────────
+    // Initialize auto-stop service
     //  Uses rconManager for player count tracking.
     initAutoStopService(client, rconManager);
 

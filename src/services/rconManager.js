@@ -25,10 +25,11 @@
 
 const Rcon = require("rcon");
 const { createLogger } = require("./logger");
+const playerStore = require("../utils/playerStore");
 
 const rconLogger = createLogger("RCON");
 
-// ── Tuneable constants ───────────────────────────────────────
+// Tuneable constants
 //  These are intentionally module-level rather than constructor
 //  arguments so they can be overridden in unit tests via jest.mock
 //  or by simply editing this one place.
@@ -59,7 +60,7 @@ const DEFAULT_MAX_KEEPALIVE_FAILURES = 2;
 /** Default cadence for ECONNREFUSED warning logs while retrying. */
 const DEFAULT_REFUSED_LOG_INTERVAL_MS = 60_000;
 
-// ── Connection states ────────────────────────────────────────
+// Connection states
 //  Using a string enum rather than bare booleans so log messages and
 //  external consumers can describe state unambiguously.
 
@@ -113,7 +114,7 @@ const State = Object.freeze({
  */
 class RconManager extends require("events").EventEmitter {
 
-    // ── Constructor ──────────────────────────────────────────
+    // Constructor
 
     /**
      * @param {Object} options
@@ -163,7 +164,7 @@ class RconManager extends require("events").EventEmitter {
         /** @private */
         this._refusedLogIntervalMs = refusedLogIntervalMs;
 
-        // ── Internal state ───────────────────────────────────
+        // Internal state
 
         /** @private @type {string} One of the State enum values. */
         this._state = State.DISCONNECTED;
@@ -230,7 +231,7 @@ class RconManager extends require("events").EventEmitter {
         /** @private */
         this._suppressedRefusedCount = 0;
 
-        // ── Public state surface (read-only via getters) ─────
+        // Public state surface (read-only via getters)
 
         /** @type {Date|null} */
         this.lastSeenOnline = null;
@@ -241,7 +242,7 @@ class RconManager extends require("events").EventEmitter {
         rconLogger.info(`RconManager initialised — target: ${this._host}:${this._port}`);
     }
 
-    // ── Public getters ───────────────────────────────────────
+    // Public getters
 
     /** True when the socket is authenticated and healthy. */
     get connected()    { return this._state === State.CONNECTED; }
@@ -272,7 +273,7 @@ class RconManager extends require("events").EventEmitter {
         };
     }
 
-    // ── Lifecycle ────────────────────────────────────────────
+    // Lifecycle
 
     /**
      * Starts the connection lifecycle. Call this once after the Discord
@@ -311,7 +312,7 @@ class RconManager extends require("events").EventEmitter {
         this._state = State.DISCONNECTED;
     }
 
-    // ── Command API ──────────────────────────────────────────
+    // Command API
 
     /**
      * Sends a Minecraft console command over the persistent connection
@@ -369,7 +370,7 @@ class RconManager extends require("events").EventEmitter {
         });
     }
 
-    // ── Private: connection setup ────────────────────────────
+    // Private: connection setup
 
     /**
      * Creates a fresh Rcon socket, wires up all event listeners, and
@@ -397,7 +398,7 @@ class RconManager extends require("events").EventEmitter {
         const conn = new Rcon(this._host, this._port, this._password);
         this._conn = conn;
 
-        // ── Socket event handlers ────────────────────────────
+        // Socket event handlers
         //
         //  We use named arrow functions assigned to `conn` rather than
         //  anonymous lambdas so each handler has a meaningful name in
@@ -437,7 +438,7 @@ class RconManager extends require("events").EventEmitter {
         }
     }
 
-    // ── Private: socket event handlers ──────────────────────
+    // Private: socket event handlers
 
     /**
      * Called when the RCON socket has successfully authenticated.
@@ -522,7 +523,7 @@ class RconManager extends require("events").EventEmitter {
         this._handleDisconnect();
     }
 
-    // ── Private: disconnection & reconnect loop ──────────────
+    // Private: disconnection & reconnect loop
 
     /**
      * Central handler for any loss-of-connection event.
@@ -647,7 +648,7 @@ class RconManager extends require("events").EventEmitter {
         }, this._reconnectIntervalMs);
     }
 
-    // ── Private: keepalive loop ──────────────────────────────
+    // Private: keepalive loop
 
     /**
      * Starts the periodic keepalive interval.  Each tick sends a "list"
@@ -670,7 +671,14 @@ class RconManager extends require("events").EventEmitter {
             try {
                 const response = await this.sendCommand("list", this._commandTimeoutMs);
                 const count = _parsePlayerCount(response);
+                const names = _parseOnlinePlayerNames(response);
                 this._keepaliveFailureStreak = 0;
+
+                if (names !== null) {
+                    playerStore.updatePlayers(names).catch((err) => {
+                        rconLogger.warn(`Failed to persist player store: ${err.message}`);
+                    });
+                }
 
                 if (count !== null) {
                     this.playerCount = count;
@@ -696,8 +704,7 @@ class RconManager extends require("events").EventEmitter {
         }, this._keepaliveIntervalMs);
     }
 
-    // ── Private: "starting" grace period ────────────────────
-
+    // Private: "starting" grace period
     /**
      * Enters the "starting" grace period immediately after a successful
      * reconnect. During this window, presence logic should display
@@ -726,7 +733,7 @@ class RconManager extends require("events").EventEmitter {
         }, this._startingGracePeriodMs);
     }
 
-    // ── Private: cleanup helpers ─────────────────────────────
+    // Private: cleanup helpers
 
     /**
      * Destroys and nullifies the current Rcon socket.
@@ -793,7 +800,7 @@ class RconManager extends require("events").EventEmitter {
     }
 }
 
-// ── Module-level pure helpers ────────────────────────────────
+// Module-level pure helpers
 //  These are free functions rather than methods because they have no
 //  dependency on instance state and are easier to unit-test in isolation.
 
@@ -823,7 +830,23 @@ function _parsePlayerCount(response) {
     return match ? parseInt(match[1], 10) : null;
 }
 
-// ── Exports ──────────────────────────────────────────────────
+/**
+ * Parses the online player names from a vanilla "list" response.
+ *
+ * @param {string} response - Cleaned RCON response from "list".
+ * @returns {string[]|null}
+ */
+function _parseOnlinePlayerNames(response) {
+    if (typeof response !== "string") return null;
+    if (!/^There are \d+ of a max of \d+ players online:/i.test(response)) {
+        return null;
+    }
+
+    const parts = response.split(": ");
+    return parts[1] ? parts[1].split(", ").filter(Boolean) : [];
+}
+
+// Exports
 
 module.exports = {
     RconManager,
@@ -837,4 +860,5 @@ module.exports = {
     // Export pure helpers for unit testing.
     _cleanMinecraftFormatting,
     _parsePlayerCount,
+    _parseOnlinePlayerNames,
 };

@@ -13,6 +13,10 @@ function setRconManager(manager) {
     rconManager = manager;
 }
 
+function getRconManager() {
+    return rconManager;
+}
+
 /**
  * @param {string} cmd
  * @returns {Promise<string|null>}
@@ -65,6 +69,7 @@ async function getPlayerListWithPing() {
 
 module.exports = {
     setRconManager,
+    getRconManager,
     rconSend,
     getTps,
     getPlayerList,
