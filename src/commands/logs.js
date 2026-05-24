@@ -203,7 +203,7 @@ async function handleAttach(interaction) {
         logsLogger.error(`/logs download: gzip pipeline failed: ${err.message}`);
         return interaction.editReply({
             embeds: [{
-                title: "📄 Log Attach",
+                title: "📄 Log Download",
                 description: `Failed to compress log file: ${err.message}`,
                 color: 0xff0000,
             }],

@@ -29,7 +29,7 @@ module.exports = {
     "admin.logs": ["ADMIN", "MOD"],
     "admin.exec": ["ADMIN", "MOD"],
     "player.list": ["ADMIN", "MOD"],
-    "player.lookup": ["ADMIN", "MOD"],
+    "player.lookup": ["ADMIN", "MOD"], // /player.lookup requires player.list as a prerequisite, or else its blocked.
     "bot.checkUpdate": ["ADMIN", "MOD"],
     // Adjust key mappings..
   },
