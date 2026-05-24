@@ -141,6 +141,7 @@ const RCON_PORT = getEnvInt("RCON_PORT", 25575, { min: 1, max: 65535 });
 const RCON_PASSWORD = process.env.RCON_PASSWORD || "";
 const MC_SERVICE = getEnvString("MC_SERVICE", "minecraft");
 const MAIN_ADDRESS = getEnvString("MAIN_ADDRESS", null);
+const MC_LOG_PATH = getEnvString("MC_LOG_PATH", null);
 
 const PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS = getEnvInt("PRESENCE_SYSTEMD_FALLBACK_INTERVAL_MS", 15_000, { min: 5_000, max: 120_000 });
 const RCON_KEEPALIVE_INTERVAL_MS = getEnvInt("RCON_KEEPALIVE_INTERVAL_MS", DEFAULT_KEEPALIVE_INTERVAL_MS, { min: 10_000, max: 300_000 });
@@ -166,6 +167,7 @@ botLogger.info(`RCON Port: ${RCON_PORT}`);
 botLogger.info(`Minecraft Service: ${MC_SERVICE}`);
 botLogger.info(`Auto-stop enabled: ${AUTO_STOP_MINUTES > 0 ? `Yes (${AUTO_STOP_MINUTES} min idle, warning at ${EFFECTIVE_WARNING_MINUTES || "disabled"} min)` : "No"}`);
 botLogger.info(`Main address: ${MAIN_ADDRESS || "NOT SET"}`);
+botLogger.info(`MC Log Path: ${MC_LOG_PATH || "Not configured (/logs download unavailable)"}`);
 botLogger.info(`RCON keepalive/reconnect/timeout: ${RCON_KEEPALIVE_INTERVAL_MS}ms / ${RCON_RECONNECT_INTERVAL_MS}ms / ${RCON_COMMAND_TIMEOUT_MS}ms`);
 botLogger.info("=============================================");
 

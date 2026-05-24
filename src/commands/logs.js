@@ -1,15 +1,25 @@
-//  /logs command  |  Live server log streaming & tail snapshot
+//  /logs command  |  Live server log streaming & tail snapshot & file attachment
 //  Subcommands:
 //    live        - streams new log lines in real-time
 //    tail [N]    - fetches last N lines as a static snapshot
 //    stop        - stops the active log session in this channel
+//    download    - downloads the server log file (auto-compresses if over 7MB)
 
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const zlib = require("zlib");
+const { pipeline } = require("stream/promises");
+const { SlashCommandBuilder, AttachmentBuilder, MessageFlags } = require("discord.js");
 const { createLogger } = require("../services/logger");
 const { hasActiveSession, startSession, stopSession, SESSION_TIMEOUT_MS } = require("../services/logsServices/sessionManager");
 const { fetchTailLines, LOGS_SOURCE } = require("../services/logsServices/logStream");
 
 const logsLogger = createLogger("Logs");
+
+const MC_LOG_PATH = process.env.MC_LOG_PATH || "";
+const SIZE_LIMIT = 7 * 1024 * 1024;
+const TEMP_PATH = path.join(os.tmpdir(), "craftdaemon-latest.log.gz");
 
 module.exports = {
     permission: "admin.logs",
@@ -38,6 +48,11 @@ module.exports = {
             sub
                 .setName("stop")
                 .setDescription("Stop the active log session in this channel")
+        )
+        .addSubcommand((sub) =>
+            sub
+                .setName("download")
+                .setDescription("Download the server log file")
         ),
 
     async execute(interaction) {
@@ -78,6 +93,11 @@ module.exports = {
             return interaction.editReply({
                 content: `${footer}\n\`\`\`\n${truncated}\n\`\`\``,
             });
+        }
+
+        // Download
+        if (subcommand === "download") {
+            return handleAttach(interaction);
         }
 
         // Live
@@ -123,3 +143,76 @@ module.exports = {
         }
     },
 };
+
+async function handleAttach(interaction) {
+    await interaction.deferReply();
+
+    if (!MC_LOG_PATH) {
+        return interaction.editReply({
+            embeds: [{
+                title: "📄 Log Attach",
+                description: "MC_LOG_PATH is not configured. Set it in your config/.env file.",
+                color: 0xff0000,
+            }],
+        });
+    }
+
+    let stat;
+    try {
+        stat = await fs.promises.stat(MC_LOG_PATH);
+    } catch (err) {
+        if (err.code === "ENOENT") {
+            return interaction.editReply({
+                embeds: [{
+                    title: "📄 Log Attach",
+                    description: `No file found at \`${MC_LOG_PATH}\`. Check that MC_LOG_PATH points to your server's logs/latest.log.`,
+                    color: 0xff0000,
+                }],
+            });
+        }
+        return interaction.editReply({
+            embeds: [{
+                title: "📄 Log Attach",
+                description: `Failed to read log file: ${err.message}`,
+                color: 0xff0000,
+            }],
+        });
+    }
+
+    if (stat.size <= SIZE_LIMIT) {
+        const attachment = new AttachmentBuilder(MC_LOG_PATH, { name: "latest.log.txt" });
+        return interaction.editReply({
+            content: "📋 Current session log:",
+            files: [attachment],
+        });
+    }
+
+    try {
+        await pipeline(
+            fs.createReadStream(MC_LOG_PATH),
+            zlib.createGzip(),
+            fs.createWriteStream(TEMP_PATH)
+        );
+
+        const attachment = new AttachmentBuilder(TEMP_PATH, { name: "latest.log.gz" });
+        await interaction.editReply({
+            content: "📋 Log exceeded 8MB and was compressed. Extract with any archive tool.",
+            files: [attachment],
+        });
+    } catch (err) {
+        logsLogger.error(`/logs download: gzip pipeline failed: ${err.message}`);
+        return interaction.editReply({
+            embeds: [{
+                title: "📄 Log Attach",
+                description: `Failed to compress log file: ${err.message}`,
+                color: 0xff0000,
+            }],
+        });
+    } finally {
+        try {
+            await fs.promises.unlink(TEMP_PATH);
+        } catch (_) {
+            // Already cleaned up or never written - safe to ignore.
+        }
+    }
+}
