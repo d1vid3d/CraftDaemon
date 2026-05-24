@@ -15,7 +15,7 @@ const GAMEMODES = {
 };
 
 module.exports = {
-    permission: null,
+    permission: "player.list",
     data: new SlashCommandBuilder()
         .setName("player")
         .setDescription("Player management and information")
@@ -62,16 +62,22 @@ module.exports = {
             return handleLookup(interaction, lookup);
         }
 
-        if (!(await ensurePermission(interaction, "player.list"))) {
-            return;
-        }
-
         playerLogger.info(`/player from ${interaction.user.tag}`);
         return interaction.reply({ embeds: [buildListEmbed()] });
     },
 };
 
 async function handleLookup(interaction, name) {
+    if (!/^[a-zA-Z0-9_]{1,16}$/.test(name)) {
+        return interaction.editReply({
+            embeds: [{
+                title: "👤 Player Lookup",
+                description: "Invalid player name format.",
+                color: 0xff0000,
+            }],
+        });
+    }
+
     const record = getPlayer(name);
 
     if (!record) {
