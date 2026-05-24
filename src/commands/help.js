@@ -18,7 +18,7 @@ const helpLogger = createLogger("Help");
 
 const SELECT_TIMEOUT_MS = 120_000; // 2 minutes
 
-// ── Category overview (used by the "Commands Reference" page) ──────────
+// Category overview (used by the "Commands Reference" page)
 
 const COMMAND_CATEGORIES = [
     {
@@ -36,8 +36,15 @@ const COMMAND_CATEGORIES = [
         emoji: "\u{1F6E0}\uFE0F",
         commands: [
             { name: "/exec", desc: "Execute Minecraft console commands via RCON", perm: "admin.exec" },
-            { name: "/logs", desc: "View live or tail server logs", perm: "admin.logs" },
+            { name: "/logs", desc: "View, stream, or download server logs", perm: "admin.logs" },
             { name: "/checkupdate", desc: "Check for bot updates", perm: "bot.checkUpdate" },
+        ],
+    },
+    {
+        name: "Players",
+        emoji: "\u{1F465}",
+        commands: [
+            { name: "/player", desc: "View online/offline players and lookup stats", perm: "player.list" },
         ],
     },
     {
@@ -51,7 +58,7 @@ const COMMAND_CATEGORIES = [
     },
 ];
 
-// ── Detailed help entries (for /help commands:<name>) ─────────────────
+// Detailed help entries (for /help commands:<name>)
 
 const COMMAND_DETAILS = {
     start: {
@@ -113,17 +120,18 @@ const COMMAND_DETAILS = {
     },
     logs: {
         name: "/logs",
-        shortDesc: "View live or tail server logs",
+        shortDesc: "View live logs, fetch tail snapshots, or download the log file",
         permission: "admin.logs",
-        usage: "`/logs live` | `/logs tail [lines]` | `/logs stop`",
-        details: "Three subcommands for accessing Minecraft server logs:\n\n**`/logs live`** — Starts a real-time log stream. The bot sends a message and edits it every 2 seconds with fresh log output. Only one live session per channel is allowed.\n\n**`/logs tail [lines]`** — Fetches the last N lines as a static snapshot in a code block. Defaults to 20 lines if not specified, maximum is 25.\n\n**`/logs stop`** — Stops the active live log session in the current channel.",
+        usage: "`/logs live` | `/logs tail [lines]` | `/logs download` | `/logs stop`",
+        details: "Four subcommands for accessing Minecraft server logs:\n\n**`/logs live`** — Starts a real-time log stream. The bot sends a message and edits it every 2 seconds with fresh output. Only one live session per channel.\n\n**`/logs tail [lines]`** — Fetches the last N lines as a static code-block snapshot. Defaults to 20, maximum 25.\n\n**`/logs download`** — Attaches the server's `latest.log` as a downloadable file. Files under 7MB are sent as plain text; larger files are automatically gzip-compressed.\n\n**`/logs stop`** — Stops the active live log session in the channel.",
         examples: [
             "/logs live",
             "/logs tail",
             "/logs tail lines: 10",
+            "/logs download",
             "/logs stop",
         ],
-        notes: "Only one live session per channel at a time. Sessions auto-stop after a configured timeout (`SESSION_TIMEOUT_MS`). The log source (journald or file) is displayed in the footer.",
+        notes: "Only one live session per channel at a time. `/logs download` requires `MC_LOG_PATH` to be set in `.env`. Sessions auto-stop after a configured timeout.",
     },
     address: {
         name: "/address",
@@ -158,6 +166,18 @@ const COMMAND_DETAILS = {
         ],
         notes: "The reply is ephemeral (only you can see it). Update notifications can also be sent automatically to a configured channel.",
     },
+    player: {
+        name: "/player",
+        shortDesc: "View online/offline players and lookup stats",
+        permission: "player.list",
+        usage: "`/player` | `/player lookup: <name>`",
+        details: "Player management and information:\n\n**`/player`** — Shows a leaderboard-style list of all known players. Online players appear first, followed by offline players sorted by most recently seen. Shows online count and total known players.\n\n**`/player lookup: <name>`** — Looks up detailed info for a specific player. Autocomplete suggests known player names as you type. For **online** players, live data is fetched via RCON (position, health, food, XP, game mode). For **offline** players, stored data is shown with a warning that live data is unavailable.",
+        examples: [
+            "/player",
+            "/player lookup: Steve",
+        ],
+        notes: "`/player` requires `player.list` permission. `/player lookup` requires `player.lookup` permission, which also needs `player.list` as a prerequisite. Player data is collected automatically via the RCON keepalive — no server mods needed.",
+    },
     help: {
         name: "/help",
         shortDesc: "Show command reference and quick start guide",
@@ -173,7 +193,7 @@ const COMMAND_DETAILS = {
     },
 };
 
-// ── Embed Builders ────────────────────────────────────────────────────
+// Embed Builders
 
 function buildCommandsEmbed() {
     const fields = COMMAND_CATEGORIES.map((cat) => {
@@ -223,17 +243,23 @@ function buildQuickStartEmbed() {
                 value: [
                     "`/logs live` \u2014 Stream server logs in real-time",
                     "`/logs tail` \u2014 Fetch the last N log lines as a snapshot",
+                    "`/logs download` \u2014 Download the server log file as an attachment",
                     "`/logs stop` \u2014 Stop an active log stream in the channel",
                 ].join("\n"),
                 inline: false,
             },
             {
-                name: "5\uFE0F\u20E3  Remote Commands",
+                name: "5\uFE0F\u20E3  Checking Players",
+                value: "Use `/player` to see who's online and view the player leaderboard.\nUse `/player lookup: <name>` to get detailed stats for a specific player — health, position, game mode, and more.",
+                inline: false,
+            },
+            {
+                name: "6\uFE0F\u20E3  Remote Commands",
                 value: "Use `/exec <command>` to run Minecraft console commands via RCON.\nDangerous commands will ask for confirmation first.",
                 inline: false,
             },
             {
-                name: "6\uFE0F\u20E3  Stopping / Restarting",
+                name: "7\uFE0F\u20E3  Stopping / Restarting",
                 value: "`/stop` gracefully saves and shuts down the server.\n`/restart` performs a full save \u2192 stop \u2192 start cycle.",
                 inline: false,
             },
@@ -289,7 +315,7 @@ function buildCommandDetailEmbed(commandKey) {
     };
 }
 
-// ── Select Menu ───────────────────────────────────────────────────────
+// Select Menu
 
 function buildSelectRow(activeValue) {
     const menu = new StringSelectMenuBuilder()
@@ -314,7 +340,7 @@ function buildSelectRow(activeValue) {
     return new ActionRowBuilder().addComponents(menu);
 }
 
-// ── Command Definition ────────────────────────────────────────────────
+// Command Definition
 
 module.exports = {
     permission: null,
@@ -348,7 +374,7 @@ module.exports = {
     },
 
     async execute(interaction) {
-        // ── Detailed help for a specific command ──
+        // Detailed help for a specific command
         const commandKey = interaction.options.getString("command");
         if (commandKey) {
             helpLogger.info(`/help command:${commandKey} from ${interaction.user.tag}`);
@@ -369,7 +395,7 @@ module.exports = {
             });
         }
 
-        // ── Overview with page selector ──
+        // Overview with page selector
         helpLogger.info(`/help from ${interaction.user.tag}`);
 
         let currentPage = "commands";
