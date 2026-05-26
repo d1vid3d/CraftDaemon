@@ -85,21 +85,21 @@ If you're setting up the bot beyond the basics, this is your primary reference a
 📸 **Gif:** Server Runtime Management
 <p align="left">
   <picture>
-    <img src="assets/gifs/start.gif" width="50%"/>
+    <img src="https://cdn.craftdaemon.arcver.xyz/start.gif" width="50%"/>
   </picture>
 </p>
 
 📸 **Gif:** Remote Command Execution
 <p align="left">
   <picture>
-    <img src="assets/gifs/exec.gif" width="50%"/>
+    <img src="https://cdn.craftdaemon.arcver.xyz/exec.gif" width="50%"/>
   </picture>
 </p>
 
 📸 **Gif:** Player Visibility
 <p align="left">
   <picture>
-    <img src="assets/gifs/player.gif" width="50%"/>
+    <img src="https://cdn.craftdaemon.arcver.xyz/player.gif" width="50%"/>
   </picture>
 </p>
 
@@ -128,6 +128,12 @@ The bot's Discord status is event-driven from the persistent RCON manager, with 
 ### Auto-Shutdown
 
 When the server has been empty for a configurable amount of time (default: **10 minutes**), CraftDaemon automatically stops it to save resources. Before that, at the **8-minute** mark, it posts a warning to your configured status channel. Both thresholds and the check interval are fully configurable in your `config/.env`.
+
+<p align="left">
+  <picture>
+    <img src="https://cdn.craftdaemon.arcver.xyz/warning-example.png" width="30%"/>
+  </picture>
+</p>
 
 This is handled through the persistent RCON keepalive/player stream, no server mods needed.
 
