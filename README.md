@@ -103,9 +103,10 @@ If you're setting up the bot beyond the basics, this is your primary reference a
   </picture>
 </p>
 
-### And More!..
+### And More! Try it for yourself!
 
 ---
+### A Bit Bore Details
 
 ### Smart Bot Presence
 
