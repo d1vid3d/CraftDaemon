@@ -82,53 +82,30 @@ If you're setting up the bot beyond the basics, this is your primary reference a
 
 ### Bot Responses (Brief showcase)
 
-📸 **Screenshot:** `/status` embed - online state with RCON stats
+📸 **Gif:** Server Runtime Management
 <p align="left">
   <picture>
-    <source srcset="assets/readme-assets/status-example-dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/readme-assets/status-example-light.png" media="(prefers-color-scheme: light)">
-    <img src="assets/status-example-dark.png" width="60%"/>
+    <img src="assets/gifs/start.gif" width="50%"/>
   </picture>
 </p>
 
-📸 **Screenshot:** `/exec` response embed - The response embed shows the executor, the command ran, the result, and a timestamp.
+📸 **Gif:** Remote Command Execution
 <p align="left">
   <picture>
-    <source srcset="assets/readme-assets/exec-example-dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/readme-assets/exec-example-light.png" media="(prefers-color-scheme: light)">
-    <img src="assets/exec-example-dark.png" width="60%"/>
+    <img src="assets/gifs/exec.gif" width="50%"/>
   </picture>
 </p>
 
-📸 **Screenshot:** `/address` embed - assigned address informations
+📸 **Gif:** Player Visibility
 <p align="left">
   <picture>
-    <source srcset="assets/readme-assets/address-example-dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/readme-assets/address-example-light.png" media="(prefers-color-scheme: light)">
-    <img src="assets/address-example-dark.png" width="60%"/>
+    <img src="assets/gifs/player.gif" width="50%"/>
   </picture>
 </p>
 
-📸 **Screenshot:** `Auto-Shutdown Warning` embed - notification posted after the set amount of time
-<p align="left">
-  <picture>
-    <source srcset="assets/readme-assets/warning-example-dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/readme-assets/warning-example-light.png" media="(prefers-color-scheme: light)">
-    <img src="assets/warning-example-dark.png" width="60%"/>
-  </picture>
-</p>
+### And More!..
 
-📸 **Screenshot:** `Bot Presence Status` you can see the current server status from the server member list or the bot profile's
-<p align="left">
-  <picture>
-    <source srcset="assets/readme-assets/bot-presence-example-dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="assets/readme-assets/bot-presence-example-light.png" media="(prefers-color-scheme: light)">
-    <img src="assets/bot-presence-example-dark.png" width="30%"/>
-  </picture>
-</p>
-
-
-The `/status` command is the most information-dense response in the bot. When the server is fully online and RCON is responding, it shows systemd uptime, live TPS, current player count and names, and RCON round-trip latency, all in a single Discord embed. When the server is offline or still starting up, it reflects that state instead.
+---
 
 ### Smart Bot Presence
 
@@ -140,11 +117,19 @@ The bot's Discord status is event-driven from the persistent RCON manager, with 
 | Server starting (RCON not ready) | 🟡 Idle | `🟡 Server Starting...` |
 | Server online | 🟢 Online | `🟩 N player(s) online` |
 
+<p align="left">
+  <picture>
+    <source srcset="assets/readme-assets/bot-presence-example-dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/readme-assets/bot-presence-example-light.png" media="(prefers-color-scheme: light)">
+    <img src="assets/bot-presence-example-dark.png" width="30%"/>
+  </picture>
+</p>
+
 ### Auto-Shutdown
 
 When the server has been empty for a configurable amount of time (default: **10 minutes**), CraftDaemon automatically stops it to save resources. Before that, at the **8-minute** mark, it posts a warning to your configured status channel. Both thresholds and the check interval are fully configurable in your `config/.env`.
 
-This is handled through the persistent RCON keepalive/player stream — no server mods needed.
+This is handled through the persistent RCON keepalive/player stream, no server mods needed.
 
 ### Live Logs (`/logs`)
 
@@ -172,7 +157,6 @@ The `/player` command provides a leaderboard-style view of all known players, pl
 
 **For online players**, live data is fetched via RCON (`data get entity`) showing position, health, food, XP level, and game mode. **For offline players**, stored data is shown with a warning that live data is unavailable. Player data is collected automatically by the RCON keepalive, no server mods needed.
 
-`/player` requires the `player.list` permission. `/player lookup` requires `player.lookup`, which also needs `player.list` as a prerequisite.
 
 ### Remote Command Execution (`/exec`)
 
@@ -185,7 +169,9 @@ The `/exec` command lets authorized users send Minecraft server commands through
 - **Walking command autocomplete** - a tree-driven autocomplete system that suggests base Minecraft commands and walks through argument slots (players, selectors, items, literals, numbers, free-text), with RBAC filtering applied at the base-command level
 - **Execution logging (Accountability)** - every command is appended as JSONL to a configurable log file (`./logs/exec.jsonl`)
 
----
+## And More!
+
+
 
 ## Before You Start
 
@@ -643,7 +629,7 @@ CraftDaemon/
 └── README.md
 ```
 
-> The `src/` layout is the intended structure, but the bot isn't rigid about it — if you prefer running `index.js` from the project root that works too, as long as paths and your systemd `ExecStart` point to the right place.
+> The `src/` layout is the intended structure, but the bot isn't rigid about it — if you prefer running `index.js` from the project root that works too, as long as paths and your systemd `ExecStart` AND point to the right place.
 
 > As per v1.2.0 release, the bot now uses a **persistent RCON connection manager** with keepalive, reconnect handling, and command queueing. This avoids frequent connect/disconnect churn and keeps presence/stat data more stable.
 
