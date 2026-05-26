@@ -131,7 +131,7 @@ When the server has been empty for a configurable amount of time (default: **10 
 
 <p align="left">
   <picture>
-    <img src="https://cdn.craftdaemon.arcver.xyz/warning-example.png" width="30%"/>
+    <img src="https://cdn.craftdaemon.arcver.xyz/warning-example-dark.png" width="30%"/>
   </picture>
 </p>
 
