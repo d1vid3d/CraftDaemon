@@ -106,7 +106,7 @@ If you're setting up the bot beyond the basics, this is your primary reference a
 ### And More! Try it for yourself!
 
 ---
-### A Bit Bore Details
+### A Bit More Details
 
 ### Smart Bot Presence
 
