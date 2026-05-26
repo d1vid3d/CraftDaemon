@@ -92,7 +92,7 @@ If you're setting up the bot beyond the basics, this is your primary reference a
 📸 **Gif:** Remote Command Execution
 <p align="left">
   <picture>
-    <img src="https://cdn.craftdaemon.arcver.xyz/exec.gif" width="50%"/>
+    <img src="https://github.com/user-attachments/assets/ac1201fd-5e26-4957-b9ef-4fdc04f7ffb0" width="50%"/>
   </picture>
 </p>
 
