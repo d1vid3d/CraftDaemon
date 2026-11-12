@@ -426,73 +426,6 @@ Both services are now managed by systemd and will survive reboots.
 
 ---
 
-## Project structure
-
-```
-CraftDaemon/
-├── assets/                    # Logos and README images
-├── config/
-│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)
-│   └── .env.example           # Environment variable template
-├── src/
-│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader
-│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)
-│   ├── commands/              # One file per slash command (data + permission + execute)
-│   │   ├── ping.js
-│   │   ├── start.js
-│   │   ├── stop.js
-│   │   ├── restart.js
-│   │   ├── address.js
-│   │   ├── status.js
-│   │   ├── checkUpdate.js
-│   │   ├── logs.js
-│   │   ├── player.js
-│   │   ├── exec.js
-│   │   └── help.js
-│   ├── events/
-│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute() + autocomplete routing
-│   ├── permissions/
-│   │   ├── index.js
-│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)
-│   │   └── resolver.js        # hasPermission() against permission-config.js
-│   ├── utils/
-│   │   ├── storage.js         # JSON persistence for per-guild update-notification state
-│   │   ├── playerStore.js     # JSON persistence for player data (online status, first/last seen)
-│   │   └── env.js             # Shared env parsers: getEnvInt, getEnvString, getEnvBool, getEnvFloat
-│   └── services/
-│       ├── autoStopService.js # Auto-Stop/Auto-Shutdown handling and logic
-│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery
-│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline + player tracking
-│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)
-│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart
-│       ├── commandLock.js     # Cooldown lock for start/stop/restart
-│       ├── logger.js          # Structured logging utility used across bot modules
-│       ├── logsServices/      # Live log streaming for /logs command
-│       │   ├── logStream.js      # Spawns journalctl/tail, manages the child process
-│       │   ├── sessionManager.js # Active sessions Map, session lifecycle (start/stop/expire)
-│       │   └── logBuffer.js      # Rotating buffer logic, MAX_LINES trimming
-│       └── execServices/      # Remote command execution for /exec command
-│           ├── executeCommand.js    # Centralized RCON execution with middleware pipeline
-│           ├── commandLogger.js     # JSONL logging for every executed command
-│           ├── permissions.js       # Exec-specific permission resolution against allowlist
-│           ├── blacklist.js         # Dangerous + blocked command safety checks
-│           ├── confirmations.js     # Confirmation button prompts with expiry
-│           ├── tellrawInjector.js   # In-game announcement via tellraw
-│           └── autocomplete/        # Walking command autocomplete system
-│               ├── commandAutocomplete.js # Input parser, tree walker, RCON player cache, RBAC filter, Discord formatter
-│               └── commandTree.js        # Static Minecraft command argument structure (single source of truth)
-├── data/                      # Runtime state directory (gitignored, created on demand)
-├── logs/                      # Player store and exec audit trail (gitignored, created on demand)
-├── package.json
-└── README.md
-```
-
-> The `src/` layout is the intended structure, but the bot isn't rigid about it; if you prefer running `index.js` from the project root, that works too, as long as your paths and the systemd `ExecStart` point to the right place.
-
-> As per v1.2.0 release, the bot now uses a **persistent RCON connection manager** with keepalive, reconnect handling, and command queueing. This avoids frequent connect/disconnect churn and keeps presence/stat data more stable.
-
----
-
 ## Operating the bot
 
 Once both services are running, you'll mostly interact with them through Discord. If you are not very familiar with systemctl and systemd in general, here are the essential commands to know for when you need to manage things directly from your server.
@@ -945,6 +878,73 @@ The permission string is missing from `config/permission-config.js`, the role ke
 
 **The website documentation looks out of date**
 It is. The site is being brought back in line with the current release; until then this README is canonical.
+
+---
+
+## Project structure
+
+```
+CraftDaemon/
+├── assets/                    # Logos and README images
+├── config/
+│   ├── permission-config.js   # RBAC rules (owners/roles/command permissions)
+│   └── .env.example           # Environment variable template
+├── src/
+│   ├── index.js               # Bot entry: client, RconManager, presence, auto-stop, command loader
+│   ├── register-commands.js   # Guild slash registration (reads src/commands/*.js)
+│   ├── commands/              # One file per slash command (data + permission + execute)
+│   │   ├── ping.js
+│   │   ├── start.js
+│   │   ├── stop.js
+│   │   ├── restart.js
+│   │   ├── address.js
+│   │   ├── status.js
+│   │   ├── checkUpdate.js
+│   │   ├── logs.js
+│   │   ├── player.js
+│   │   ├── exec.js
+│   │   └── help.js
+│   ├── events/
+│   │   └── interactionCreate.js   # Slash dispatch: RBAC middleware → command.execute() + autocomplete routing
+│   ├── permissions/
+│   │   ├── index.js
+│   │   ├── middleware.js      # permissionMiddleware (ephemeral deny)
+│   │   └── resolver.js        # hasPermission() against permission-config.js
+│   ├── utils/
+│   │   ├── storage.js         # JSON persistence for per-guild update-notification state
+│   │   ├── playerStore.js     # JSON persistence for player data (online status, first/last seen)
+│   │   └── env.js             # Shared env parsers: getEnvInt, getEnvString, getEnvBool, getEnvFloat
+│   └── services/
+│       ├── autoStopService.js # Auto-Stop/Auto-Shutdown handling and logic
+│       ├── updateService.js   # GitHub release polling, ETag cache, update embed delivery
+│       ├── rconManager.js     # Persistent RCON connection lifecycle + command pipeline + player tracking
+│       ├── rconQuery.js       # Command-facing RCON helpers (wired after clientReady)
+│       ├── minecraftSystemd.js # systemctl + save-all before stop/restart
+│       ├── commandLock.js     # Cooldown lock for start/stop/restart
+│       ├── logger.js          # Structured logging utility used across bot modules
+│       ├── logsServices/      # Live log streaming for /logs command
+│       │   ├── logStream.js      # Spawns journalctl/tail, manages the child process
+│       │   ├── sessionManager.js # Active sessions Map, session lifecycle (start/stop/expire)
+│       │   └── logBuffer.js      # Rotating buffer logic, MAX_LINES trimming
+│       └── execServices/      # Remote command execution for /exec command
+│           ├── executeCommand.js    # Centralized RCON execution with middleware pipeline
+│           ├── commandLogger.js     # JSONL logging for every executed command
+│           ├── permissions.js       # Exec-specific permission resolution against allowlist
+│           ├── blacklist.js         # Dangerous + blocked command safety checks
+│           ├── confirmations.js     # Confirmation button prompts with expiry
+│           ├── tellrawInjector.js   # In-game announcement via tellraw
+│           └── autocomplete/        # Walking command autocomplete system
+│               ├── commandAutocomplete.js # Input parser, tree walker, RCON player cache, RBAC filter, Discord formatter
+│               └── commandTree.js        # Static Minecraft command argument structure (single source of truth)
+├── data/                      # Runtime state directory (gitignored, created on demand)
+├── logs/                      # Player store and exec audit trail (gitignored, created on demand)
+├── package.json
+└── README.md
+```
+
+> The `src/` layout is the intended structure, but the bot isn't rigid about it; if you prefer running `index.js` from the project root, that works too, as long as your paths and the systemd `ExecStart` point to the right place.
+
+> As per v1.2.0 release, the bot now uses a **persistent RCON connection manager** with keepalive, reconnect handling, and command queueing. This avoids frequent connect/disconnect churn and keeps presence/stat data more stable.
 
 ---
 
