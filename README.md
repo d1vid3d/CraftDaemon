@@ -3,7 +3,7 @@
   <picture>
     <source srcset="assets/logo/logo-dark.svg" media="(prefers-color-scheme: dark)">
     <source srcset="assets/logo/logo-light.svg" media="(prefers-color-scheme: light)">
-    <img src="assets/logo-dark.svg" width="70%">
+    <img src="assets/logo/logo-dark.svg" width="70%">
   </picture>
 
   <h4>
@@ -54,11 +54,11 @@ CraftDaemon uses the `tps` RCON command to read server performance. This command
 
 ### Full Documentation
 
-The full documentation is available at:  
-👉 [CraftDaemon Docs](https://craftdaemon.arcver.xyz/documentation.html) On the website.
+> ⚠️ **The website is under maintenance.** Its documentation is being brought back in line with the current code, so parts of it may be outdated or describe behaviour that has changed.
+>
+> Until that work is complete, **this README is the canonical documentation** for CraftDaemon. Use it for setup, configuration, and troubleshooting. The website becomes canonical again once it matches the current release.
 
-Detailed guides, configuration options, and advanced usage are covered.  
-If you're setting up the bot beyond the basics, this is your primary reference and source of truth.
+When the site is current, the full documentation will be available at [CraftDaemon Docs](https://craftdaemon.arcver.xyz/documentation.html).
 
 ---
 
@@ -122,7 +122,7 @@ The bot's Discord status is event-driven from the persistent RCON manager, with 
   <picture>
     <source srcset="assets/readme-assets/bot-presence-example-dark.png" media="(prefers-color-scheme: dark)">
     <source srcset="assets/readme-assets/bot-presence-example-light.png" media="(prefers-color-scheme: light)">
-    <img src="assets/bot-presence-example-dark.png" width="30%"/>
+    <img src="assets/readme-assets/bot-presence-example-dark.png" width="30%"/>
   </picture>
 </p>
 

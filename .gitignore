@@ -1,7 +1,16 @@
-.vscode/
+# Critical
 .env
+
+# Local dev environment/helper files
+.vscode/
 data/
 node_modules/
+analysis/
+graphify-out/
+.opencode/
+AGENTS.md
+
+# Local docs reference files
 patchnotes/
 logs/
 docs/
